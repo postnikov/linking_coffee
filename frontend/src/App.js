@@ -139,9 +139,6 @@ function App() {
                                                 required
                                             />
                                         </div>
-                                        <span className="form-hint">
-                                            {t('form.username_hint')}
-                                        </span>
                                     </div>
 
                                     <button

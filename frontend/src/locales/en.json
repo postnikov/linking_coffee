@@ -11,10 +11,9 @@
     },
     "form": {
         "title": "Get Early Access",
-        "subtitle": "Sign up now and be among the first to experience Linking Coffee",
+        "subtitle": "Sign up now and be among the first to experience <br /> Linking Coffee",
         "label": "Telegram Username",
         "username_placeholder": "your_username",
-        "username_hint": "Enter your Telegram username without \"@\"",
         "cta_button": "Join the Waitlist",
         "loading": "Registering...",
         "footer": "By signing up, you'll receive exclusive early bird benefits when we launch! 🚀",
