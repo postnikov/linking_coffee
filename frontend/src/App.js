@@ -145,6 +145,7 @@ function App() {
                                         <p className="error-message">{message}</p>
                                     )}
                                 </form>
+                            )}
                         </div>
                     </div>
                 </div>
