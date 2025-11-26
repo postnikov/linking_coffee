@@ -1,0 +1,22 @@
+{
+    "hero": {
+        "title": "Linking Coffee",
+        "tagline": "Expand your world.<br />One conversation at a time.",
+        "description": "Join a community of curious minds. We match you with a new person every week for a 15-minute coffee chat. No agenda, just connection."
+    },
+    "features": {
+        "weekly_matches": "Weekly curated matches",
+        "conversations": "Meaningful conversations via Zoom or Google Meet",
+        "community": "Diverse, global community"
+    },
+    "form": {
+        "title": "Join the Waitlist",
+        "username_placeholder": "Telegram username (e.g. john_doe)",
+        "username_hint": "Enter your Telegram username without \"@\"",
+        "cta_button": "Get Early Access",
+        "loading": "Joining...",
+        "success": "Welcome to the club! ☕️",
+        "error_generic": "Something went wrong. Please try again.",
+        "error_duplicate": "You're already on the list! 🎉"
+    }
+}

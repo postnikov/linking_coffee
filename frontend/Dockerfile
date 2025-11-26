@@ -27,4 +27,7 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 # Expose port
 EXPOSE 80
 
+# Ensure all files in the web root are readable by everyone
+RUN chmod -R 755 /usr/share/nginx/html
+
 CMD ["nginx", "-g", "daemon off;"]

@@ -1,25 +1,29 @@
 import React, { useState } from 'react';
+import { useTranslation, Trans } from 'react-i18next';
 import './App.css';
 
 function App() {
+    const { t, i18n } = useTranslation();
     const [telegramUsername, setTelegramUsername] = useState('');
-    const [loading, setLoading] = useState(false);
-    const [message, setMessage] = useState(null);
+    const [status, setStatus] = useState('idle'); // idle, loading, success, error
+    const [message, setMessage] = useState('');
+
+    const changeLanguage = (lng) => {
+        i18n.changeLanguage(lng);
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setStatus('loading');
+        setMessage('');
 
-        if (!telegramUsername.trim()) {
-            setMessage({
-                type: 'error',
-                title: 'Oops!',
-                text: 'Please enter your Telegram username'
-            });
+        // Basic validation: remove @ if present
+        const cleanUsername = telegramUsername.replace('@', '').trim();
+
+        if (!cleanUsername) {
+            setStatus('idle');
             return;
         }
-
-        setLoading(true);
-        setMessage(null);
 
         try {
             const response = await fetch('/api/register', {
@@ -27,158 +31,124 @@ function App() {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ telegramUsername }),
+                body: JSON.stringify({ telegramUsername: cleanUsername }),
             });
 
             const data = await response.json();
 
             if (response.ok) {
-                setMessage({
-                    type: 'success',
-                    title: 'Welcome aboard! 🎉',
-                    text: data.message
-                });
+                setStatus('success');
+                setMessage(t('form.success'));
                 setTelegramUsername('');
             } else {
-                setMessage({
-                    type: 'error',
-                    title: 'Registration failed',
-                    text: data.message
-                });
+                setStatus('error');
+                if (response.status === 409) {
+                    setMessage(t('form.error_duplicate'));
+                } else {
+                    setMessage(data.error || t('form.error_generic'));
+                }
             }
         } catch (error) {
-            setMessage({
-                type: 'error',
-                title: 'Connection error',
-                text: 'Could not connect to the server. Please try again later.'
-            });
-        } finally {
-            setLoading(false);
+            setStatus('error');
+            setMessage(t('form.error_generic'));
         }
     };
 
     return (
-        <div className="landing-page">
-            {/* Animated background decorations */}
-            <div className="background-decoration">
-                <div className="bg-circle bg-circle-1"></div>
-                <div className="bg-circle bg-circle-2"></div>
-                <div className="bg-circle bg-circle-3"></div>
+        <div className="app-container">
+            <div className="language-switcher">
+                <button
+                    className={`lang-btn ${i18n.language === 'en' ? 'active' : ''}`}
+                    onClick={() => changeLanguage('en')}
+                >
+                    EN
+                </button>
+                <span className="lang-divider">|</span>
+                <button
+                    className={`lang-btn ${i18n.language === 'ru' ? 'active' : ''}`}
+                    onClick={() => changeLanguage('ru')}
+                >
+                    RU
+                </button>
             </div>
 
-            {/* Main content */}
-            <div className="landing-content">
+            <main className="main-content">
                 <div className="content-wrapper">
                     {/* Left side - Hero */}
                     <div className="hero-section">
 
-
                         <h1 className="hero-title">
-                            Linking Coffee
+                            {t('hero.title')}
                         </h1>
 
                         <p className="hero-tagline">
-                            Expand your world.
-                            <br />
-                            One conversation at a time.
+                            <Trans i18nKey="hero.tagline" />
                         </p>
 
                         <p className="hero-description">
-                            Join our community of curious minds and build meaningful connections
-                            through random coffee chats. Every week, we'll match you with someone
-                            new for enriching conversations.
+                            {t('hero.description')}
                         </p>
 
-                        <ul className="features-list">
+                        <ul className="feature-list">
                             <li className="feature-item">
-                                <span className="feature-icon">🤝</span>
-                                <span>Connect with like-minded people</span>
-                            </li>
-                            <li className="feature-item">
-                                <span className="feature-icon">🌍</span>
-                                <span>Expand your network globally</span>
+                                <span className="feature-icon">☕️</span>
+                                <span>{t('features.weekly_matches')}</span>
                             </li>
                             <li className="feature-item">
                                 <span className="feature-icon">💬</span>
-                                <span>Meaningful conversations via Zoom or Google Meet</span>
+                                <span>{t('features.conversations')}</span>
                             </li>
                             <li className="feature-item">
                                 <span className="feature-icon">✨</span>
-                                <span>Serendipitous connections every week</span>
+                                <span>{t('features.community')}</span>
                             </li>
                         </ul>
                     </div>
 
-                    {/* Right side - Registration Form */}
-                    <div className="registration-section">
-                        <div className="registration-card">
-                            <div className="card-header">
-                                <div className="early-bird-badge">
-                                    <span>🐦</span>
-                                    <span>Early Bird Registration</span>
-                                </div>
-                                <h2 className="card-title">Get Early Access</h2>
-                                <p className="card-subtitle">
-                                    Sign up now and be among the first to experience Linking Coffee
-                                </p>
-                            </div>
+                    {/* Right side - Form Card */}
+                    <div className="form-section">
+                        <div className="glass-card">
+                            <h2>{t('form.title')}</h2>
 
-                            {message && (
-                                <div className={`alert alert-${message.type}`}>
-                                    <div className="alert-title">{message.title}</div>
-                                    <div>{message.text}</div>
+                            {status === 'success' ? (
+                                <div className="success-message">
+                                    <span className="success-icon">✅</span>
+                                    <p>{message}</p>
                                 </div>
-                            )}
-
-                            <form onSubmit={handleSubmit} className="registration-form">
-                                <div className="form-group">
-                                    <label htmlFor="telegram-username" className="form-label">
-                                        Telegram Username
-                                    </label>
-                                    <div className="input-wrapper">
-                                        <span className="input-icon">@</span>
-                                        <input
-                                            type="text"
-                                            id="telegram-username"
-                                            className="form-input"
-                                            placeholder="your_username"
-                                            value={telegramUsername}
-                                            onChange={(e) => setTelegramUsername(e.target.value)}
-                                            disabled={loading}
-                                        />
+                            ) : (
+                                <form onSubmit={handleSubmit}>
+                                    <div className="input-group">
+                                        <div className="input-wrapper">
+                                            <span className="input-prefix">@</span>
+                                            <input
+                                                type="text"
+                                                placeholder={t('form.username_placeholder')}
+                                                value={telegramUsername}
+                                                onChange={(e) => setTelegramUsername(e.target.value)}
+                                                required
+                                            />
+                                        </div>
+                                        <span className="form-hint">
+                                            {t('form.username_hint')}
+                                        </span>
                                     </div>
-                                    <span className="form-hint">
-                                        Enter your Telegram username without "@"
-                                    </span>
-                                </div>
 
-                                <button
-                                    type="submit"
-                                    className="submit-button"
-                                    disabled={loading}
-                                >
-                                    <div className="button-content">
-                                        {loading && <span className="spinner"></span>}
-                                        <span>{loading ? 'Registering...' : 'Join the Waitlist'}</span>
-                                    </div>
-                                </button>
-                            </form>
+                                    <button
+                                        type="submit"
+                                        className={`submit-btn ${status === 'loading' ? 'loading' : ''}`}
+                                        disabled={status === 'loading'}
+                                    >
+                                        {status === 'loading' ? t('form.loading') : t('form.cta_button')}
+                                    </button>
 
-                            <div style={{
-                                marginTop: 'var(--spacing-lg)',
-                                textAlign: 'center',
-                                fontSize: '0.875rem',
-                                color: 'var(--gray-600)'
-                            }}>
-                                <p>
-                                    By signing up, you'll receive exclusive early bird benefits
-                                    when we launch! 🚀
-                                </p>
-                            </div>
+                                    {status === 'error' && (
+                                        <p className="error-message">{message}</p>
+                                    )}
+                                </form>
                         </div>
                     </div>
                 </div>
-            </div>
+            </main>
         </div>
     );
 }
