@@ -108,7 +108,7 @@ function App() {
                     {/* Right side - Form Card */}
                     <div className="form-section">
                         <div className="glass-card">
-                            <h2>{t('form.title')}</h2>
+                            <h2 className="card-title">{t('form.title')}</h2>
 
                             {status === 'success' ? (
                                 <div className="success-message">
@@ -116,12 +116,13 @@ function App() {
                                     <p>{message}</p>
                                 </div>
                             ) : (
-                                <form onSubmit={handleSubmit}>
+                                <form className="registration-form" onSubmit={handleSubmit}>
                                     <div className="input-group">
                                         <div className="input-wrapper">
                                             <span className="input-prefix">@</span>
                                             <input
                                                 type="text"
+                                                className="form-input"
                                                 placeholder={t('form.username_placeholder')}
                                                 value={telegramUsername}
                                                 onChange={(e) => setTelegramUsername(e.target.value)}
