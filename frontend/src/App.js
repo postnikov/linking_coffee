@@ -92,7 +92,7 @@ function App() {
                         <ul className="feature-list">
                             <li className="feature-item">
                                 <span className="feature-icon">☕️</span>
-                                <span>{t('features.weekly_matches')}</span>
+                                <span>{t('features.connect')}</span>
                             </li>
                             <li className="feature-item">
                                 <span className="feature-icon">💬</span>
@@ -108,7 +108,12 @@ function App() {
                     {/* Right side - Form Card */}
                     <div className="form-section">
                         <div className="glass-card">
-                            <h2 className="card-title">{t('form.title')}</h2>
+                            <div className="card-header">
+                                <h2 className="card-title">{t('form.title')}</h2>
+                                <p className="card-subtitle">
+                                    {t('form.subtitle')}
+                                </p>
+                            </div>
 
                             {status === 'success' ? (
                                 <div className="success-message">
@@ -118,14 +123,19 @@ function App() {
                             ) : (
                                 <form className="registration-form" onSubmit={handleSubmit}>
                                     <div className="input-group">
+                                        <label htmlFor="telegram-username" className="form-label">
+                                            {t('form.label')}
+                                        </label>
                                         <div className="input-wrapper">
                                             <span className="input-prefix">@</span>
                                             <input
                                                 type="text"
+                                                id="telegram-username"
                                                 className="form-input"
                                                 placeholder={t('form.username_placeholder')}
                                                 value={telegramUsername}
                                                 onChange={(e) => setTelegramUsername(e.target.value)}
+                                                disabled={status === 'loading'}
                                                 required
                                             />
                                         </div>
@@ -136,10 +146,13 @@ function App() {
 
                                     <button
                                         type="submit"
-                                        className={`submit-btn ${status === 'loading' ? 'loading' : ''}`}
+                                        className="submit-btn"
                                         disabled={status === 'loading'}
                                     >
-                                        {status === 'loading' ? t('form.loading') : t('form.cta_button')}
+                                        <div className="button-content">
+                                            {status === 'loading' && <span className="spinner"></span>}
+                                            <span>{status === 'loading' ? t('form.loading') : t('form.cta_button')}</span>
+                                        </div>
                                     </button>
 
                                     {status === 'error' && (
@@ -147,6 +160,17 @@ function App() {
                                     )}
                                 </form>
                             )}
+
+                            <div style={{
+                                marginTop: 'var(--spacing-lg)',
+                                textAlign: 'center',
+                                fontSize: '0.875rem',
+                                color: 'var(--gray-600)'
+                            }}>
+                                <p>
+                                    {t('form.footer')}
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -201,7 +201,7 @@
     animation: fadeIn 0.8s ease-out 1s both;
 }
 
-.registration-card {
+.glass-card {
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
@@ -212,7 +212,7 @@
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.registration-card:hover {
+.glass-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.3);
 }
@@ -243,10 +243,11 @@
     gap: var(--spacing-md);
 }
 
-.form-group {
+.input-group {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-xs);
+    text-align: center;
 }
 
 .form-label {
@@ -255,6 +256,7 @@
     font-size: 0.875rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
+    text-align: center;
 }
 
 .input-wrapper {
@@ -263,17 +265,21 @@
     align-items: center;
 }
 
-.input-icon {
+.input-prefix {
     position: absolute;
-    left: var(--spacing-md);
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
     color: var(--gray-600);
     font-size: 1.25rem;
     pointer-events: none;
+    z-index: 1;
+    line-height: 1;
 }
 
 .form-input {
     width: 100%;
-    padding: var(--spacing-md) var(--spacing-md) var(--spacing-md) calc(var(--spacing-md) * 3);
+    padding: var(--spacing-md) var(--spacing-md) var(--spacing-md) 2.5rem;
     font-size: 1rem;
     border: 2px solid var(--gray-200);
     border-radius: var(--radius-lg);
@@ -286,7 +292,6 @@
     outline: none;
     border-color: #667eea;
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-    transform: translateY(-2px);
 }
 
 .form-input::placeholder {
@@ -296,9 +301,11 @@
 .form-hint {
     font-size: 0.875rem;
     color: var(--gray-600);
+    text-align: center;
 }
 
-.submit-button {
+
+.submit-btn {
     margin-top: var(--spacing-sm);
     padding: var(--spacing-md) var(--spacing-lg);
     font-size: 1.125rem;
@@ -314,7 +321,7 @@
     overflow: hidden;
 }
 
-.submit-button::before {
+.submit-btn::before {
     content: '';
     position: absolute;
     top: 0;
@@ -325,20 +332,20 @@
     transition: left 0.5s;
 }
 
-.submit-button:hover::before {
+.submit-btn:hover::before {
     left: 100%;
 }
 
-.submit-button:hover {
+.submit-btn:hover {
     transform: translateY(-2px);
     box-shadow: var(--shadow-xl);
 }
 
-.submit-button:active {
+.submit-btn:active {
     transform: translateY(0);
 }
 
-.submit-button:disabled {
+.submit-btn:disabled {
     opacity: 0.6;
     cursor: not-allowed;
     transform: none;
@@ -359,6 +366,41 @@
     border-top-color: white;
     border-radius: 50%;
     animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* Success and Error Messages */
+.success-message {
+    text-align: center;
+    padding: var(--spacing-lg);
+}
+
+.success-message p {
+    margin: 0;
+    color: var(--gray-700);
+    font-size: 1rem;
+}
+
+.success-icon {
+    font-size: 3rem;
+    display: block;
+    margin-bottom: var(--spacing-md);
+}
+
+.error-message {
+    text-align: center;
+    color: #991b1b;
+    font-size: 0.875rem;
+    margin-top: var(--spacing-sm);
 }
 
 /* Alert messages */
@@ -447,7 +489,7 @@
         font-size: 1.125rem;
     }
 
-    .registration-card {
+    .glass-card {
         padding: var(--spacing-lg);
     }
 
