@@ -1,4 +1,4 @@
-.landing-page {
+.app-container {
     min-height: 100vh;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
     position: relative;
@@ -106,7 +106,7 @@
 }
 
 /* Main content */
-.landing-content {
+.main-content {
     position: relative;
     z-index: 1;
     min-height: 100vh;
@@ -197,7 +197,7 @@
 }
 
 /* Right side - Registration form */
-.registration-section {
+.form-section {
     animation: fadeIn 0.8s ease-out 1s both;
 }
 
