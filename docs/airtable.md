@@ -1,0 +1,3 @@
+AIRTABLE_API_KEY=your_airtable_api_key_here
+
+AIRTABLE_BASE_ID=appA0Vaq5r5436SGp

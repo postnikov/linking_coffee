@@ -1,0 +1,50 @@
+services:
+  linking-coffee-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: linking-coffee-backend
+    restart: unless-stopped
+    expose:
+      - "3001"
+    environment:
+      - NODE_ENV=production
+      - AIRTABLE_API_KEY=${AIRTABLE_API_KEY}
+      - AIRTABLE_BASE_ID=${AIRTABLE_BASE_ID}
+      - AIRTABLE_MEMBERS_TABLE=${AIRTABLE_MEMBERS_TABLE}
+      - BOT_TOKEN=${BOT_TOKEN}
+      - ADMIN_BOT_TOKEN=${ADMIN_BOT_TOKEN}
+      - ADMIN_CHAT_ID=${ADMIN_CHAT_ID}
+      - PORT=3001
+    networks:
+      - linking-coffee-internal
+    healthcheck:
+      test: [ "CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3001/api/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  linking-coffee-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: linking-coffee-frontend
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.linking-coffee.rule=Host(`linkingcoffee.com`) || Host(`www.linkingcoffee.com`)"
+      - "traefik.http.routers.linking-coffee.entrypoints=websecure"
+      - "traefik.http.routers.linking-coffee.tls.certresolver=myresolver"
+      - "traefik.http.services.linking-coffee.loadbalancer.server.port=80"
+    networks:
+      - traefik-public
+      - linking-coffee-internal
+    depends_on:
+      - linking-coffee-backend
+
+networks:
+  traefik-public:
+    external: true
+  linking-coffee-internal:
+    driver: bridge

@@ -1,0 +1,4 @@
+BOT_TOKEN=your_bot_token_here
+ADMIN_BOT_TOKEN=your_admin_bot_token_here
+
+ADMIN_CHAT_ID=379053
