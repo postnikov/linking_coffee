@@ -2,6 +2,13 @@
 
 server: root@91.98.235.147
 
+## Current Server Setup
+The production server is running **Traefik** as the main reverse proxy.
+- **Network**: All public-facing containers must be connected to the `traefik-public` Docker network.
+- **Routing**: Routing is handled via Docker labels on the services (see `docker-compose.yml`).
+- **SSL**: Traefik handles SSL certificates automatically.
+- **Ports**: The application containers do NOT expose ports directly to the host (except Backend for internal health checks if needed, but Frontend is purely internal to Docker network).
+
 ## Docker Deployment
 
 ### Prerequisites
@@ -110,11 +117,13 @@ docker-compose up -d --build
    docker-compose up -d
    ```
 
-6. **Set up reverse proxy (nginx)**
-   ```bash
-   sudo apt install nginx
-   # Configure nginx to proxy to port 80
-   ```
+6. **Traefik Configuration**
+   The server uses Traefik as a reverse proxy. The `docker-compose.yml` is already configured with the necessary labels:
+   - `traefik.enable=true`
+   - Host rules for `linkingcoffee.com` and `www.linkingcoffee.com`
+   - Connection to `traefik-public` external network
+
+   Ensure the `traefik-public` network exists on the server (it should already be there).
 
 ### Option 2: Separate Deployment
 
