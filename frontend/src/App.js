@@ -111,7 +111,7 @@ function App() {
                             <div className="card-header">
                                 <h2 className="card-title">{t('form.title')}</h2>
                                 <p className="card-subtitle">
-                                    {t('form.subtitle')}
+                                    <Trans i18nKey="form.subtitle" />
                                 </p>
                             </div>
 
