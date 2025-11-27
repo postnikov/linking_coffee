@@ -35,13 +35,22 @@ services:
       dockerfile: Dockerfile
     container_name: linking-coffee-frontend
     restart: unless-stopped
-    ports:
-      - "8080:80"
+    # ports:
+    #   - "8080:80"
     depends_on:
       - backend
     networks:
       - linking-coffee-network
+      - traefik-public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.linkingcoffee.rule=Host(`linkingcoffee.com`) || Host(`www.linkingcoffee.com`)"
+      - "traefik.http.routers.linkingcoffee.entrypoints=web,websecure"
+      - "traefik.http.routers.linkingcoffee.tls.certresolver=myresolver"
+      - "traefik.http.services.linkingcoffee.loadbalancer.server.port=80"
 
 networks:
   linking-coffee-network:
     driver: bridge
+  traefik-public:
+    external: true
