@@ -1,4 +1,4 @@
-```javascript
+
 import React, { useState } from 'react';
 import { useTranslation, Trans } from 'react-i18next';
 import PageLayout from '../components/PageLayout';
@@ -61,11 +61,11 @@ const Register = () => {
                     <div className="success-message">
                         <span className="success-icon">✅</span>
                         <p>
-                            <Trans 
-                                i18nKey="form.success_bot_link" 
-                                components={{ 
-                                    1: <a href="https://t.me/linked_coffee_bot" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline', fontWeight: 'bold' }} /> 
-                                }} 
+                            <Trans
+                                i18nKey="form.success_bot_link"
+                                components={{
+                                    1: <a href="https://t.me/linked_coffee_bot" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline', fontWeight: 'bold' }} />
+                                }}
                             />
                         </p>
                     </div>
@@ -106,7 +106,7 @@ const Register = () => {
                         )}
                     </form>
                 )}
-                
+
                 <div style={{
                     marginTop: 'var(--spacing-lg)',
                     textAlign: 'center',
