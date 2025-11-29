@@ -32,25 +32,65 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Linked.Coffee API is running' });
 });
 
+const crypto = require('crypto');
+
+// Helper to verify Telegram Login Widget data
+function verifyTelegramAuth(data) {
+  const { hash, ...userData } = data;
+  if (!hash) return false;
+
+  const secretKey = crypto.createHash('sha256').update(process.env.BOT_TOKEN).digest();
+  const checkString = Object.keys(userData)
+    .sort()
+    .map(key => `${key}=${userData[key]}`)
+    .join('\n');
+
+  const hmac = crypto.createHmac('sha256', secretKey).update(checkString).digest('hex');
+  return hmac === hash;
+}
+
 // Pre-registration endpoint
 app.post('/api/register', async (req, res) => {
-  const { telegramUsername } = req.body;
+  const { telegramUser, telegramUsername } = req.body;
 
-  // Validate telegram username
-  if (!telegramUsername) {
+  let cleanUsername;
+
+  // Handle Telegram Login Widget data
+  if (telegramUser) {
+    // 1. Verify authenticity
+    const isValid = verifyTelegramAuth(telegramUser);
+    if (!isValid) {
+      return res.status(403).json({
+        success: false,
+        message: 'Invalid Telegram authentication data'
+      });
+    }
+
+    // 2. Check for expiration (optional but recommended, e.g. 24h)
+    const authDate = telegramUser.auth_date;
+    const now = Math.floor(Date.now() / 1000);
+    if (now - authDate > 86400) {
+      return res.status(403).json({
+        success: false,
+        message: 'Authentication data expired'
+      });
+    }
+
+    cleanUsername = telegramUser.username;
+  } else if (telegramUsername) {
+    // Fallback for manual entry (if we keep it or for testing)
+    cleanUsername = telegramUsername.replace('@', '').trim();
+  } else {
     return res.status(400).json({
       success: false,
-      message: 'Telegram username is required'
+      message: 'Telegram user data is required'
     });
   }
-
-  // Clean the username (remove @ if present)
-  const cleanUsername = telegramUsername.replace('@', '').trim();
 
   if (!cleanUsername) {
     return res.status(400).json({
       success: false,
-      message: 'Invalid Telegram username'
+      message: 'Telegram username is missing from profile'
     });
   }
 
@@ -71,12 +111,15 @@ app.post('/api/register', async (req, res) => {
     }
 
     // Create new record with EarlyBird status
+    // We can add more fields (ID, Name) if Airtable supports them later
     const record = await base(process.env.AIRTABLE_MEMBERS_TABLE).create([
       {
         fields: {
           Tg_Username: cleanUsername,
           Status: 'EarlyBird',
-          Created_At: new Date().toISOString()
+          Created_At: new Date().toISOString(),
+          // Store Telegram ID if possible, or just username for now
+          // Tg_ID: telegramUser?.id 
         }
       }
     ]);
