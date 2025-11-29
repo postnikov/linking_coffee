@@ -20,5 +20,26 @@
         "success": "Welcome to the club! ☕️",
         "error_duplicate": "You're already on the waitlist!",
         "error_generic": "Something went wrong. Please try again."
+    },
+    "header": {
+        "about": "What is Linked Coffee",
+        "rules": "Rules",
+        "prices": "Prices",
+        "register": "Register"
+    },
+    "footer": {
+        "rights": "All rights reserved.",
+        "gdpr": "Privacy Policy & GDPR"
+    },
+    "pages": {
+        "about": {
+            "text": "Linked.Coffee is a platform designed to connect people through random coffee chats. We believe in the power of serendipitous connections to broaden horizons and spark new ideas."
+        },
+        "rules": {
+            "text": "1. Be respectful. 2. Show up on time. 3. Have an open mind. 4. No selling or pitching unless mutually agreed."
+        },
+        "prices": {
+            "text": "Linked.Coffee is currently free to join during our beta period. Premium features will be announced soon."
+        }
     }
 }
