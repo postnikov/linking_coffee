@@ -138,7 +138,8 @@ app.post('/api/verify', async (req, res) => {
 
   // Magic OTP for testing
   if (cleanOtp === '000000') {
-    // Allow pass
+    // Allow pass - skip store check
+    console.log('✨ Magic OTP used. Bypassing verification.');
   } else {
     const storedData = otpStore.get(cleanUsername);
 
@@ -167,12 +168,15 @@ app.post('/api/verify', async (req, res) => {
 
     if (records.length > 0) {
       const record = records[0];
-      const storedData = otpStore.get(cleanUsername);
 
-      // Update Tg_ID if we have it from the bot interaction (stored in otpStore)
-      // If using magic OTP, we might not have a telegramId, so skip or use dummy?
-      // For production, storedData.telegramId should exist.
-      const telegramId = storedData?.telegramId || '000000000';
+      // If magic OTP, we won't have storedData, so default to dummy ID
+      let telegramId = '000000000';
+
+      if (cleanOtp !== '000000') {
+        const storedData = otpStore.get(cleanUsername);
+        telegramId = storedData?.telegramId || '000000000';
+        otpStore.delete(cleanUsername);
+      }
 
       await base(process.env.AIRTABLE_MEMBERS_TABLE).update([
         {
@@ -182,8 +186,6 @@ app.post('/api/verify', async (req, res) => {
           }
         }
       ]);
-
-      otpStore.delete(cleanUsername);
 
       res.json({
         success: true,
