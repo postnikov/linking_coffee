@@ -24,7 +24,7 @@
         "step2_title": "Verify Telegram",
         "step2_subtitle": "Launch <1>@linked_coffee_bot</1> and send /start to get your code",
         "otp_label": "Verification Code",
-        "otp_placeholder": "123456",
+        "otp_placeholder": "123456 (or 000000)",
         "verify_btn": "Verify & Register"
     },
     "header": {
