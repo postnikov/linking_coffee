@@ -1,15 +1,18 @@
 
+
 import React, { useState } from 'react';
 import { useTranslation, Trans } from 'react-i18next';
 import PageLayout from '../components/PageLayout';
 
 const Register = () => {
     const { t } = useTranslation();
+    const [step, setStep] = useState(1); // 1: Username, 2: OTP
     const [telegramUsername, setTelegramUsername] = useState('');
+    const [otp, setOtp] = useState('');
     const [status, setStatus] = useState('idle');
     const [message, setMessage] = useState('');
 
-    const handleSubmit = async (e) => {
+    const handleUsernameSubmit = async (e) => {
         e.preventDefault();
         setStatus('loading');
         setMessage('');
@@ -24,25 +27,20 @@ const Register = () => {
         try {
             const response = await fetch('/api/register', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ telegramUsername: cleanUsername }),
             });
 
             const data = await response.json();
 
             if (response.ok) {
-                setStatus('success');
-                setMessage(t('form.success_bot_link'));
-                setTelegramUsername('');
+                // Proceed to Step 2
+                setTelegramUsername(cleanUsername);
+                setStep(2);
+                setStatus('idle');
             } else {
                 setStatus('error');
-                if (response.status === 409) {
-                    setMessage(t('form.error_duplicate'));
-                } else {
-                    setMessage(data.error || data.message || t('form.error_generic'));
-                }
+                setMessage(data.message || t('form.error_generic'));
             }
         } catch (error) {
             setStatus('error');
@@ -50,61 +48,144 @@ const Register = () => {
         }
     };
 
+    const handleOtpSubmit = async (e) => {
+        e.preventDefault();
+        setStatus('loading');
+        setMessage('');
+
+        try {
+            const response = await fetch('/api/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    telegramUsername,
+                    otp: otp.replace(/\s+/g, '')
+                }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                setStatus('success');
+                setMessage(t('form.success'));
+            } else {
+                setStatus('error');
+                setMessage(data.message || t('form.error_generic'));
+            }
+        } catch (error) {
+            setStatus('error');
+            setMessage(t('form.error_generic'));
+        }
+    };
+
+    const resetFlow = () => {
+        setStep(1);
+        setStatus('idle');
+        setMessage('');
+        setOtp('');
+    };
+
     return (
-        <PageLayout title={t('header.register')}>
+        <PageLayout title={step === 1 ? t('header.register') : t('form.step2_title')}>
             <div className="register-page-content">
                 <p className="register-intro">
-                    <Trans i18nKey="form.subtitle" />
+                    {step === 1 ? (
+                        <Trans i18nKey="form.subtitle" />
+                    ) : (
+                        <Trans
+                            i18nKey="form.step2_subtitle"
+                            components={{
+                                1: <a href="https://t.me/linked_coffee_bot" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline', fontWeight: 'bold' }} />
+                            }}
+                        />
+                    )}
                 </p>
 
                 {status === 'success' ? (
                     <div className="success-message">
                         <span className="success-icon">✅</span>
-                        <p>
-                            <Trans
-                                i18nKey="form.success_bot_link"
-                                components={{
-                                    1: <a href="https://t.me/linked_coffee_bot" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline', fontWeight: 'bold' }} />
-                                }}
-                            />
-                        </p>
+                        <p>{message}</p>
                     </div>
                 ) : (
-                    <form className="registration-form" onSubmit={handleSubmit} style={{ maxWidth: '400px', margin: '0 auto' }}>
-                        <div className="input-group">
-                            <label htmlFor="telegram-username" className="form-label">
-                                {t('form.label')}
-                            </label>
-                            <div className="input-wrapper">
-                                <span className="input-prefix">@</span>
-                                <input
-                                    type="text"
-                                    id="telegram-username"
-                                    className="form-input"
-                                    placeholder={t('form.username_placeholder')}
-                                    value={telegramUsername}
-                                    onChange={(e) => setTelegramUsername(e.target.value)}
-                                    disabled={status === 'loading'}
-                                    required
-                                />
-                            </div>
-                        </div>
+                    <>
+                        {step === 1 && (
+                            <form className="registration-form" onSubmit={handleUsernameSubmit} style={{ maxWidth: '400px', margin: '0 auto' }}>
+                                <div className="input-group">
+                                    <label htmlFor="telegram-username" className="form-label">
+                                        {t('form.label')}
+                                    </label>
+                                    <div className="input-wrapper">
+                                        <span className="input-prefix">@</span>
+                                        <input
+                                            type="text"
+                                            id="telegram-username"
+                                            className="form-input"
+                                            placeholder={t('form.username_placeholder')}
+                                            value={telegramUsername}
+                                            onChange={(e) => setTelegramUsername(e.target.value)}
+                                            disabled={status === 'loading'}
+                                            required
+                                        />
+                                    </div>
+                                </div>
 
-                        <button
-                            type="submit"
-                            className="submit-btn"
-                            disabled={status === 'loading'}
-                        >
-                            <div className="button-content">
-                                {status === 'loading' && <span className="spinner"></span>}
-                                <span>{status === 'loading' ? t('form.loading') : t('form.cta_button')}</span>
-                            </div>
-                        </button>
-
-                        {status === 'error' && (
-                            <p className="error-message">{message}</p>
+                                <button type="submit" className="submit-btn" disabled={status === 'loading'}>
+                                    <div className="button-content">
+                                        {status === 'loading' && <span className="spinner"></span>}
+                                        <span>{status === 'loading' ? t('form.loading') : t('form.step1_btn')}</span>
+                                    </div>
+                                </button>
+                                {status === 'error' && <p className="error-message">{message}</p>}
+                            </form>
                         )}
-                    </form>
+
+                        {step === 2 && (
+                            <form className="registration-form" onSubmit={handleOtpSubmit} style={{ maxWidth: '400px', margin: '0 auto' }}>
+                                <div className="input-group">
+                                    <label htmlFor="otp" className="form-label">
+                                        {t('form.otp_label')}
+                                    </label>
+                                    <div className="input-wrapper">
+                                        <input
+                                            type="text"
+                                            id="otp"
+                                            className="form-input"
+                                            placeholder={t('form.otp_placeholder')}
+                                            value={otp}
+                                            onChange={(e) => setOtp(e.target.value)}
+                                            disabled={status === 'loading'}
+                                            required
+                                            style={{ textAlign: 'center', letterSpacing: '0.2em', fontSize: '1.2rem' }}
+                                        />
+                                    </div>
+                                </div>
+
+                                <button type="submit" className="submit-btn" disabled={status === 'loading'}>
+                                    <div className="button-content">
+                                        {status === 'loading' && <span className="spinner"></span>}
+                                        <span>{status === 'loading' ? t('form.loading') : t('form.verify_btn')}</span>
+                                    </div>
+                                </button>
+
+                                {status === 'error' && <p className="error-message">{message}</p>}
+
+                                <button
+                                    type="button"
+                                    onClick={resetFlow}
+                                    style={{
+                                        background: 'none',
+                                        border: 'none',
+                                        color: 'var(--gray-600)',
+                                        marginTop: '1rem',
+                                        cursor: 'pointer',
+                                        textDecoration: 'underline'
+                                    }}
+                                >
+                                    Back
+                                </button>
+                            </form>
+                        )}
+                    </>
                 )}
 
                 <div style={{

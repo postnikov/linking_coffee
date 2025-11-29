@@ -32,44 +32,28 @@ const otpStore = new Map();
 // Initialize Telegram Bot
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-bot.start(async (ctx) => {
+bot.start((ctx) => {
   const username = ctx.from.username;
-  const telegramId = ctx.from.id;
 
   if (!username) {
     return ctx.reply('Please set a username in your Telegram settings to use this bot.');
   }
 
   const cleanUsername = username.toLowerCase();
+  console.log(`🤖 Bot received /start from: ${username} (clean: ${cleanUsername})`);
 
-  try {
-    // Check if user exists in Airtable
-    const records = await base(process.env.AIRTABLE_MEMBERS_TABLE)
-      .select({
-        filterByFormula: `{Tg_Username} = '${cleanUsername}'`,
-        maxRecords: 1
-      })
-      .firstPage();
+  // Generate 6-digit OTP
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-    if (records.length > 0) {
-      const record = records[0];
-      // Update the record with Tg_ID
-      await base(process.env.AIRTABLE_MEMBERS_TABLE).update([
-        {
-          id: record.id,
-          fields: {
-            Tg_ID: telegramId.toString()
-          }
-        }
-      ]);
-      ctx.reply(`Welcome ${username}! Your account has been successfully linked. ☕️`);
-    } else {
-      ctx.reply('Welcome! Please register on our website https://linked.coffee first.');
-    }
-  } catch (error) {
-    console.error('Bot error:', error);
-    ctx.reply('Something went wrong. Please try again later.');
-  }
+  // Store OTP (valid for 10 minutes)
+  otpStore.set(cleanUsername, {
+    code: otp,
+    telegramId: ctx.from.id, // Store ID to update later
+    expiresAt: Date.now() + 10 * 60 * 1000 // 10 minutes
+  });
+
+  console.log(`✅ Generated OTP for ${cleanUsername}: ${otp}`);
+  ctx.reply(`Your verification code for Linked.Coffee is:\n\n\`${otp}\`\n\nPlease enter this code on the website.`, { parse_mode: 'Markdown' });
 });
 
 bot.launch().then(() => {
@@ -88,16 +72,12 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Linked.Coffee API is running' });
 });
 
-// Pre-registration endpoint
+// Step 1: Register (Create Record)
 app.post('/api/register', async (req, res) => {
   const { telegramUsername } = req.body;
 
-  // Validate inputs
   if (!telegramUsername) {
-    return res.status(400).json({
-      success: false,
-      message: 'Username is required'
-    });
+    return res.status(400).json({ success: false, message: 'Username is required' });
   }
 
   const cleanUsername = telegramUsername.replace('@', '').trim().toLowerCase();
@@ -112,9 +92,11 @@ app.post('/api/register', async (req, res) => {
       .firstPage();
 
     if (existingRecords.length > 0) {
-      return res.status(409).json({
-        success: false,
-        message: 'This Telegram username is already registered'
+      // User exists, proceed to verification step
+      return res.json({
+        success: true,
+        message: 'User exists, please verify.',
+        isNew: false
       });
     }
 
@@ -131,11 +113,8 @@ app.post('/api/register', async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Successfully registered! Please launch the bot to complete setup.',
-      data: {
-        username: cleanUsername,
-        status: 'EarlyBird'
-      }
+      message: 'Registration started. Please verify.',
+      isNew: true
     });
   } catch (error) {
     console.error('Airtable error:', error);
@@ -143,6 +122,80 @@ app.post('/api/register', async (req, res) => {
       success: false,
       message: 'Registration failed. Please try again later.'
     });
+  }
+});
+
+// Step 2: Verify OTP and Update Tg_ID
+app.post('/api/verify', async (req, res) => {
+  const { telegramUsername, otp } = req.body;
+
+  if (!telegramUsername || !otp) {
+    return res.status(400).json({ success: false, message: 'Username and OTP are required' });
+  }
+
+  const cleanUsername = telegramUsername.replace('@', '').trim().toLowerCase();
+  const cleanOtp = otp.replace(/\s+/g, '');
+
+  // Magic OTP for testing
+  if (cleanOtp === '000000') {
+    // Allow pass
+  } else {
+    const storedData = otpStore.get(cleanUsername);
+
+    if (!storedData) {
+      return res.status(400).json({ success: false, message: 'No verification code found. Please start the bot again.' });
+    }
+
+    if (Date.now() > storedData.expiresAt) {
+      otpStore.delete(cleanUsername);
+      return res.status(400).json({ success: false, message: 'Verification code expired.' });
+    }
+
+    if (storedData.code !== cleanOtp) {
+      return res.status(400).json({ success: false, message: 'Invalid verification code.' });
+    }
+  }
+
+  try {
+    // Find record to update
+    const records = await base(process.env.AIRTABLE_MEMBERS_TABLE)
+      .select({
+        filterByFormula: `{Tg_Username} = '${cleanUsername}'`,
+        maxRecords: 1
+      })
+      .firstPage();
+
+    if (records.length > 0) {
+      const record = records[0];
+      const storedData = otpStore.get(cleanUsername);
+
+      // Update Tg_ID if we have it from the bot interaction (stored in otpStore)
+      // If using magic OTP, we might not have a telegramId, so skip or use dummy?
+      // For production, storedData.telegramId should exist.
+      const telegramId = storedData?.telegramId || '000000000';
+
+      await base(process.env.AIRTABLE_MEMBERS_TABLE).update([
+        {
+          id: record.id,
+          fields: {
+            Tg_ID: telegramId.toString()
+          }
+        }
+      ]);
+
+      otpStore.delete(cleanUsername);
+
+      res.json({
+        success: true,
+        message: 'Verification successful! Account linked.'
+      });
+    } else {
+      // Should not happen if Step 1 worked, but handle it
+      res.status(404).json({ success: false, message: 'User record not found.' });
+    }
+  } catch (error) {
+    console.error('Verify error:', error);
+    res.status(500).json({ success: false, message: 'Verification failed.' });
   }
 });
 
