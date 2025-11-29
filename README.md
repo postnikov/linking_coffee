@@ -1,8 +1,8 @@
-# Linking Coffee 🔗☕
+# Linked.Coffee 🔗☕
 
 **Expand your world. One conversation at a time.**
 
-Linking Coffee is a web service built on Random Coffee mechanics that connects people for meaningful conversations through Telegram.
+Linked.Coffee is a web service built on Random Coffee mechanics that connects people for meaningful conversations through Telegram.
 
 ## 🌟 Features
 
@@ -15,7 +15,7 @@ Linking Coffee is a web service built on Random Coffee mechanics that connects p
 
 - **Database**: Airtable
 - **Backend**: Node.js + Express
-- **Frontend**: React
+- **Frontend**: React (Linked.Coffee)
 - **Bot**: Telegram Bot API
 - **Deployment**: Docker
 
@@ -61,7 +61,7 @@ Linking_Coffee/
 1. **Clone the repository**
    ```bash
    git clone <repository-url>
-   cd Linking_Coffee
+   cd Linked.Coffee
    ```
 
 2. **Set up environment variables**
@@ -85,8 +85,8 @@ Linking_Coffee/
    ```
 
 5. **Access the application**
-   - Frontend: http://localhost:3000
-   - Backend API: http://localhost:3001
+   - Frontend: http://localhost:3000 (Linked.Coffee)
+   - Backend API: http://localhost:3001 (Linked.Coffee API)
 
 ### Docker Deployment
 

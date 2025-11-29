@@ -33,7 +33,7 @@ services:
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.linking-coffee.rule=Host(`linkingcoffee.com`) || Host(`www.linkingcoffee.com`)"
+      - "traefik.http.routers.linking-coffee.rule=Host(`linked.coffee`) || Host(`www.linked.coffee`) || Host(`linkingcoffee.com`) || Host(`www.linkingcoffee.com`)"
       - "traefik.http.routers.linking-coffee.entrypoints=websecure"
       - "traefik.http.routers.linking-coffee.tls.certresolver=myresolver"
       - "traefik.http.services.linking-coffee.loadbalancer.server.port=80"

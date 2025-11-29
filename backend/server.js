@@ -3,7 +3,19 @@ const express = require('express');
 const cors = require('cors');
 const Airtable = require('airtable');
 
+
+
 const app = express();
+
+// Redirect old domain to new domain
+app.use((req, res, next) => {
+  const host = req.get('host');
+  if (host && host.includes('linking.coffee')) {
+    const newUrl = `https://linked.coffee${req.originalUrl}`;
+    return res.redirect(301, newUrl);
+  }
+  next();
+});
 const PORT = process.env.PORT || 3001;
 
 // Middleware
@@ -17,7 +29,7 @@ const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY }).base(
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'Linking Coffee API is running' });
+  res.json({ status: 'ok', message: 'Linked.Coffee API is running' });
 });
 
 // Pre-registration endpoint
@@ -71,7 +83,7 @@ app.post('/api/register', async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Successfully registered! Welcome to Linking Coffee 🎉',
+      message: 'Successfully registered! Welcome to Linked.Coffee 🎉',
       data: {
         username: cleanUsername,
         status: 'EarlyBird'
@@ -88,6 +100,6 @@ app.post('/api/register', async (req, res) => {
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`🚀 Linking Coffee API server running on port ${PORT}`);
+  console.log(`🚀 Linked.Coffee API server running on port ${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV}`);
 });

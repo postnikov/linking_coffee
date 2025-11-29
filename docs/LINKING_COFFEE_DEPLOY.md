@@ -2,7 +2,7 @@
 
 ## Информация о проекте
 
-- Домен: https://linkingcoffee.com (замените на ваш домен)
+- Домен: https://linked.coffee (и редирект с linkingcoffee.com)
 - Директория на сервере: `/opt/linking-coffee/`
 - Компоненты:
   - linking-coffee-frontend (nginx) — порт 80 (внутри контейнера)
@@ -96,7 +96,7 @@ NODE_ENV=production
 4. **Настройте домен в docker-compose.prod.yml:**
    Если домен отличается от `linkingcoffee.com`, отредактируйте labels в `docker-compose.prod.yml`:
    ```yaml
-   - "traefik.http.routers.linking-coffee.rule=Host(`your-domain.com`) || Host(`www.your-domain.com`)"
+   - "traefik.http.routers.linking-coffee.rule=Host(`linked.coffee`) || Host(`www.linked.coffee`) || Host(`linkingcoffee.com`)"
    ```
 
 ## Деплой

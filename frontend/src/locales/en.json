@@ -1,6 +1,6 @@
 {
     "hero": {
-        "title": "Linking Coffee",
+        "title": "Linked.Coffee",
         "tagline": "Expand your world.<br />One conversation at a time.",
         "description": "Join a community of curious minds. We match you with a new person every week for a 25-minute online coffee chat. No agenda, just connection."
     },
@@ -11,7 +11,7 @@
     },
     "form": {
         "title": "Get Early Access",
-        "subtitle": "Sign up now and be among the first <br /> to experience Linking Coffee",
+        "subtitle": "Sign up now and be among the first <br /> to experience Linked.Coffee",
         "label": "Telegram Username",
         "username_placeholder": "your_username",
         "cta_button": "Join the Waitlist",
