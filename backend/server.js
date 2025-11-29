@@ -32,23 +32,44 @@ const otpStore = new Map();
 // Initialize Telegram Bot
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-bot.start((ctx) => {
+bot.start(async (ctx) => {
   const username = ctx.from.username;
+  const telegramId = ctx.from.id;
+
   if (!username) {
     return ctx.reply('Please set a username in your Telegram settings to use this bot.');
   }
 
-  // Generate 6-digit OTP
-  const otp = Math.floor(100000 + Math.random() * 900000).toString();
-
-  // Store OTP (valid for 10 minutes)
   const cleanUsername = username.toLowerCase();
-  otpStore.set(cleanUsername, {
-    code: otp,
-    expiresAt: Date.now() + 10 * 60 * 1000 // 10 minutes
-  });
 
-  ctx.reply(`Your verification code for Linked.Coffee is:\n\n\`${otp}\`\n\nPlease enter this code on the website.`, { parse_mode: 'Markdown' });
+  try {
+    // Check if user exists in Airtable
+    const records = await base(process.env.AIRTABLE_MEMBERS_TABLE)
+      .select({
+        filterByFormula: `{Tg_Username} = '${cleanUsername}'`,
+        maxRecords: 1
+      })
+      .firstPage();
+
+    if (records.length > 0) {
+      const record = records[0];
+      // Update the record with Tg_ID
+      await base(process.env.AIRTABLE_MEMBERS_TABLE).update([
+        {
+          id: record.id,
+          fields: {
+            Tg_ID: telegramId.toString()
+          }
+        }
+      ]);
+      ctx.reply(`Welcome ${username}! Your account has been successfully linked. ☕️`);
+    } else {
+      ctx.reply('Welcome! Please register on our website https://linked.coffee first.');
+    }
+  } catch (error) {
+    console.error('Bot error:', error);
+    ctx.reply('Something went wrong. Please try again later.');
+  }
 });
 
 bot.launch().then(() => {
@@ -69,50 +90,18 @@ app.get('/api/health', (req, res) => {
 
 // Pre-registration endpoint
 app.post('/api/register', async (req, res) => {
-  const { telegramUsername, otp } = req.body;
+  const { telegramUsername } = req.body;
 
   // Validate inputs
-  if (!telegramUsername || !otp) {
+  if (!telegramUsername) {
     return res.status(400).json({
       success: false,
-      message: 'Username and verification code are required'
+      message: 'Username is required'
     });
   }
 
   const cleanUsername = telegramUsername.replace('@', '').trim().toLowerCase();
-  const cleanOtp = otp.trim();
 
-  // Magic OTP for testing/demo purposes (or if bot conflict prevents receiving OTP locally)
-  if (cleanOtp === '000000') {
-    // Allow '000000' to pass verification
-  } else {
-    // Verify OTP
-    const storedData = otpStore.get(cleanUsername);
-
-    if (!storedData) {
-      return res.status(400).json({
-        success: false,
-        message: 'No verification code found. Please start the bot again.'
-      });
-    }
-
-    if (Date.now() > storedData.expiresAt) {
-      otpStore.delete(cleanUsername);
-      return res.status(400).json({
-        success: false,
-        message: 'Verification code expired. Please get a new one.'
-      });
-    }
-
-    if (storedData.code !== cleanOtp) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid verification code.'
-      });
-    }
-  }
-
-  // OTP is valid (or magic), proceed with registration
   try {
     // Check if user already registered
     const existingRecords = await base(process.env.AIRTABLE_MEMBERS_TABLE)
@@ -123,8 +112,6 @@ app.post('/api/register', async (req, res) => {
       .firstPage();
 
     if (existingRecords.length > 0) {
-      // Even if registered, we clear the OTP
-      otpStore.delete(cleanUsername);
       return res.status(409).json({
         success: false,
         message: 'This Telegram username is already registered'
@@ -132,22 +119,19 @@ app.post('/api/register', async (req, res) => {
     }
 
     // Create new record with EarlyBird status
-    const record = await base(process.env.AIRTABLE_MEMBERS_TABLE).create([
+    await base(process.env.AIRTABLE_MEMBERS_TABLE).create([
       {
         fields: {
-          Tg_Username: cleanUsername, // Store as provided (or lowercase? keeping consistent with input)
+          Tg_Username: cleanUsername,
           Status: 'EarlyBird',
           Created_At: new Date().toISOString()
         }
       }
     ]);
 
-    // Clear OTP after successful registration
-    otpStore.delete(cleanUsername);
-
     res.json({
       success: true,
-      message: 'Successfully registered! Welcome to Linked.Coffee 🎉',
+      message: 'Successfully registered! Please launch the bot to complete setup.',
       data: {
         username: cleanUsername,
         status: 'EarlyBird'

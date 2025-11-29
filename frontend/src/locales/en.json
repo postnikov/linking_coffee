@@ -18,14 +18,9 @@
         "loading": "Registering...",
         "footer": "By signing up, you'll receive exclusive early bird benefits when we launch! 🚀",
         "success": "Welcome to the club! ☕️",
+        "success_bot_link": "Registration successful! Please start <1>@linked_coffee_bot</1> to complete setup.",
         "error_duplicate": "You're already on the waitlist!",
-        "error_generic": "Something went wrong. Please try again.",
-        "step1_btn": "Get Code",
-        "step2_title": "Verify Telegram",
-        "step2_subtitle": "Launch <1>@linked_coffee_bot</1> and send /start to get your code",
-        "otp_label": "Verification Code",
-        "otp_placeholder": "123456 (or 000000)",
-        "verify_btn": "Verify & Register"
+        "error_generic": "Something went wrong. Please try again."
     },
     "header": {
         "about": "What is Linked Coffee",
