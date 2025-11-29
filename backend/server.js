@@ -2,8 +2,7 @@ require('dotenv').config({ path: '../.env' });
 const express = require('express');
 const cors = require('cors');
 const Airtable = require('airtable');
-
-
+const { Telegraf } = require('telegraf');
 
 const app = express();
 
@@ -27,73 +26,87 @@ const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY }).base(
   process.env.AIRTABLE_BASE_ID
 );
 
+// In-memory OTP store: Map<username_lowercase, { code, expiresAt }>
+const otpStore = new Map();
+
+// Initialize Telegram Bot
+const bot = new Telegraf(process.env.BOT_TOKEN);
+
+bot.start((ctx) => {
+  const username = ctx.from.username;
+  if (!username) {
+    return ctx.reply('Please set a username in your Telegram settings to use this bot.');
+  }
+
+  // Generate 6-digit OTP
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+  // Store OTP (valid for 10 minutes)
+  const cleanUsername = username.toLowerCase();
+  otpStore.set(cleanUsername, {
+    code: otp,
+    expiresAt: Date.now() + 10 * 60 * 1000 // 10 minutes
+  });
+
+  ctx.reply(`Your verification code for Linked.Coffee is:\n\n\`${otp}\`\n\nPlease enter this code on the website.`, { parse_mode: 'Markdown' });
+});
+
+bot.launch().then(() => {
+  console.log('🤖 Telegram bot started');
+}).catch(err => {
+  console.error('❌ Telegram bot failed to start:', err);
+});
+
+// Enable graceful stop
+process.once('SIGINT', () => bot.stop('SIGINT'));
+process.once('SIGTERM', () => bot.stop('SIGTERM'));
+
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Linked.Coffee API is running' });
 });
 
-const crypto = require('crypto');
-
-// Helper to verify Telegram Login Widget data
-function verifyTelegramAuth(data) {
-  const { hash, ...userData } = data;
-  if (!hash) return false;
-
-  const secretKey = crypto.createHash('sha256').update(process.env.BOT_TOKEN).digest();
-  const checkString = Object.keys(userData)
-    .sort()
-    .map(key => `${key}=${userData[key]}`)
-    .join('\n');
-
-  const hmac = crypto.createHmac('sha256', secretKey).update(checkString).digest('hex');
-  return hmac === hash;
-}
-
 // Pre-registration endpoint
 app.post('/api/register', async (req, res) => {
-  const { telegramUser, telegramUsername } = req.body;
+  const { telegramUsername, otp } = req.body;
 
-  let cleanUsername;
-
-  // Handle Telegram Login Widget data
-  if (telegramUser) {
-    // 1. Verify authenticity
-    const isValid = verifyTelegramAuth(telegramUser);
-    if (!isValid) {
-      return res.status(403).json({
-        success: false,
-        message: 'Invalid Telegram authentication data'
-      });
-    }
-
-    // 2. Check for expiration (optional but recommended, e.g. 24h)
-    const authDate = telegramUser.auth_date;
-    const now = Math.floor(Date.now() / 1000);
-    if (now - authDate > 86400) {
-      return res.status(403).json({
-        success: false,
-        message: 'Authentication data expired'
-      });
-    }
-
-    cleanUsername = telegramUser.username;
-  } else if (telegramUsername) {
-    // Fallback for manual entry (if we keep it or for testing)
-    cleanUsername = telegramUsername.replace('@', '').trim();
-  } else {
+  // Validate inputs
+  if (!telegramUsername || !otp) {
     return res.status(400).json({
       success: false,
-      message: 'Telegram user data is required'
+      message: 'Username and verification code are required'
     });
   }
 
-  if (!cleanUsername) {
+  const cleanUsername = telegramUsername.replace('@', '').trim().toLowerCase();
+
+  // Verify OTP
+  const storedData = otpStore.get(cleanUsername);
+
+  if (!storedData) {
     return res.status(400).json({
       success: false,
-      message: 'Telegram username is missing from profile'
+      message: 'No verification code found. Please start the bot again.'
     });
   }
 
+  if (Date.now() > storedData.expiresAt) {
+    otpStore.delete(cleanUsername);
+    return res.status(400).json({
+      success: false,
+      message: 'Verification code expired. Please get a new one.'
+    });
+  }
+
+  if (storedData.code !== otp) {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid verification code.'
+    });
+  }
+
+  // OTP is valid, proceed with registration
   try {
     // Check if user already registered
     const existingRecords = await base(process.env.AIRTABLE_MEMBERS_TABLE)
@@ -104,6 +117,8 @@ app.post('/api/register', async (req, res) => {
       .firstPage();
 
     if (existingRecords.length > 0) {
+      // Even if registered, we clear the OTP
+      otpStore.delete(cleanUsername);
       return res.status(409).json({
         success: false,
         message: 'This Telegram username is already registered'
@@ -111,18 +126,18 @@ app.post('/api/register', async (req, res) => {
     }
 
     // Create new record with EarlyBird status
-    // We can add more fields (ID, Name) if Airtable supports them later
     const record = await base(process.env.AIRTABLE_MEMBERS_TABLE).create([
       {
         fields: {
-          Tg_Username: cleanUsername,
+          Tg_Username: cleanUsername, // Store as provided (or lowercase? keeping consistent with input)
           Status: 'EarlyBird',
-          Created_At: new Date().toISOString(),
-          // Store Telegram ID if possible, or just username for now
-          // Tg_ID: telegramUser?.id 
+          Created_At: new Date().toISOString()
         }
       }
     ]);
+
+    // Clear OTP after successful registration
+    otpStore.delete(cleanUsername);
 
     res.json({
       success: true,

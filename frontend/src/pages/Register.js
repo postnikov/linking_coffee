@@ -4,21 +4,26 @@ import PageLayout from '../components/PageLayout';
 
 const Register = () => {
     const { t } = useTranslation();
+    const [step, setStep] = useState(1); // 1: Username, 2: OTP
     const [telegramUsername, setTelegramUsername] = useState('');
+    const [otp, setOtp] = useState('');
     const [status, setStatus] = useState('idle');
     const [message, setMessage] = useState('');
 
-    const handleSubmit = async (e) => {
+    const handleUsernameSubmit = (e) => {
+        e.preventDefault();
+        const cleanUsername = telegramUsername.replace('@', '').trim();
+        if (!cleanUsername) return;
+
+        setTelegramUsername(cleanUsername);
+        setStep(2);
+        setMessage('');
+    };
+
+    const handleOtpSubmit = async (e) => {
         e.preventDefault();
         setStatus('loading');
         setMessage('');
-
-        const cleanUsername = telegramUsername.replace('@', '').trim();
-
-        if (!cleanUsername) {
-            setStatus('idle');
-            return;
-        }
 
         try {
             const response = await fetch('/api/register', {
@@ -26,7 +31,10 @@ const Register = () => {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ telegramUsername: cleanUsername }),
+                body: JSON.stringify({
+                    telegramUsername,
+                    otp
+                }),
             });
 
             const data = await response.json();
@@ -35,12 +43,13 @@ const Register = () => {
                 setStatus('success');
                 setMessage(t('form.success'));
                 setTelegramUsername('');
+                setOtp('');
             } else {
                 setStatus('error');
                 if (response.status === 409) {
                     setMessage(t('form.error_duplicate'));
                 } else {
-                    setMessage(data.error || t('form.error_generic'));
+                    setMessage(data.error || data.message || t('form.error_generic'));
                 }
             }
         } catch (error) {
@@ -49,11 +58,22 @@ const Register = () => {
         }
     };
 
+    const resetFlow = () => {
+        setStep(1);
+        setStatus('idle');
+        setMessage('');
+        setOtp('');
+    };
+
     return (
-        <PageLayout title={t('header.register')}>
+        <PageLayout title={step === 1 ? t('header.register') : t('form.step2_title')}>
             <div className="register-page-content">
                 <p className="register-intro">
-                    <Trans i18nKey="form.subtitle" />
+                    {step === 1 ? (
+                        <Trans i18nKey="form.subtitle" />
+                    ) : (
+                        <Trans i18nKey="form.step2_subtitle" />
+                    )}
                 </p>
 
                 {status === 'success' ? (
@@ -62,41 +82,88 @@ const Register = () => {
                         <p>{message}</p>
                     </div>
                 ) : (
-                    <form className="registration-form" onSubmit={handleSubmit} style={{ maxWidth: '400px', margin: '0 auto' }}>
-                        <div className="input-group">
-                            <label htmlFor="telegram-username" className="form-label">
-                                {t('form.label')}
-                            </label>
-                            <div className="input-wrapper">
-                                <span className="input-prefix">@</span>
-                                <input
-                                    type="text"
-                                    id="telegram-username"
-                                    className="form-input"
-                                    placeholder={t('form.username_placeholder')}
-                                    value={telegramUsername}
-                                    onChange={(e) => setTelegramUsername(e.target.value)}
-                                    disabled={status === 'loading'}
-                                    required
-                                />
-                            </div>
-                        </div>
+                    <>
+                        {step === 1 && (
+                            <form className="registration-form" onSubmit={handleUsernameSubmit} style={{ maxWidth: '400px', margin: '0 auto' }}>
+                                <div className="input-group">
+                                    <label htmlFor="telegram-username" className="form-label">
+                                        {t('form.label')}
+                                    </label>
+                                    <div className="input-wrapper">
+                                        <span className="input-prefix">@</span>
+                                        <input
+                                            type="text"
+                                            id="telegram-username"
+                                            className="form-input"
+                                            placeholder={t('form.username_placeholder')}
+                                            value={telegramUsername}
+                                            onChange={(e) => setTelegramUsername(e.target.value)}
+                                            required
+                                        />
+                                    </div>
+                                </div>
 
-                        <button
-                            type="submit"
-                            className="submit-btn"
-                            disabled={status === 'loading'}
-                        >
-                            <div className="button-content">
-                                {status === 'loading' && <span className="spinner"></span>}
-                                <span>{status === 'loading' ? t('form.loading') : t('form.cta_button')}</span>
-                            </div>
-                        </button>
-
-                        {status === 'error' && (
-                            <p className="error-message">{message}</p>
+                                <button type="submit" className="submit-btn">
+                                    <div className="button-content">
+                                        <span>{t('form.step1_btn')}</span>
+                                    </div>
+                                </button>
+                            </form>
                         )}
-                    </form>
+
+                        {step === 2 && (
+                            <form className="registration-form" onSubmit={handleOtpSubmit} style={{ maxWidth: '400px', margin: '0 auto' }}>
+                                <div className="input-group">
+                                    <label htmlFor="otp" className="form-label">
+                                        {t('form.otp_label')}
+                                    </label>
+                                    <div className="input-wrapper">
+                                        <input
+                                            type="text"
+                                            id="otp"
+                                            className="form-input"
+                                            placeholder={t('form.otp_placeholder')}
+                                            value={otp}
+                                            onChange={(e) => setOtp(e.target.value)}
+                                            disabled={status === 'loading'}
+                                            required
+                                            style={{ textAlign: 'center', letterSpacing: '0.2em', fontSize: '1.2rem' }}
+                                        />
+                                    </div>
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    className="submit-btn"
+                                    disabled={status === 'loading'}
+                                >
+                                    <div className="button-content">
+                                        {status === 'loading' && <span className="spinner"></span>}
+                                        <span>{status === 'loading' ? t('form.loading') : t('form.verify_btn')}</span>
+                                    </div>
+                                </button>
+
+                                {status === 'error' && (
+                                    <p className="error-message">{message}</p>
+                                )}
+
+                                <button
+                                    type="button"
+                                    onClick={resetFlow}
+                                    style={{
+                                        background: 'none',
+                                        border: 'none',
+                                        color: 'var(--gray-600)',
+                                        marginTop: '1rem',
+                                        cursor: 'pointer',
+                                        textDecoration: 'underline'
+                                    }}
+                                >
+                                    Back
+                                </button>
+                            </form>
+                        )}
+                    </>
                 )}
 
                 <div style={{
