@@ -1,17 +1,24 @@
-
 import React, { useState } from 'react';
 import { useTranslation, Trans } from 'react-i18next';
 import PageLayout from '../components/PageLayout';
-import TelegramLoginButton from '../components/TelegramLoginButton';
 
 const Register = () => {
     const { t } = useTranslation();
+    const [telegramUsername, setTelegramUsername] = useState('');
     const [status, setStatus] = useState('idle');
     const [message, setMessage] = useState('');
 
-    const handleTelegramAuth = async (user) => {
+    const handleSubmit = async (e) => {
+        e.preventDefault();
         setStatus('loading');
         setMessage('');
+
+        const cleanUsername = telegramUsername.replace('@', '').trim();
+
+        if (!cleanUsername) {
+            setStatus('idle');
+            return;
+        }
 
         try {
             const response = await fetch('/api/register', {
@@ -19,7 +26,7 @@ const Register = () => {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ telegramUser: user }),
+                body: JSON.stringify({ telegramUsername: cleanUsername }),
             });
 
             const data = await response.json();
@@ -27,6 +34,7 @@ const Register = () => {
             if (response.ok) {
                 setStatus('success');
                 setMessage(t('form.success'));
+                setTelegramUsername('');
             } else {
                 setStatus('error');
                 if (response.status === 409) {
@@ -54,24 +62,41 @@ const Register = () => {
                         <p>{message}</p>
                     </div>
                 ) : (
-                    <div className="registration-form-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2rem' }}>
-
-                        <TelegramLoginButton
-                            botName={process.env.REACT_APP_TELEGRAM_BOT_NAME || 'Linked_Coffee_Bot'}
-                            onAuth={handleTelegramAuth}
-                        />
-
-                        {status === 'loading' && (
-                            <div className="button-content">
-                                <span className="spinner"></span>
-                                <span>{t('form.loading')}</span>
+                    <form className="registration-form" onSubmit={handleSubmit} style={{ maxWidth: '400px', margin: '0 auto' }}>
+                        <div className="input-group">
+                            <label htmlFor="telegram-username" className="form-label">
+                                {t('form.label')}
+                            </label>
+                            <div className="input-wrapper">
+                                <span className="input-prefix">@</span>
+                                <input
+                                    type="text"
+                                    id="telegram-username"
+                                    className="form-input"
+                                    placeholder={t('form.username_placeholder')}
+                                    value={telegramUsername}
+                                    onChange={(e) => setTelegramUsername(e.target.value)}
+                                    disabled={status === 'loading'}
+                                    required
+                                />
                             </div>
-                        )}
+                        </div>
+
+                        <button
+                            type="submit"
+                            className="submit-btn"
+                            disabled={status === 'loading'}
+                        >
+                            <div className="button-content">
+                                {status === 'loading' && <span className="spinner"></span>}
+                                <span>{status === 'loading' ? t('form.loading') : t('form.cta_button')}</span>
+                            </div>
+                        </button>
 
                         {status === 'error' && (
                             <p className="error-message">{message}</p>
                         )}
-                    </div>
+                    </form>
                 )}
 
                 <div style={{
