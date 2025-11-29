@@ -22,7 +22,7 @@
         "error_generic": "Something went wrong. Please try again.",
         "step1_btn": "Get Code",
         "step2_title": "Verify Telegram",
-        "step2_subtitle": "Launch @linked_coffee_bot and send /start to get your code",
+        "step2_subtitle": "Launch <a href='https://t.me/linked_coffee_bot' target='_blank'>@linked_coffee_bot</a> and send /start to get your code",
         "otp_label": "Verification Code",
         "otp_placeholder": "123456",
         "verify_btn": "Verify & Register"
