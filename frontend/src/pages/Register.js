@@ -33,7 +33,7 @@ const Register = () => {
                 },
                 body: JSON.stringify({
                     telegramUsername,
-                    otp
+                    otp: otp.trim()
                 }),
             });
 

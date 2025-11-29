@@ -80,9 +80,10 @@ app.post('/api/register', async (req, res) => {
   }
 
   const cleanUsername = telegramUsername.replace('@', '').trim().toLowerCase();
+  const cleanOtp = otp.trim();
 
   // Magic OTP for testing/demo purposes (or if bot conflict prevents receiving OTP locally)
-  if (otp === '000000') {
+  if (cleanOtp === '000000') {
     // Allow '000000' to pass verification
   } else {
     // Verify OTP
@@ -103,7 +104,7 @@ app.post('/api/register', async (req, res) => {
       });
     }
 
-    if (storedData.code !== otp) {
+    if (storedData.code !== cleanOtp) {
       return res.status(400).json({
         success: false,
         message: 'Invalid verification code.'
