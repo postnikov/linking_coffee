@@ -22,6 +22,9 @@ git pull origin main
 
 # 2. Rebuild and restart containers
 echo "🔄 Rebuilding and restarting containers..."
+# Force remove potential conflicting containers from previous deployments
+docker rm -f linking-coffee-backend linking-coffee-frontend 2>/dev/null || true
+
 docker compose -f docker-compose.prod.yml down
 docker compose -f docker-compose.prod.yml up -d --build
 
