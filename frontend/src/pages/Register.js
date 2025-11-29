@@ -72,7 +72,12 @@ const Register = () => {
                     {step === 1 ? (
                         <Trans i18nKey="form.subtitle" />
                     ) : (
-                        <Trans i18nKey="form.step2_subtitle" />
+                        <Trans
+                            i18nKey="form.step2_subtitle"
+                            components={{
+                                1: <a href="https://t.me/linked_coffee_bot" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline', fontWeight: 'bold' }} />
+                            }}
+                        />
                     )}
                 </p>
 

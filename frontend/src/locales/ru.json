@@ -22,7 +22,7 @@
         "error_generic": "Что-то пошло не так. Пожалуйста, попробуйте снова.",
         "step1_btn": "Получить код",
         "step2_title": "Подтверждение Telegram",
-        "step2_subtitle": "Запустите <a href='https://t.me/linked_coffee_bot' target='_blank'>@linked_coffee_bot</a> и отправьте /start, чтобы получить код",
+        "step2_subtitle": "Запустите <1>@linked_coffee_bot</1> и отправьте /start, чтобы получить код",
         "otp_label": "Код подтверждения",
         "otp_placeholder": "123456",
         "verify_btn": "Подтвердить и зарегистрироваться"
