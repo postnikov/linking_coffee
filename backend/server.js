@@ -56,7 +56,7 @@ bot.start((ctx) => {
   });
 
   console.log(`✅ Generated OTP for ${cleanUsername}: ${otp}`);
-  ctx.reply(`Your verification code for Linked.Coffee is:\n\n\`${otp}\`\n\nPlease enter this code on the website.`, { parse_mode: 'Markdown' });
+  ctx.reply(`☕️☕️☕️\nYour verification code for Linked.Coffee is:\n\n\`${otp}\`\n\nPlease enter this code on the website.\nhttps://linked.coffee`, { parse_mode: 'Markdown' });
 });
 
 bot.launch().then(() => {
@@ -113,7 +113,7 @@ app.post('/api/register', async (req, res) => {
         });
 
         try {
-          await bot.telegram.sendMessage(tgId, `Your verification code for Linked.Coffee is:\n\n\`${otp}\`\n\nPlease enter this code on the website.`, { parse_mode: 'Markdown' });
+          await bot.telegram.sendMessage(tgId, `☕️☕️☕️\nYour verification code for Linked.Coffee is:\n\n\`${otp}\`\n\nPlease enter this code on the website.\nhttps://linked.coffee`, { parse_mode: 'Markdown' });
           console.log(`📤 Proactive OTP sent to ${cleanUsername} (${tgId})`);
         } catch (botError) {
           console.error('❌ Failed to send proactive OTP:', botError);
