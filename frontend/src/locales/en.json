@@ -15,12 +15,20 @@
         "label": "Telegram Username",
         "username_placeholder": "your_username",
         "cta_button": "Get Early Access",
-        "loading": "Registering...",
+        "loading": "Sending the code...",
         "footer": "By signing up, you'll receive exclusive early bird benefits when we launch! 🚀",
         "success": "Welcome to the club! ☕️",
         "success_bot_link": "Registration successful! Please start <1>@linked_coffee_bot</1> to complete setup.",
         "error_duplicate": "You're already on the waitlist!",
-        "error_generic": "Something went wrong. Please try again."
+        "error_generic": "Something went wrong. Please try again.",
+        "otp_label": "Verification Code",
+        "otp_placeholder": "123456 (or 000000)",
+        "verify_btn": "Verify & Login",
+        "step1_btn": "Login with Telegram",
+        "step2_title": "Verify your account",
+        "step2_subtitle": "Please enter the verification code sent to your Telegram.",
+        "otp_sent_proactive": "Code sent to your Telegram!",
+        "check_bot": "Check <1>@linked_coffee_bot</1>"
     },
     "header": {
         "about": "What is Linked Coffee",

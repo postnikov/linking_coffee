@@ -6,10 +6,26 @@ import Home from './pages/Home';
 import About from './pages/About';
 import Rules from './pages/Rules';
 import Prices from './pages/Prices';
-import Register from './pages/Register';
+import Dashboard from './pages/Dashboard';
+
+
 import './App.css';
 
 function App() {
+    const [user, setUser] = React.useState(null);
+
+    React.useEffect(() => {
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+            setUser(JSON.parse(storedUser));
+        }
+    }, []);
+
+    const handleLogout = () => {
+        localStorage.removeItem('user');
+        setUser(null);
+    };
+
     return (
         <Router>
             <div className="app-container">
@@ -19,14 +35,17 @@ function App() {
                     <div className="bg-circle bg-circle-3"></div>
                 </div>
 
-                <Header />
+                <Header user={user} onLogout={handleLogout} />
 
                 <Routes>
-                    <Route path="/" element={<Home />} />
+                    <Route path="/" element={user ? <Dashboard /> : <Home onLogin={(u) => {
+                        localStorage.setItem('user', JSON.stringify(u));
+                        setUser(u);
+                    }} />} />
                     <Route path="/about" element={<About />} />
                     <Route path="/rules" element={<Rules />} />
                     <Route path="/prices" element={<Prices />} />
-                    <Route path="/register" element={<Register />} />
+
                 </Routes>
 
                 <Footer />
