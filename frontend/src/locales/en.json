@@ -16,22 +16,24 @@
         "username_placeholder": "your_username",
         "cta_button": "Get Early Access",
         "loading": "Sending the code...",
-        "footer": "By signing up, you'll receive exclusive early bird benefits when we launch! 🚀",
+        "footer": "By signing up today, you'll receive exclusive early bird benefits 🚀",
         "success": "Welcome to the club! ☕️",
         "success_bot_link": "Registration successful! Please start <1>@linked_coffee_bot</1> to complete setup.",
         "error_duplicate": "You're already on the waitlist!",
         "error_generic": "Something went wrong. Please try again.",
-        "otp_label": "Verification Code",
-        "otp_placeholder": "123456 (or 000000)",
-        "verify_btn": "Verify & Login",
+        "otp_label": "VERIFICATION CODE",
+        "otp_placeholder": "1 2 3 4 5 6",
+        "verify_btn": "Login",
         "step1_btn": "Login with Telegram",
         "step2_title": "Verify your account",
         "step2_subtitle": "Please enter the verification code sent to your Telegram.",
         "otp_sent_proactive": "Code sent to your Telegram!",
-        "check_bot": "Check <1>@linked_coffee_bot</1>"
+        "check_bot": "Check <1>@linked_coffee_bot</1>",
+        "verify_existing": "Please enter the verification code sent to your Telegram.",
+        "verify_new": "Please launch our telegram bot <1>@Linked_Coffee_Bot</1>, press start and get your verification code"
     },
     "header": {
-        "about": "What is Linked Coffee",
+        "about": "What is Linked.Coffee",
         "rules": "Rules",
         "prices": "Prices",
         "register": "Register"
@@ -42,13 +44,74 @@
     },
     "pages": {
         "about": {
-            "text": "Linked.Coffee is a platform designed to connect people through random coffee chats. We believe in the power of serendipitous connections to broaden horizons and spark new ideas."
-        },
-        "rules": {
-            "text": "1. Be respectful. 2. Show up on time. 3. Have an open mind. 4. No selling or pitching unless mutually agreed."
+            "title": "What is Linked.Coffee",
+            "p1": "We all get trapped in professional bubbles. We talk to the same colleagues, attend the same meetups, read the same channels. Social media algorithms make it ever worse — showing us people just like ourselves. We end up in an echo chamber while fresh ideas and unexpected opportunities pass us by.",
+            "p2": "Linked.Coffee's mission is to break down these walls. We connect tech professionals — developers, product managers, founders, executives, analysts — for \"random\" online coffee chats with people outside their usual circles. People you would never meet on your own. Who work in different industries, live in different countries, solve different problems — but speak the same language of technology and business.",
+            "p3": "This isn't networking for the sake of collecting business cards. It's not sales disguised as introductions. Linked.Coffee is about honest conversations with no preset agenda. Sometimes a chat like this becomes the start of a partnership or friendship. Sometimes it simply expands your view of the world. And sometimes a random conversation partner gives you an insight in thirty minutes that would have taken you months to reach on your own.",
+            "p4": "Smart matching considers your experience, interests, and goals to find conversation partners where the conversation will actually happen. Not randomness for its own sake, but meaningful pairings. Because the best career opportunities come from people you don't know yet. Linked.Coffee helps you meet them.",
+            "how_it_works_title": "How it works",
+            "how_it_works_steps": [
+                "Sign up through our <1>Telegram bot</1> and fill out your profile",
+                "Every Saturday, the bot asks if you're in for the next week",
+                "If yes, on Monday you receive your Linked.Coffee match — along with conversation starters based on what you have in common",
+                "You arrange a time and place that works for both of you (Zoom, Google Meet, or even a real coffee if you're in the same city) and meet for a 30-50 minutes chat"
+            ],
+            "slogan_l1": "«Real human connections are priceless",
+            "slogan_l2": "For everything else there's AI»",
+            "slogan_copyright": "(c) Max Postnikov — Founder of Linked.Coffee"
         },
         "prices": {
-            "text": "Linked.Coffee is currently free to join during our beta period. Premium features will be announced soon."
+            "title": "Pricing Plans",
+            "free": {
+                "title": "Free",
+                "features": [
+                    "Weekly Linked.Coffee partners",
+                    "Free profile settings",
+                    "Smart matching algorithm"
+                ],
+                "price": "0 EUR / month",
+                "current": "Current subscription"
+            },
+            "pro": {
+                "title": "PRO",
+                "features": [
+                    "Weekly Linked.Coffee partners",
+                    "PRO profile settings",
+                    "PRO matching settings",
+                    "PRO matching algorithm"
+                ],
+                "price_monthly": "10 EUR / month",
+                "price_yearly": "90 EUR / year",
+                "button": "Become a PRO",
+                "current": "Current subscription"
+            },
+            "premium": {
+                "title": "Premium",
+                "coming_soon": "Coming soon"
+            }
+        },
+        "rules": {
+            "title": "Community Guidelines",
+            "basics": {
+                "title": "The basics",
+                "items": [
+                    "This is a space for professional conversations, not transactions. Come to learn something new, share your experience, and meet interesting people.",
+                    "No selling. Your match is not a lead. If there's a genuine fit for collaboration, it will emerge naturally — but that's not why we're here.",
+                    "No recruiting. Unless your match explicitly asks for career opportunities, keep the job pitches out of the conversation.",
+                    "No dating. Linked.Coffee is a professional platform. There are better apps for that.",
+                    "Show up. If you said yes, be there. If something comes up, let your match know in advance. Ghosting ruins the experience for everyone."
+                ]
+            },
+            "tips": {
+                "title": "Making it great",
+                "items": [
+                    "Listen as much as you talk. The best conversations are balanced. You're here to discover someone new, not to deliver a monologue.",
+                    "Stay curious. Your match might have a completely different background, industry, or worldview. That's the point. Approach differences with curiosity, not judgment.",
+                    "Skip the minefields. Politics, religion, and other divisive topics rarely lead anywhere good in a first conversation with a stranger. You're here to build bridges, not to debate.",
+                    "Respect time. If you agreed on 30 minutes, stick to it. If the conversation is flowing and both want to continue — great. But don't assume.",
+                    "Keep it confidential. What's shared in the conversation stays between you, unless you both agree otherwise."
+                ]
+            }
         }
     }
 }

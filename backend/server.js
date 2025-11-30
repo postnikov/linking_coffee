@@ -244,7 +244,12 @@ app.post('/api/verify', async (req, res) => {
       console.log(`✅ Successfully updated record!`);
       res.json({
         success: true,
-        message: 'Verification successful! Account linked.'
+        message: 'Verification successful! Account linked.',
+        user: {
+          username: cleanUsername,
+          status: record.fields.Status,
+          consentGdpr: record.fields.Consent_GDPR
+        }
       });
     } else {
       // Should not happen if Step 1 worked, but handle it
@@ -254,6 +259,45 @@ app.post('/api/verify', async (req, res) => {
   } catch (error) {
     console.error('❌ Verify error:', error);
     res.status(500).json({ success: false, message: 'Verification failed.' });
+  }
+});
+
+// Step 3: Update GDPR Consent
+app.post('/api/consent', async (req, res) => {
+  const { username } = req.body;
+
+  if (!username) {
+    return res.status(400).json({ success: false, message: 'Username is required' });
+  }
+
+  const cleanUsername = username.replace('@', '').trim().toLowerCase();
+
+  try {
+    const records = await base(process.env.AIRTABLE_MEMBERS_TABLE)
+      .select({
+        filterByFormula: `{Tg_Username} = '${cleanUsername}'`,
+        maxRecords: 1
+      })
+      .firstPage();
+
+    if (records.length > 0) {
+      const record = records[0];
+      await base(process.env.AIRTABLE_MEMBERS_TABLE).update([
+        {
+          id: record.id,
+          fields: {
+            Consent_GDPR: true
+          }
+        }
+      ]);
+
+      res.json({ success: true, message: 'Consent updated' });
+    } else {
+      res.status(404).json({ success: false, message: 'User not found' });
+    }
+  } catch (error) {
+    console.error('Consent update error:', error);
+    res.status(500).json({ success: false, message: 'Failed to update consent' });
   }
 });
 

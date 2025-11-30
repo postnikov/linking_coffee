@@ -44,7 +44,7 @@ function App() {
                     }} />} />
                     <Route path="/about" element={<About />} />
                     <Route path="/rules" element={<Rules />} />
-                    <Route path="/prices" element={<Prices />} />
+                    <Route path="/prices" element={<Prices user={user} />} />
 
                 </Routes>
 
