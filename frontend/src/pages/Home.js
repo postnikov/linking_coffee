@@ -156,7 +156,7 @@ const Home = ({ onLogin }) => {
                         {t('hero.description')}
                     </p>
 
-                    <ul className="feature-list">
+                    <ul className="features-list">
                         <li className="feature-item">
                             <span className="feature-icon">☕️</span>
                             <span>{t('features.connect')}</span>

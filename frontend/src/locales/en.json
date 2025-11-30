@@ -9,6 +9,11 @@
         "conversations": "Meaningful conversations via Zoom or Google Meet",
         "community": "Diverse, global community"
     },
+    "dashboard": {
+        "welcome": "Welcome to your Dashboard",
+        "empty_state": "Your coffee matches will appear here soon. Stay tuned! ☕️",
+        "development_notice": "The Dashboard is still in development. We'll let you know once it is ready."
+    },
     "form": {
         "title": "Get Early Access",
         "subtitle": "Sign up now and be among the first <br /> to experience Linked.Coffee",
@@ -36,6 +41,7 @@
         "about": "What is Linked.Coffee",
         "rules": "Rules",
         "prices": "Prices",
+        "logout": "Logout",
         "register": "Register"
     },
     "footer": {

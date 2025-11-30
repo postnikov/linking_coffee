@@ -31,7 +31,7 @@ const GdprModal = ({ onAccept, onClose }) => {
                     <div style={{ fontSize: '0.95rem', lineHeight: '1.6' }}>
                         <p style={{ fontWeight: 'bold', marginBottom: '1rem' }}>The essence of the policy</p>
                         <ul style={{ paddingLeft: '1.5rem', marginBottom: '1rem' }}>
-                            <li style={{ marginBottom: '0.5rem' }}>Linked.Coffee connects people from the tech world for friendly “random coffee” chats via Telegram.</li>
+                            <li style={{ marginBottom: '0.5rem' }}>Linked.Coffee connects people from the tech world for friendly “random coffee” chats via Telegram, Zoom or Google Meet.</li>
                             <li style={{ marginBottom: '0.5rem' }}>You use the service through a Telegram bot. We don’t ask you for email to participate.</li>
                             <li style={{ marginBottom: '0.5rem' }}>We see what Telegram shows us (your Telegram ID, username, name, profile photo if available) and what you decide to tell the bot about yourself: interests, hobbies, professional background, career plans, and who you’d like to meet.</li>
                         </ul>
