@@ -31,6 +31,8 @@ const otpStore = new Map();
 
 // Initialize Telegram Bot
 const botToken = process.env.NODE_ENV === 'production' ? process.env.BOT_TOKEN : process.env.ADMIN_BOT_TOKEN;
+console.log(`🤖 Initializing Bot in ${process.env.NODE_ENV} mode`);
+console.log(`🔑 Using Bot Token starting with: ${botToken ? botToken.substring(0, 5) + '...' : 'UNDEFINED'}`);
 const bot = new Telegraf(botToken);
 
 bot.start((ctx) => {
