@@ -475,8 +475,8 @@ app.post('/api/upload-avatar', upload.single('avatar'), async (req, res) => {
   const cleanUsername = username.replace('@', '').trim().toLowerCase();
 
   // Construct the public URL
-  // Trust X-Forwarded-Proto and Host headers from Nginx/Traefik
-  const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+  // Force HTTPS in production to ensure Airtable can fetch it without redirects
+  const protocol = process.env.NODE_ENV === 'production' ? 'https' : (req.headers['x-forwarded-proto'] || req.protocol);
   const host = req.get('host');
   const fileUrl = `${protocol}://${host}/uploads/${req.file.filename}`;
 
