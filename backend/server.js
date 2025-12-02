@@ -378,11 +378,17 @@ app.get('/api/countries', async (req, res) => {
       })
       .all();
 
-    const countries = records.map(record => ({
-      id: record.id,
-      name: record.fields.Name,
-      flag: record.fields.Flag
-    }));
+    const countries = records.map(record => {
+      const isoCode = record.fields.ISO_Code;
+      // Generate flag emoji from ISO code
+      const flag = isoCode ? isoCode.toUpperCase().replace(/./g, char => String.fromCodePoint(char.charCodeAt(0) + 127397)) : '';
+
+      return {
+        id: record.id,
+        name: record.fields.Name_en,
+        flag: flag
+      };
+    });
 
     res.json({ success: true, countries });
   } catch (error) {
@@ -418,10 +424,13 @@ app.get('/api/profile', async (req, res) => {
       if (fields.Countries && fields.Countries.length > 0) {
         try {
           const countryRecord = await base(process.env.AIRTABLE_COUNTRIES_TABLE || 'Countries').find(fields.Countries[0]);
+          const isoCode = countryRecord.fields.ISO_Code;
+          const flag = isoCode ? isoCode.toUpperCase().replace(/./g, char => String.fromCodePoint(char.charCodeAt(0) + 127397)) : '';
+
           country = {
             id: countryRecord.id,
-            name: countryRecord.fields.Name,
-            flag: countryRecord.fields.Flag
+            name: countryRecord.fields.Name_en,
+            flag: flag
           };
         } catch (err) {
           console.error('Error fetching linked country:', err);
