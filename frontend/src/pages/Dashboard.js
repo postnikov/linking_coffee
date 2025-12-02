@@ -448,7 +448,7 @@ const Dashboard = () => {
                             </div>
                         )}
 
-                        {/* Timezone & Best Time */}
+                        {/* Timezone & Languages */}
                         <div className="form-row">
                             <div className="form-group">
                                 <label>{t('dashboard.profile.timezone', 'Time Zone')}</label>
@@ -472,15 +472,15 @@ const Dashboard = () => {
                                 </div>
                             </div>
                             <div className="form-group">
-                                <label>{t('dashboard.profile.best_days', 'Best Meeting Days')}</label>
+                                <label>{t('dashboard.profile.languages', 'Languages')}</label>
                                 <div className="language-chips">
-                                    {formData.bestMeetingDays.map(day => (
-                                        <div key={day} className="chip">
-                                            {day}
+                                    {formData.languages.map(lang => (
+                                        <div key={lang} className="chip">
+                                            {lang}
                                             <button
                                                 type="button"
                                                 className="chip-remove"
-                                                onClick={() => handleMultiSelectChange('bestMeetingDays', day)}
+                                                onClick={() => handleMultiSelectChange('languages', lang)}
                                             >
                                                 ×
                                             </button>
@@ -489,13 +489,13 @@ const Dashboard = () => {
                                     <button
                                         type="button"
                                         className="add-language-btn"
-                                        onClick={() => setShowDaysModal(true)}
+                                        onClick={() => setShowLanguageModal(true)}
                                     >
                                         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
                                             <path d="M1.5 8.5L1 11L3.5 10.5L9.75 4.25L7.75 2.25L1.5 8.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                                             <path d="M9.75 4.25L7.75 2.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                                         </svg>
-                                        {t('dashboard.profile.change_days', 'Change')}
+                                        {t('dashboard.profile.change_languages', 'Change')}
                                     </button>
                                 </div>
                             </div>
@@ -571,17 +571,17 @@ const Dashboard = () => {
                             </div>
                         )}
 
-                        {/* Languages */}
+                        {/* Best Meeting Days */}
                         <div className="form-group">
-                            <label>{t('dashboard.profile.languages', 'Languages')}</label>
+                            <label>{t('dashboard.profile.best_days', 'Best Meeting Days')}</label>
                             <div className="language-chips">
-                                {formData.languages.map(lang => (
-                                    <div key={lang} className="chip">
-                                        {lang}
+                                {formData.bestMeetingDays.map(day => (
+                                    <div key={day} className="chip">
+                                        {day}
                                         <button
                                             type="button"
                                             className="chip-remove"
-                                            onClick={() => handleMultiSelectChange('languages', lang)}
+                                            onClick={() => handleMultiSelectChange('bestMeetingDays', day)}
                                         >
                                             ×
                                         </button>
@@ -590,13 +590,13 @@ const Dashboard = () => {
                                 <button
                                     type="button"
                                     className="add-language-btn"
-                                    onClick={() => setShowLanguageModal(true)}
+                                    onClick={() => setShowDaysModal(true)}
                                 >
                                     <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
                                         <path d="M1.5 8.5L1 11L3.5 10.5L9.75 4.25L7.75 2.25L1.5 8.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                                         <path d="M9.75 4.25L7.75 2.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                                     </svg>
-                                    {t('dashboard.profile.change_languages', 'Change')}
+                                    {t('dashboard.profile.change_days', 'Change')}
                                 </button>
                             </div>
                         </div>
