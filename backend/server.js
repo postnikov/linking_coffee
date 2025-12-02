@@ -529,7 +529,10 @@ app.put('/api/profile', async (req, res) => {
     }
   } catch (error) {
     console.error('Update profile error:', error);
-    res.status(500).json({ success: false, message: 'Failed to update profile' });
+    if (error.error && error.error === 'INVALID_VALUE_FOR_COLUMN') {
+      console.error('Invalid value details:', error.message);
+    }
+    res.status(500).json({ success: false, message: 'Failed to update profile: ' + error.message });
   }
 });
 
