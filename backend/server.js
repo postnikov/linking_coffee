@@ -473,26 +473,16 @@ app.post('/api/upload-avatar', upload.single('avatar'), async (req, res) => {
 
   const cleanUsername = username.replace('@', '').trim().toLowerCase();
 
-  // Construct the local URL
-  const protocol = req.protocol;
+  // Construct the public URL
+  // Trust X-Forwarded-Proto and Host headers from Nginx/Traefik
+  const protocol = req.headers['x-forwarded-proto'] || req.protocol;
   const host = req.get('host');
   const fileUrl = `${protocol}://${host}/uploads/${req.file.filename}`;
 
   console.log(`📤 Avatar uploaded for ${cleanUsername}: ${fileUrl}`);
 
   try {
-    // In a real production environment with public URL, we would update Airtable here.
-    // Since we are on localhost, Airtable cannot fetch this URL.
-    // We will just return the URL to the frontend.
-    // Optionally, we could store the filename in a text field in Airtable if we wanted to persist the reference.
-
-    // For now, let's try to update Airtable if it's a public URL (e.g. production)
-    // or just acknowledge the upload.
-
-    // We will update the user's record with the new avatar URL if possible, 
-    // or just return it so the frontend can display it.
-
-    // Let's at least verify the user exists
+    // Verify user exists
     const records = await base(process.env.AIRTABLE_MEMBERS_TABLE)
       .select({
         filterByFormula: `{Tg_Username} = '${cleanUsername}'`,
@@ -501,31 +491,24 @@ app.post('/api/upload-avatar', upload.single('avatar'), async (req, res) => {
       .firstPage();
 
     if (records.length > 0) {
-      // If we were in production, we would do this:
-      /*
-      await base(process.env.AIRTABLE_MEMBERS_TABLE).update([
+      // Update Airtable with the new avatar URL
+      // This works now because the server is deployed and the URL is public!
+      try {
+        await base(process.env.AIRTABLE_MEMBERS_TABLE).update([
           {
-              id: records[0].id,
-              fields: {
-                  Avatar: [
-                      { url: fileUrl }
-                  ]
-              }
+            id: records[0].id,
+            fields: {
+              Avatar: [
+                { url: fileUrl }
+              ]
+            }
           }
-      ]);
-      */
-
-      // Since we can't reliably do that on localhost, we'll just return success.
-      // The frontend should use the returned URL to display the image.
-      // And we might want to store this URL in a local "cache" or just rely on the frontend state for the session?
-      // Actually, if we don't save it to Airtable, it will be lost on refresh if we fetch from Airtable again.
-      // So we SHOULD save it to Airtable if possible.
-      // If we can't, maybe we can save the filename in a separate text field "Avatar_Local_Path" if we added one?
-      // But we can't change schema easily.
-
-      // Workaround: We will return the URL. The frontend will display it.
-      // On refresh, it will revert to whatever is in Airtable (likely empty or old).
-      // This is a known limitation of localhost development with Airtable Attachments.
+        ]);
+        console.log('✅ Airtable updated with new avatar URL');
+      } catch (airtableError) {
+        console.error('Failed to update Airtable (non-fatal):', airtableError);
+        // We continue even if Airtable update fails, so the user sees their upload
+      }
 
       res.json({
         success: true,
