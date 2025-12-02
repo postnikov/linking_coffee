@@ -43,6 +43,15 @@ const Dashboard = () => {
     const [message, setMessage] = useState({ type: '', text: '' });
 
     useEffect(() => {
+        if (message.type === 'success' && message.text) {
+            const timer = setTimeout(() => {
+                setMessage({ type: '', text: '' });
+            }, 2000);
+            return () => clearTimeout(timer);
+        }
+    }, [message]);
+
+    useEffect(() => {
         const fetchProfile = async () => {
             const storedUser = localStorage.getItem('user');
             if (!storedUser) return;
