@@ -424,9 +424,14 @@ const Dashboard = () => {
 
                         <div style={{ minHeight: '3rem', display: 'flex', alignItems: 'center' }}>
                             {showSuccess ? (
-                                <div className="success-message" style={{ color: 'var(--success)', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <span>✅</span> {t('dashboard.profile.saved_success', 'All changes are saved')}
-                                </div>
+                                <button
+                                    type="button"
+                                    className="save-btn success"
+                                    disabled={true}
+                                    style={{ marginTop: 0, background: '#10b981', cursor: 'default' }}
+                                >
+                                    {t('dashboard.profile.saved_success', 'All changes are saved')}
+                                </button>
                             ) : (
                                 (hasChanges || isSaving) && (
                                     <button
