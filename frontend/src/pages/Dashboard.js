@@ -58,6 +58,7 @@ const Dashboard = () => {
     const [countries, setCountries] = useState([]);
     const [cities, setCities] = useState([]);
     const [countrySearch, setCountrySearch] = useState('');
+    const [newCityName, setNewCityName] = useState('');
 
     useEffect(() => {
         // Fetch countries
@@ -244,6 +245,42 @@ const Dashboard = () => {
             setMessage({ type: 'error', text: 'An error occurred while uploading' });
         } finally {
             setIsLoading(false);
+        }
+    };
+    const handleAddCity = async () => {
+        if (!newCityName.trim() || !formData.country) return;
+
+        try {
+            const response = await fetch(`${API_URL}/api/cities`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    name: newCityName,
+                    countryIso: formData.country.iso
+                }),
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                // Add to cities list and select it
+                setCities(prev => [...prev, data.city]);
+                setFormData(prev => ({ ...prev, city: data.city }));
+                setNewCityName('');
+                // Optional: Close modal? User might want to see it selected.
+                // User requirement: "For this user we show his city even if it is not Approved"
+                // So keeping it open or closing is fine. Let's keep it open to show selection or close it?
+                // Usually selecting an item closes the modal in this UI.
+                // But here we just added it. Let's select it and close it to be consistent with other selections.
+                setShowCityModal(false);
+            } else {
+                alert(data.message || 'Failed to add city');
+            }
+        } catch (error) {
+            console.error('Error adding city:', error);
+            alert('An error occurred while adding the city');
         }
     };
 
@@ -434,28 +471,69 @@ const Dashboard = () => {
                                     </div>
                                     <div className="modal-body">
                                         <div className="language-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)', gridTemplateRows: 'auto', gridAutoFlow: 'row' }}>
-                                            {cities.length > 0 ? (
-                                                cities.map(city => (
-                                                    <label key={city.id} className={`language-option ${formData.city?.id === city.id ? 'selected' : ''}`}>
-                                                        <input
-                                                            type="radio"
-                                                            name="city-modal"
-                                                            checked={formData.city?.id === city.id}
-                                                            onChange={() => {
-                                                                setFormData(prev => ({ ...prev, city: city }));
-                                                                setShowCityModal(false);
-                                                            }}
-                                                            style={{ display: 'none' }}
-                                                        />
-                                                        <span>{city.name}</span>
-                                                        {formData.city?.id === city.id && <span className="check-icon">✓</span>}
-                                                    </label>
-                                                ))
-                                            ) : (
+                                            {cities.map(city => (
+                                                <label key={city.id} className={`language-option ${formData.city?.id === city.id ? 'selected' : ''}`}>
+                                                    <input
+                                                        type="radio"
+                                                        name="city-modal"
+                                                        checked={formData.city?.id === city.id}
+                                                        onChange={() => {
+                                                            setFormData(prev => ({ ...prev, city: city }));
+                                                            setShowCityModal(false);
+                                                        }}
+                                                        style={{ display: 'none' }}
+                                                    />
+                                                    <span>{city.name}</span>
+                                                    {formData.city?.id === city.id && <span className="check-icon">✓</span>}
+                                                </label>
+                                            ))}
+
+                                            {/* Show selected city if not in list (e.g. unapproved or just added) */}
+                                            {formData.city && !cities.find(c => c.id === formData.city.id) && (
+                                                <label key={formData.city.id} className="language-option selected">
+                                                    <input
+                                                        type="radio"
+                                                        name="city-modal"
+                                                        checked={true}
+                                                        readOnly
+                                                        style={{ display: 'none' }}
+                                                    />
+                                                    <span>{formData.city.name}</span>
+                                                    <span className="check-icon">✓</span>
+                                                </label>
+                                            )}
+
+                                            {cities.length === 0 && !formData.city && (
                                                 <p style={{ gridColumn: '1 / -1', textAlign: 'center', color: '#888' }}>
                                                     {t('dashboard.profile.no_cities', 'No cities found for this country.')}
                                                 </p>
                                             )}
+                                        </div>
+
+                                        {/* Add City Section */}
+                                        <div style={{ marginTop: '1.5rem', borderTop: '1px solid #eee', paddingTop: '1rem' }}>
+                                            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: '#666', fontWeight: 600 }}>
+                                                {t('dashboard.profile.add_city_label', 'Add your City')}
+                                            </label>
+                                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                                <input
+                                                    type="text"
+                                                    className="form-control"
+                                                    placeholder={t('dashboard.profile.add_city_placeholder', 'Enter city name')}
+                                                    value={newCityName}
+                                                    onChange={(e) => setNewCityName(e.target.value)}
+                                                    style={{ flex: 1 }}
+                                                />
+                                                <button
+                                                    type="button"
+                                                    className="save-btn"
+                                                    onClick={handleAddCity}
+                                                    style={{ marginTop: 0, padding: '0.5rem 1rem', whiteSpace: 'nowrap' }}
+                                                    disabled={!newCityName.trim()}
+                                                >
+                                                    {t('common.add', 'Add')}
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                     <div className="modal-footer">
