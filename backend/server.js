@@ -271,12 +271,41 @@ app.post('/api/verify', async (req, res) => {
       const record = records[0];
       console.log(`📝 Updating record ${record.id} with Tg_ID: ${telegramId} (type: ${typeof telegramId})`);
 
+      const updateFields = {
+        Tg_ID: telegramId
+      };
+
+      // Try to fetch Telegram Avatar if user has none
+      if (telegramId > 0 && (!record.fields.Avatar || record.fields.Avatar.length === 0)) {
+        try {
+          console.log(`📸 Fetching Telegram profile photos for ${telegramId}...`);
+          const userProfilePhotos = await bot.telegram.getUserProfilePhotos(telegramId, 0, 1);
+
+          if (userProfilePhotos.total_count > 0) {
+            const photos = userProfilePhotos.photos[0];
+            // Get the largest size (last in array)
+            const largestPhoto = photos[photos.length - 1];
+            const fileLink = await bot.telegram.getFileLink(largestPhoto.file_id);
+
+            // Telegraf getFileLink returns a URL object or string depending on version
+            // We'll handle both
+            const avatarUrl = typeof fileLink === 'string' ? fileLink : fileLink.href;
+
+            console.log(`📸 Found Telegram avatar: ${avatarUrl}`);
+            updateFields.Avatar = [{ url: avatarUrl }];
+          } else {
+            console.log('📸 No profile photos found for user.');
+          }
+        } catch (avatarError) {
+          console.error('⚠️ Failed to fetch Telegram avatar:', avatarError);
+          // Non-fatal, continue with verification
+        }
+      }
+
       await base(process.env.AIRTABLE_MEMBERS_TABLE).update([
         {
           id: record.id,
-          fields: {
-            Tg_ID: telegramId // Now a number
-          }
+          fields: updateFields
         }
       ]);
 
