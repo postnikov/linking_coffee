@@ -31,7 +31,22 @@
             "personal_interests": "Личные интересы",
             "coffee_goals": "Цели общения",
             "save": "Сохранить изменения",
-            "saved": "Профиль успешно сохранен!"
+            "saved": "Профиль успешно сохранен!",
+            "select_country": "Выберите страну",
+            "search_country": "Поиск страны...",
+            "select_city": "Выберите город",
+            "add_city_label": "Добавьте свой город",
+            "add_city_placeholder": "Введите название города",
+            "no_cities": "Города не найдены для этой страны.",
+            "select_timezone": "Выберите часовой пояс",
+            "select_days": "Выберите дни",
+            "select_languages": "Выберите языки",
+            "change_country": "Изменить",
+            "change_city": "Изменить",
+            "change_timezone": "Изменить",
+            "change_days": "Изменить",
+            "change_languages": "Изменить",
+            "select_country_first": "Сначала выберите страну"
         },
         "matching": {
             "title": "Матчинг",
