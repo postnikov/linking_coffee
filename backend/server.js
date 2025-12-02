@@ -426,6 +426,42 @@ app.get('/api/cities', async (req, res) => {
   }
 });
 
+// Add a new city
+app.post('/api/cities', async (req, res) => {
+  const { name, countryIso } = req.body;
+  console.log('Adding city:', { name, countryIso });
+
+  if (!name || !countryIso) {
+    return res.status(400).json({ success: false, message: 'Name and Country ISO are required' });
+  }
+
+  try {
+    const slug = name.toLowerCase().trim().replace(/[\s\W-]+/g, '-');
+
+    const createdRecord = await base(process.env.AIRTABLE_CITIES_TABLE).create([
+      {
+        "fields": {
+          "name_en": name,
+          "country_iso": countryIso,
+          "Slug": slug,
+          "Approved": false
+        }
+      }
+    ], { typecast: true });
+
+    const newCity = {
+      id: createdRecord[0].id,
+      name: createdRecord[0].fields.name_en,
+      slug: createdRecord[0].fields.Slug
+    };
+
+    res.json({ success: true, city: newCity });
+  } catch (error) {
+    console.error('Error adding city:', error);
+    res.status(500).json({ success: false, message: 'Failed to add city: ' + error.message });
+  }
+});
+
 // Step 4: Get User Profile
 app.get('/api/profile', async (req, res) => {
   const { username } = req.query;
