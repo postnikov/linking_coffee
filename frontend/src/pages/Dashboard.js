@@ -59,6 +59,7 @@ const Dashboard = () => {
     const [cities, setCities] = useState([]);
     const [countrySearch, setCountrySearch] = useState('');
     const [newCityName, setNewCityName] = useState('');
+    const [savedSections, setSavedSections] = useState({});
 
     useEffect(() => {
         // Fetch countries
@@ -247,6 +248,42 @@ const Dashboard = () => {
             setIsLoading(false);
         }
     };
+
+    const autoSaveProfile = async (updatedData, section) => {
+        const storedUser = localStorage.getItem('user');
+        if (!storedUser) return;
+        const user = JSON.parse(storedUser);
+
+        try {
+            const response = await fetch(`${API_URL}/api/profile`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    username: user.username,
+                    profile: updatedData
+                }),
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                setInitialFormData(updatedData);
+                setHasChanges(false);
+
+                setSavedSections(prev => ({ ...prev, [section]: true }));
+                setTimeout(() => {
+                    setSavedSections(prev => ({ ...prev, [section]: false }));
+                }, 3000);
+            } else {
+                console.error('Auto-save failed:', data.message);
+            }
+        } catch (error) {
+            console.error('Auto-save error:', error);
+        }
+    };
+
     const handleAddCity = async () => {
         if (!newCityName.trim() || !formData.country) return;
 
@@ -267,7 +304,8 @@ const Dashboard = () => {
             if (data.success) {
                 // Add to cities list and select it
                 setCities(prev => [...prev, data.city]);
-                setFormData(prev => ({ ...prev, city: data.city }));
+                const newData = { ...formData, city: data.city };
+                setFormData(newData);
                 setNewCityName('');
                 // Optional: Close modal? User might want to see it selected.
                 // User requirement: "For this user we show his city even if it is not Approved"
@@ -275,6 +313,7 @@ const Dashboard = () => {
                 // Usually selecting an item closes the modal in this UI.
                 // But here we just added it. Let's select it and close it to be consistent with other selections.
                 setShowCityModal(false);
+                autoSaveProfile(newData, 'city');
             } else {
                 alert(data.message || 'Failed to add city');
             }
@@ -369,17 +408,29 @@ const Dashboard = () => {
                                     )}
                                     <button
                                         type="button"
-                                        className="add-language-btn"
+                                        className={`add-language-btn ${savedSections.country ? 'saved' : ''}`}
                                         onClick={() => {
                                             setShowCountryModal(true);
                                             setCountrySearch('');
                                         }}
+                                        style={savedSections.country ? { backgroundColor: '#dcfce7', color: '#166534', borderColor: '#bbf7d0' } : {}}
                                     >
-                                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                            <path d="M1.5 8.5L1 11L3.5 10.5L9.75 4.25L7.75 2.25L1.5 8.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                            <path d="M9.75 4.25L7.75 2.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                        </svg>
-                                        {t('dashboard.profile.change_country', 'Change')}
+                                        {savedSections.country ? (
+                                            <>
+                                                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                    <path d="M10 3L4.5 8.5L2 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                </svg>
+                                                {t('common.saved', 'Saved')}
+                                            </>
+                                        ) : (
+                                            <>
+                                                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                    <path d="M1.5 8.5L1 11L3.5 10.5L9.75 4.25L7.75 2.25L1.5 8.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                    <path d="M9.75 4.25L7.75 2.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                </svg>
+                                                {t('dashboard.profile.change_country', 'Change')}
+                                            </>
+                                        )}
                                     </button>
                                 </div>
                             </div>
@@ -393,7 +444,7 @@ const Dashboard = () => {
                                     )}
                                     <button
                                         type="button"
-                                        className="add-language-btn"
+                                        className={`add-language-btn ${savedSections.city ? 'saved' : ''}`}
                                         onClick={() => {
                                             if (!formData.country) {
                                                 alert(t('dashboard.profile.select_country_first', 'Please select a country first'));
@@ -401,12 +452,24 @@ const Dashboard = () => {
                                             }
                                             setShowCityModal(true);
                                         }}
+                                        style={savedSections.city ? { backgroundColor: '#dcfce7', color: '#166534', borderColor: '#bbf7d0' } : {}}
                                     >
-                                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                            <path d="M1.5 8.5L1 11L3.5 10.5L9.75 4.25L7.75 2.25L1.5 8.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                            <path d="M9.75 4.25L7.75 2.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                        </svg>
-                                        {t('dashboard.profile.change_city', 'Change')}
+                                        {savedSections.city ? (
+                                            <>
+                                                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                    <path d="M10 3L4.5 8.5L2 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                </svg>
+                                                {t('common.saved', 'Saved')}
+                                            </>
+                                        ) : (
+                                            <>
+                                                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                    <path d="M1.5 8.5L1 11L3.5 10.5L9.75 4.25L7.75 2.25L1.5 8.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                    <path d="M9.75 4.25L7.75 2.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                </svg>
+                                                {t('dashboard.profile.change_city', 'Change')}
+                                            </>
+                                        )}
                                     </button>
                                 </div>
                             </div>
@@ -440,9 +503,11 @@ const Dashboard = () => {
                                                             name="country-modal"
                                                             checked={formData.country?.id === country.id}
                                                             onChange={() => {
-                                                                setFormData(prev => ({ ...prev, country: country, city: null })); // Reset city on country change
+                                                                const newData = { ...formData, country: country, city: null };
+                                                                setFormData(newData);
                                                                 setShowCountryModal(false);
                                                                 setCountrySearch('');
+                                                                autoSaveProfile(newData, 'country');
                                                             }}
                                                             style={{ display: 'none' }}
                                                         />
@@ -478,8 +543,10 @@ const Dashboard = () => {
                                                         name="city-modal"
                                                         checked={formData.city?.id === city.id}
                                                         onChange={() => {
-                                                            setFormData(prev => ({ ...prev, city: city }));
+                                                            const newData = { ...formData, city: city };
+                                                            setFormData(newData);
                                                             setShowCityModal(false);
+                                                            autoSaveProfile(newData, 'city');
                                                         }}
                                                         style={{ display: 'none' }}
                                                     />
@@ -556,14 +623,26 @@ const Dashboard = () => {
                                 )}
                                 <button
                                     type="button"
-                                    className="add-language-btn"
+                                    className={`add-language-btn ${savedSections.timezone ? 'saved' : ''}`}
                                     onClick={() => setShowTimezoneModal(true)}
+                                    style={savedSections.timezone ? { backgroundColor: '#dcfce7', color: '#166534', borderColor: '#bbf7d0' } : {}}
                                 >
-                                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M1.5 8.5L1 11L3.5 10.5L9.75 4.25L7.75 2.25L1.5 8.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                        <path d="M9.75 4.25L7.75 2.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                    {t('dashboard.profile.change_timezone', 'Change')}
+                                    {savedSections.timezone ? (
+                                        <>
+                                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M10 3L4.5 8.5L2 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                            </svg>
+                                            {t('common.saved', 'Saved')}
+                                        </>
+                                    ) : (
+                                        <>
+                                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M1.5 8.5L1 11L3.5 10.5L9.75 4.25L7.75 2.25L1.5 8.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                <path d="M9.75 4.25L7.75 2.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                            </svg>
+                                            {t('dashboard.profile.change_timezone', 'Change')}
+                                        </>
+                                    )}
                                 </button>
                             </div>
                         </div>
@@ -593,7 +672,10 @@ const Dashboard = () => {
                                         </div>
                                     </div>
                                     <div className="modal-footer">
-                                        <button className="save-btn" onClick={() => setShowDaysModal(false)} style={{ width: '100%', marginTop: 0 }}>
+                                        <button className="save-btn" onClick={() => {
+                                            setShowDaysModal(false);
+                                            autoSaveProfile(formData, 'bestMeetingDays');
+                                        }} style={{ width: '100%', marginTop: 0 }}>
                                             {t('common.done', 'Done')}
                                         </button>
                                     </div>
@@ -618,8 +700,10 @@ const Dashboard = () => {
                                                         name="timezone-modal"
                                                         checked={formData.timezone === tz}
                                                         onChange={() => {
-                                                            setFormData(prev => ({ ...prev, timezone: tz }));
+                                                            const newData = { ...formData, timezone: tz };
+                                                            setFormData(newData);
                                                             setShowTimezoneModal(false);
+                                                            autoSaveProfile(newData, 'timezone');
                                                         }}
                                                         style={{ display: 'none' }}
                                                     />
@@ -656,14 +740,26 @@ const Dashboard = () => {
                                 ))}
                                 <button
                                     type="button"
-                                    className="add-language-btn"
+                                    className={`add-language-btn ${savedSections.bestMeetingDays ? 'saved' : ''}`}
                                     onClick={() => setShowDaysModal(true)}
+                                    style={savedSections.bestMeetingDays ? { backgroundColor: '#dcfce7', color: '#166534', borderColor: '#bbf7d0' } : {}}
                                 >
-                                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M1.5 8.5L1 11L3.5 10.5L9.75 4.25L7.75 2.25L1.5 8.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                        <path d="M9.75 4.25L7.75 2.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                    {t('dashboard.profile.change_days', 'Change')}
+                                    {savedSections.bestMeetingDays ? (
+                                        <>
+                                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M10 3L4.5 8.5L2 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                            </svg>
+                                            {t('common.saved', 'Saved')}
+                                        </>
+                                    ) : (
+                                        <>
+                                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M1.5 8.5L1 11L3.5 10.5L9.75 4.25L7.75 2.25L1.5 8.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                <path d="M9.75 4.25L7.75 2.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                            </svg>
+                                            {t('dashboard.profile.change_days', 'Change')}
+                                        </>
+                                    )}
                                 </button>
                             </div>
                         </div>
@@ -686,14 +782,26 @@ const Dashboard = () => {
                                 ))}
                                 <button
                                     type="button"
-                                    className="add-language-btn"
+                                    className={`add-language-btn ${savedSections.languages ? 'saved' : ''}`}
                                     onClick={() => setShowLanguageModal(true)}
+                                    style={savedSections.languages ? { backgroundColor: '#dcfce7', color: '#166534', borderColor: '#bbf7d0' } : {}}
                                 >
-                                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M1.5 8.5L1 11L3.5 10.5L9.75 4.25L7.75 2.25L1.5 8.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                        <path d="M9.75 4.25L7.75 2.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                    {t('dashboard.profile.change_languages', 'Change')}
+                                    {savedSections.languages ? (
+                                        <>
+                                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M10 3L4.5 8.5L2 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                            </svg>
+                                            {t('common.saved', 'Saved')}
+                                        </>
+                                    ) : (
+                                        <>
+                                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M1.5 8.5L1 11L3.5 10.5L9.75 4.25L7.75 2.25L1.5 8.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                <path d="M9.75 4.25L7.75 2.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                            </svg>
+                                            {t('dashboard.profile.change_languages', 'Change')}
+                                        </>
+                                    )}
                                 </button>
                             </div>
                         </div>
@@ -723,7 +831,10 @@ const Dashboard = () => {
                                         </div>
                                     </div>
                                     <div className="modal-footer">
-                                        <button className="save-btn" onClick={() => setShowLanguageModal(false)} style={{ width: '100%', marginTop: 0 }}>
+                                        <button className="save-btn" onClick={() => {
+                                            setShowLanguageModal(false);
+                                            autoSaveProfile(formData, 'languages');
+                                        }} style={{ width: '100%', marginTop: 0 }}>
                                             {t('common.done', 'Done')}
                                         </button>
                                     </div>

@@ -266,7 +266,7 @@ textarea.form-control {
     display: flex;
     align-items: flex-start;
     justify-content: center;
-    padding-top: 6vh;
+    padding-top: 10vh;
     z-index: 1000;
     backdrop-filter: blur(4px);
 }
@@ -276,7 +276,7 @@ textarea.form-control {
     border-radius: 16px;
     width: 90%;
     max-width: 600px;
-    height: 600px;
+    height: 700px;
     display: flex;
     flex-direction: column;
     max-height: 90vh;
