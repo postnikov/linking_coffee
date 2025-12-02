@@ -183,15 +183,17 @@ const Dashboard = () => {
                     <form onSubmit={handleSubmit} className="profile-form">
                         {/* Avatar */}
                         <div className="avatar-upload">
-                            <div className="avatar-preview">
-                                {formData.avatar ? (
-                                    <img src={formData.avatar} alt="Avatar" />
-                                ) : (
-                                    <span>👤</span>
-                                )}
-                            </div>
-                            <label className="form-control" style={{ width: 'auto', cursor: 'pointer', display: 'inline-block', textAlign: 'center' }}>
-                                {t('dashboard.profile.upload_avatar', 'Upload Photo')}
+                            <label className="avatar-wrapper">
+                                <div className="avatar-preview">
+                                    {formData.avatar ? (
+                                        <img src={formData.avatar} alt="Avatar" />
+                                    ) : (
+                                        <span>👤</span>
+                                    )}
+                                </div>
+                                <div className="avatar-overlay">
+                                    <span>{t('dashboard.profile.upload_avatar', 'Upload Photo')}</span>
+                                </div>
                                 <input
                                     type="file"
                                     accept="image/png, image/jpeg, image/jpg"
