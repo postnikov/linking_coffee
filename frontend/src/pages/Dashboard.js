@@ -471,36 +471,6 @@ const Dashboard = () => {
                             </div>
                         </div>
 
-                        {/* Languages */}
-                        <div className="form-group">
-                            <label>{t('dashboard.profile.languages', 'Languages')}</label>
-                            <div className="language-chips">
-                                {formData.languages.map(lang => (
-                                    <div key={lang} className="chip">
-                                        {lang}
-                                        <button
-                                            type="button"
-                                            className="chip-remove"
-                                            onClick={() => handleMultiSelectChange('languages', lang)}
-                                        >
-                                            ×
-                                        </button>
-                                    </div>
-                                ))}
-                                <button
-                                    type="button"
-                                    className="add-language-btn"
-                                    onClick={() => setShowLanguageModal(true)}
-                                >
-                                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M1.5 8.5L1 11L3.5 10.5L9.75 4.25L7.75 2.25L1.5 8.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                        <path d="M9.75 4.25L7.75 2.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                    {t('dashboard.profile.change_languages', 'Change')}
-                                </button>
-                            </div>
-                        </div>
-
                         {/* Days Modal */}
                         {showDaysModal && (
                             <div className="modal-overlay" onClick={() => setShowDaysModal(false)}>
@@ -597,6 +567,36 @@ const Dashboard = () => {
                                         <path d="M9.75 4.25L7.75 2.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                                     </svg>
                                     {t('dashboard.profile.change_days', 'Change')}
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Languages */}
+                        <div className="form-group">
+                            <label>{t('dashboard.profile.languages', 'Languages')}</label>
+                            <div className="language-chips">
+                                {formData.languages.map(lang => (
+                                    <div key={lang} className="chip">
+                                        {lang}
+                                        <button
+                                            type="button"
+                                            className="chip-remove"
+                                            onClick={() => handleMultiSelectChange('languages', lang)}
+                                        >
+                                            ×
+                                        </button>
+                                    </div>
+                                ))}
+                                <button
+                                    type="button"
+                                    className="add-language-btn"
+                                    onClick={() => setShowLanguageModal(true)}
+                                >
+                                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M1.5 8.5L1 11L3.5 10.5L9.75 4.25L7.75 2.25L1.5 8.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                        <path d="M9.75 4.25L7.75 2.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
+                                    {t('dashboard.profile.change_languages', 'Change')}
                                 </button>
                             </div>
                         </div>
