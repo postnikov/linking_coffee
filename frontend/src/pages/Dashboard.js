@@ -46,6 +46,7 @@ const Dashboard = () => {
     const [hasChanges, setHasChanges] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
+    const [showLanguageModal, setShowLanguageModal] = useState(false);
 
     useEffect(() => {
         if (message.type === 'success' && message.text) {
@@ -320,19 +321,64 @@ const Dashboard = () => {
                         {/* Languages */}
                         <div className="form-group">
                             <label>{t('dashboard.profile.languages', 'Languages')}</label>
-                            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-                                {LANGUAGES.map(lang => (
-                                    <label key={lang} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                                        <input
-                                            type="checkbox"
-                                            checked={formData.languages.includes(lang)}
-                                            onChange={() => handleMultiSelectChange('languages', lang)}
-                                        />
+                            <div className="language-chips">
+                                {formData.languages.map(lang => (
+                                    <div key={lang} className="chip">
                                         {lang}
-                                    </label>
+                                        <button
+                                            type="button"
+                                            className="chip-remove"
+                                            onClick={() => handleMultiSelectChange('languages', lang)}
+                                        >
+                                            ×
+                                        </button>
+                                    </div>
                                 ))}
+                                <button
+                                    type="button"
+                                    className="add-language-btn"
+                                    onClick={() => setShowLanguageModal(true)}
+                                >
+                                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M6 1V11M1 6H11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
+                                    {t('dashboard.profile.add_language', 'Add')}
+                                </button>
                             </div>
                         </div>
+
+                        {/* Language Modal */}
+                        {showLanguageModal && (
+                            <div className="modal-overlay" onClick={() => setShowLanguageModal(false)}>
+                                <div className="modal-content" onClick={e => e.stopPropagation()}>
+                                    <div className="modal-header">
+                                        <h3>{t('dashboard.profile.select_languages', 'Select Languages')}</h3>
+                                        <button className="close-btn" onClick={() => setShowLanguageModal(false)}>×</button>
+                                    </div>
+                                    <div className="modal-body">
+                                        <div className="language-grid">
+                                            {LANGUAGES.map(lang => (
+                                                <label key={lang} className={`language-option ${formData.languages.includes(lang) ? 'selected' : ''}`}>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={formData.languages.includes(lang)}
+                                                        onChange={() => handleMultiSelectChange('languages', lang)}
+                                                        style={{ display: 'none' }}
+                                                    />
+                                                    {lang}
+                                                    {formData.languages.includes(lang) && <span className="check-icon">✓</span>}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="modal-footer">
+                                        <button className="save-btn" onClick={() => setShowLanguageModal(false)} style={{ width: '100%', marginTop: 0 }}>
+                                            {t('common.done', 'Done')}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
                         {/* Profession & Grade */}
                         <div className="form-row">
