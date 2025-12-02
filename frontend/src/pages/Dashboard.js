@@ -1,22 +1,392 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import './Dashboard.css';
+
+const TIMEZONES = [
+    "HST (UTC-10)", "AKST (UTC-9)", "PST (UTC-8)", "MST (UTC-7)", "CST (UTC-6)", "EST (UTC-5)",
+    "AST (UTC-4)", "GMT (UTC+0)", "UTC (UTC+0)", "BST (UTC+1)", "CET (UTC+1)", "CEST (UTC+2)",
+    "EET (UTC+2)", "EEST (UTC+3)", "MSK (UTC+3)", "IST (UTC+5.5)", "AWST (UTC+8)", "JST (UTC+9)",
+    "KST (UTC+9)", "ACST (UTC+9.5)", "AEST (UTC+10)", "NZST (UTC+12)"
+];
+
+const GRADES = [
+    "Prefer not to say", "Junior", "Middle", "Senior", "Lead / Head of",
+    "C-Level Executive", "Founder", "Entrepreneur"
+];
+
+const LANGUAGES = ["English", "Russian", "Spanish", "French", "German"];
+
+const COFFEE_GOALS = ["Casual Chat", "Professional Chat"];
+
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
 const Dashboard = () => {
     const { t } = useTranslation();
+    const [formData, setFormData] = useState({
+        name: '',
+        family: '',
+        country: '',
+        city: '',
+        timezone: 'UTC (UTC+0)',
+        bestTime: '',
+        languages: [],
+        profession: '',
+        grade: 'Prefer not to say',
+        professionalDesc: '',
+        personalDesc: '',
+        professionalInterests: '',
+        personalInterests: '',
+        coffeeGoals: []
+    });
+
+    const [isLoading, setIsLoading] = useState(false);
+    const [message, setMessage] = useState({ type: '', text: '' });
+
+    useEffect(() => {
+        const fetchProfile = async () => {
+            const storedUser = localStorage.getItem('user');
+            if (!storedUser) return;
+
+            const user = JSON.parse(storedUser);
+            if (!user.username) return;
+
+            try {
+                setIsLoading(true);
+                const response = await fetch(`${API_URL}/api/profile?username=${user.username}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    setFormData(prev => ({
+                        ...prev,
+                        ...data.profile
+                    }));
+                }
+            } catch (error) {
+                console.error('Failed to fetch profile:', error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchProfile();
+    }, []);
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleMultiSelectChange = (name, value) => {
+        setFormData(prev => {
+            const current = prev[name] || [];
+            if (current.includes(value)) {
+                return { ...prev, [name]: current.filter(item => item !== value) };
+            } else {
+                return { ...prev, [name]: [...current, value] };
+            }
+        });
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setMessage({ type: '', text: '' });
+
+        const storedUser = localStorage.getItem('user');
+        if (!storedUser) return;
+        const user = JSON.parse(storedUser);
+
+        try {
+            setIsLoading(true);
+            const response = await fetch(`${API_URL}/api/profile`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    username: user.username,
+                    profile: formData
+                }),
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                setMessage({ type: 'success', text: t('dashboard.profile.saved', 'Profile saved successfully!') });
+            } else {
+                setMessage({ type: 'error', text: data.message || 'Failed to save profile' });
+            }
+        } catch (error) {
+            console.error('Error saving profile:', error);
+            setMessage({ type: 'error', text: 'An error occurred while saving' });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleAvatarChange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const storedUser = localStorage.getItem('user');
+        if (!storedUser) return;
+        const user = JSON.parse(storedUser);
+
+        const formDataUpload = new FormData();
+        formDataUpload.append('avatar', file);
+        formDataUpload.append('username', user.username);
+
+        try {
+            setIsLoading(true);
+            const response = await fetch(`${API_URL}/api/upload-avatar`, {
+                method: 'POST',
+                body: formDataUpload
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                setFormData(prev => ({ ...prev, avatar: data.avatarUrl }));
+                setMessage({ type: 'success', text: t('dashboard.profile.avatar_updated', 'Avatar updated successfully!') });
+            } else {
+                setMessage({ type: 'error', text: data.message || 'Failed to upload avatar' });
+            }
+        } catch (error) {
+            console.error('Error uploading avatar:', error);
+            setMessage({ type: 'error', text: 'An error occurred while uploading' });
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     return (
-        <main className="main-content">
-            <div className="content-wrapper" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
-                <div className="glass-card" style={{ maxWidth: '800px', width: '100%', textAlign: 'center', padding: '3rem' }}>
-                    <h1 style={{ fontSize: '2.5rem', marginBottom: '1rem', background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                        {t('dashboard.welcome', 'Welcome to your Dashboard')}
-                    </h1>
-                    <p style={{ fontSize: '1.2rem', color: 'var(--gray-600)' }}>
-                        {t('dashboard.empty_state', 'Your coffee matches will appear here soon. Stay tuned! ☕️')}
-                    </p>
-                    <p style={{ fontSize: '1.1rem', color: 'var(--gray-500)', marginTop: '1.5rem', fontStyle: 'italic' }}>
-                        {t('dashboard.development_notice')}
-                    </p>
+        <main className="main-content" style={{ paddingTop: '8rem', alignItems: 'flex-start' }}>
+            <div className="dashboard-container">
+                {/* Left Side: Profile */}
+                <div className="profile-section glass-card">
+                    <h2 className="section-title">{t('dashboard.profile.title', 'Your Profile')}</h2>
+
+                    {message.text && (
+                        <div className={`alert alert-${message.type}`} style={{ marginBottom: '1rem' }}>
+                            {message.text}
+                        </div>
+                    )}
+
+                    <form onSubmit={handleSubmit} className="profile-form">
+                        {/* Avatar */}
+                        <div className="avatar-upload">
+                            <div className="avatar-preview">
+                                {formData.avatar ? (
+                                    <img src={formData.avatar} alt="Avatar" />
+                                ) : (
+                                    <span>👤</span>
+                                )}
+                            </div>
+                            <label className="form-control" style={{ width: 'auto', cursor: 'pointer', display: 'inline-block', textAlign: 'center' }}>
+                                {t('dashboard.profile.upload_avatar', 'Upload Photo')}
+                                <input
+                                    type="file"
+                                    accept="image/png, image/jpeg, image/jpg"
+                                    onChange={handleAvatarChange}
+                                    style={{ display: 'none' }}
+                                />
+                            </label>
+                        </div>
+
+                        {/* Name & Family */}
+                        <div className="form-row">
+                            <div className="form-group">
+                                <label>{t('dashboard.profile.name', 'Name')}</label>
+                                <input
+                                    type="text"
+                                    name="name"
+                                    className="form-control"
+                                    value={formData.name}
+                                    onChange={handleChange}
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>{t('dashboard.profile.family', 'Family Name')}</label>
+                                <input
+                                    type="text"
+                                    name="family"
+                                    className="form-control"
+                                    value={formData.family}
+                                    onChange={handleChange}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Location */}
+                        <div className="form-row">
+                            <div className="form-group">
+                                <label>{t('dashboard.profile.country', 'Country')}</label>
+                                <input
+                                    type="text"
+                                    name="country"
+                                    className="form-control"
+                                    value={formData.country}
+                                    onChange={handleChange}
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>{t('dashboard.profile.city', 'City')}</label>
+                                <input
+                                    type="text"
+                                    name="city"
+                                    className="form-control"
+                                    value={formData.city}
+                                    onChange={handleChange}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Timezone & Best Time */}
+                        <div className="form-row">
+                            <div className="form-group">
+                                <label>{t('dashboard.profile.timezone', 'Time Zone')}</label>
+                                <select
+                                    name="timezone"
+                                    className="form-control"
+                                    value={formData.timezone}
+                                    onChange={handleChange}
+                                >
+                                    {TIMEZONES.map(tz => (
+                                        <option key={tz} value={tz}>{tz}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="form-group">
+                                <label>{t('dashboard.profile.best_time', 'Best time for meetings')}</label>
+                                <input
+                                    type="text"
+                                    name="bestTime"
+                                    className="form-control"
+                                    placeholder="e.g. Weekdays 10-12 AM"
+                                    value={formData.bestTime}
+                                    onChange={handleChange}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Languages */}
+                        <div className="form-group">
+                            <label>{t('dashboard.profile.languages', 'Languages')}</label>
+                            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                                {LANGUAGES.map(lang => (
+                                    <label key={lang} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={formData.languages.includes(lang)}
+                                            onChange={() => handleMultiSelectChange('languages', lang)}
+                                        />
+                                        {lang}
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Profession & Grade */}
+                        <div className="form-row">
+                            <div className="form-group">
+                                <label>{t('dashboard.profile.profession', 'Profession')}</label>
+                                <input
+                                    type="text"
+                                    name="profession"
+                                    className="form-control"
+                                    value={formData.profession}
+                                    onChange={handleChange}
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>{t('dashboard.profile.grade', 'Grade')}</label>
+                                <select
+                                    name="grade"
+                                    className="form-control"
+                                    value={formData.grade}
+                                    onChange={handleChange}
+                                >
+                                    {GRADES.map(grade => (
+                                        <option key={grade} value={grade}>{grade}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+
+                        {/* Descriptions */}
+                        <div className="form-group">
+                            <label>{t('dashboard.profile.professional_desc', 'Professional Description')}</label>
+                            <textarea
+                                name="professionalDesc"
+                                className="form-control"
+                                value={formData.professionalDesc}
+                                onChange={handleChange}
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label>{t('dashboard.profile.personal_desc', 'Personal Description')}</label>
+                            <textarea
+                                name="personalDesc"
+                                className="form-control"
+                                value={formData.personalDesc}
+                                onChange={handleChange}
+                            />
+                        </div>
+
+                        {/* Interests */}
+                        <div className="form-group">
+                            <label>{t('dashboard.profile.professional_interests', 'Professional Interests')}</label>
+                            <input
+                                type="text"
+                                name="professionalInterests"
+                                className="form-control"
+                                placeholder="e.g. AI, Startups, Fintech"
+                                value={formData.professionalInterests}
+                                onChange={handleChange}
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label>{t('dashboard.profile.personal_interests', 'Personal Interests')}</label>
+                            <input
+                                type="text"
+                                name="personalInterests"
+                                className="form-control"
+                                placeholder="e.g. Hiking, Chess, Jazz"
+                                value={formData.personalInterests}
+                                onChange={handleChange}
+                            />
+                        </div>
+
+                        {/* Coffee Goals */}
+                        <div className="form-group">
+                            <label>{t('dashboard.profile.coffee_goals', 'Coffee Goals')}</label>
+                            <div style={{ display: 'flex', gap: '1rem' }}>
+                                {COFFEE_GOALS.map(goal => (
+                                    <label key={goal} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={formData.coffeeGoals.includes(goal)}
+                                            onChange={() => handleMultiSelectChange('coffeeGoals', goal)}
+                                        />
+                                        {goal}
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
+
+                        <button type="submit" className="save-btn">
+                            {t('dashboard.profile.save', 'Save Changes')}
+                        </button>
+                    </form>
+                </div>
+
+                {/* Right Side: Matching */}
+                <div className="matching-section">
+                    <div className="glass-card" style={{ height: '100%', padding: '2rem' }}>
+                        <h2 className="section-title">{t('dashboard.matching.title', 'Matching')}</h2>
+                        <div className="matching-placeholder">
+                            <p>{t('dashboard.matching.placeholder', 'Matching features coming soon...')}</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </main>

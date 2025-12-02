@@ -26,6 +26,43 @@ const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY }).base(
   process.env.AIRTABLE_BASE_ID
 );
 
+// Configure Multer for file uploads
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadDir = path.join(__dirname, 'uploads');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    // Use timestamp + original extension
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'avatar-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    const filetypes = /jpeg|jpg|png/;
+    const mimetype = filetypes.test(file.mimetype);
+    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+    if (mimetype && extname) {
+      return cb(null, true);
+    }
+    cb(new Error('Only .png, .jpg and .jpeg format allowed!'));
+  }
+});
+
+// Serve uploaded files statically
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 // In-memory OTP store: Map<username_lowercase, { code, expiresAt }>
 const otpStore = new Map();
 
@@ -303,8 +340,210 @@ app.post('/api/consent', async (req, res) => {
   }
 });
 
+// Step 4: Get User Profile
+app.get('/api/profile', async (req, res) => {
+  const { username } = req.query;
+
+  if (!username) {
+    return res.status(400).json({ success: false, message: 'Username is required' });
+  }
+
+  const cleanUsername = username.replace('@', '').trim().toLowerCase();
+
+  try {
+    const records = await base(process.env.AIRTABLE_MEMBERS_TABLE)
+      .select({
+        filterByFormula: `{Tg_Username} = '${cleanUsername}'`,
+        maxRecords: 1
+      })
+      .firstPage();
+
+    if (records.length > 0) {
+      const record = records[0];
+      const fields = record.fields;
+
+      // Map Airtable fields to frontend format
+      const profile = {
+        name: fields.Name || '',
+        family: fields.Family || '',
+        // Country and City handling to be improved with proper linking later
+        // For now we just return what we have if possible, or empty
+        timezone: fields.Time_Zone || 'UTC (UTC+0)',
+        profession: fields.Profession || '',
+        grade: fields.Grade || 'Prefer not to say',
+        professionalDesc: fields.Professional_Description || '',
+        personalDesc: fields.Personal_Description || '',
+        professionalInterests: fields.Professional_Interests ? fields.Professional_Interests.join(', ') : '', // Assuming multiselect or text? Schema says multipleSelects for Interests is empty? Wait, schema said "multipleSelects ()". If it's empty options, maybe it's just text? Or dynamic?
+        // Actually schema says: Professional_Interests | multipleSelects () | -
+        // If it's multipleSelects, we should send an array.
+        // Let's assume array for now.
+        personalInterests: fields.Personal_Interests ? fields.Personal_Interests.join(', ') : '',
+        coffeeGoals: fields.Coffee_Goals || [],
+        languages: fields.Languages || [],
+        bestTime: '' // Not in schema yet?
+      };
+
+      res.json({ success: true, profile });
+    } else {
+      res.status(404).json({ success: false, message: 'User not found' });
+    }
+  } catch (error) {
+    console.error('Get profile error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch profile' });
+  }
+});
+
+// Step 5: Update User Profile
+app.put('/api/profile', async (req, res) => {
+  const { username, profile } = req.body;
+
+  if (!username) {
+    return res.status(400).json({ success: false, message: 'Username is required' });
+  }
+
+  const cleanUsername = username.replace('@', '').trim().toLowerCase();
+
+  try {
+    const records = await base(process.env.AIRTABLE_MEMBERS_TABLE)
+      .select({
+        filterByFormula: `{Tg_Username} = '${cleanUsername}'`,
+        maxRecords: 1
+      })
+      .firstPage();
+
+    if (records.length > 0) {
+      const record = records[0];
+
+      // Prepare fields for Airtable
+      // Note: We are not updating Countries yet as it requires linking logic
+      const updateFields = {
+        Name: profile.name,
+        Family: profile.family,
+        Time_Zone: profile.timezone,
+        Profession: profile.profession,
+        Grade: profile.grade,
+        Professional_Description: profile.professionalDesc,
+        Personal_Description: profile.personalDesc,
+        Coffee_Goals: profile.coffeeGoals,
+        Languages: profile.languages
+        // Interests need to be arrays if they are multipleSelects
+        // If the user sends a string (comma separated), we might need to split it?
+        // The frontend currently sends a string for interests.
+        // But the schema says multipleSelects.
+        // If we send strings to Airtable multipleSelects, it might fail if options don't exist and "Typecast" is not enabled.
+        // We will enable typecast: true
+      };
+
+      // Handle Interests - split string into array
+      if (profile.professionalInterests) {
+        updateFields.Professional_Interests = profile.professionalInterests.split(',').map(s => s.trim()).filter(s => s);
+      }
+      if (profile.personalInterests) {
+        updateFields.Personal_Interests = profile.personalInterests.split(',').map(s => s.trim()).filter(s => s);
+      }
+
+      await base(process.env.AIRTABLE_MEMBERS_TABLE).update([
+        {
+          id: record.id,
+          fields: updateFields
+        }
+      ], { typecast: true }); // Enable typecast to allow creating new options for selects
+
+      res.json({ success: true, message: 'Profile updated successfully' });
+    } else {
+      res.status(404).json({ success: false, message: 'User not found' });
+    }
+  } catch (error) {
+    console.error('Update profile error:', error);
+    res.status(500).json({ success: false, message: 'Failed to update profile' });
+  }
+});
+
+// Step 6: Upload Avatar
+app.post('/api/upload-avatar', upload.single('avatar'), async (req, res) => {
+  const { username } = req.body;
+
+  if (!req.file) {
+    return res.status(400).json({ success: false, message: 'No file uploaded' });
+  }
+
+  if (!username) {
+    return res.status(400).json({ success: false, message: 'Username is required' });
+  }
+
+  const cleanUsername = username.replace('@', '').trim().toLowerCase();
+
+  // Construct the local URL
+  const protocol = req.protocol;
+  const host = req.get('host');
+  const fileUrl = `${protocol}://${host}/uploads/${req.file.filename}`;
+
+  console.log(`📤 Avatar uploaded for ${cleanUsername}: ${fileUrl}`);
+
+  try {
+    // In a real production environment with public URL, we would update Airtable here.
+    // Since we are on localhost, Airtable cannot fetch this URL.
+    // We will just return the URL to the frontend.
+    // Optionally, we could store the filename in a text field in Airtable if we wanted to persist the reference.
+
+    // For now, let's try to update Airtable if it's a public URL (e.g. production)
+    // or just acknowledge the upload.
+
+    // We will update the user's record with the new avatar URL if possible, 
+    // or just return it so the frontend can display it.
+
+    // Let's at least verify the user exists
+    const records = await base(process.env.AIRTABLE_MEMBERS_TABLE)
+      .select({
+        filterByFormula: `{Tg_Username} = '${cleanUsername}'`,
+        maxRecords: 1
+      })
+      .firstPage();
+
+    if (records.length > 0) {
+      // If we were in production, we would do this:
+      /*
+      await base(process.env.AIRTABLE_MEMBERS_TABLE).update([
+          {
+              id: records[0].id,
+              fields: {
+                  Avatar: [
+                      { url: fileUrl }
+                  ]
+              }
+          }
+      ]);
+      */
+
+      // Since we can't reliably do that on localhost, we'll just return success.
+      // The frontend should use the returned URL to display the image.
+      // And we might want to store this URL in a local "cache" or just rely on the frontend state for the session?
+      // Actually, if we don't save it to Airtable, it will be lost on refresh if we fetch from Airtable again.
+      // So we SHOULD save it to Airtable if possible.
+      // If we can't, maybe we can save the filename in a separate text field "Avatar_Local_Path" if we added one?
+      // But we can't change schema easily.
+
+      // Workaround: We will return the URL. The frontend will display it.
+      // On refresh, it will revert to whatever is in Airtable (likely empty or old).
+      // This is a known limitation of localhost development with Airtable Attachments.
+
+      res.json({
+        success: true,
+        message: 'Avatar uploaded successfully',
+        avatarUrl: fileUrl
+      });
+    } else {
+      res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+  } catch (error) {
+    console.error('Avatar upload error:', error);
+    res.status(500).json({ success: false, message: 'Failed to upload avatar' });
+  }
+});
+
 // Start server
 app.listen(PORT, () => {
   console.log(`🚀 Linked.Coffee API server running on port ${PORT}`);
-  console.log(`📊 Environment: ${process.env.NODE_ENV}`);
 });
+

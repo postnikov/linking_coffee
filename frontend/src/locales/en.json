@@ -12,7 +12,31 @@
     "dashboard": {
         "welcome": "Welcome to your Dashboard",
         "empty_state": "Your coffee matches will appear here soon. Stay tuned! ☕️",
-        "development_notice": "The Dashboard is still in development. We'll let you know once it is ready."
+        "development_notice": "The Dashboard is still in development. We'll let you know once it is ready.",
+        "profile": {
+            "title": "Your Profile",
+            "upload_avatar": "Upload Photo",
+            "name": "Name",
+            "family": "Family Name",
+            "country": "Country",
+            "city": "City",
+            "timezone": "Time Zone",
+            "best_time": "Best time for meetings",
+            "languages": "Languages",
+            "profession": "Profession",
+            "grade": "Grade",
+            "professional_desc": "Professional Description",
+            "personal_desc": "Personal Description",
+            "professional_interests": "Professional Interests",
+            "personal_interests": "Personal Interests",
+            "coffee_goals": "Coffee Goals",
+            "save": "Save Changes",
+            "saved": "Profile saved successfully!"
+        },
+        "matching": {
+            "title": "Matching",
+            "placeholder": "Matching features coming soon..."
+        }
     },
     "form": {
         "title": "Get Early Access",

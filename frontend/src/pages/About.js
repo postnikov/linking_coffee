@@ -11,7 +11,7 @@ const About = () => {
                 display: 'flex',
                 justifyContent: 'center',
                 alignItems: 'flex-start',
-                paddingTop: '2rem'
+                paddingTop: '6rem'
             }}>
                 <div style={{
                     display: 'flex',
