@@ -34,6 +34,12 @@ const DAY_COLORS = {
     'Sunday': '#fae8ff'
 };
 
+const getAvatarUrl = (avatarPath) => {
+    if (!avatarPath) return null;
+    if (avatarPath.startsWith('http') || avatarPath.startsWith('data:')) return avatarPath;
+    return `${API_URL}${avatarPath}`;
+};
+
 const Dashboard = () => {
     const { t } = useTranslation();
     const [formData, setFormData] = useState({
@@ -71,6 +77,11 @@ const Dashboard = () => {
     const [newCityName, setNewCityName] = useState('');
     const [savedSections, setSavedSections] = useState({});
     const [isEditMode, setIsEditMode] = useState(true);
+    const [imageError, setImageError] = useState(false);
+
+    useEffect(() => {
+        setImageError(false);
+    }, [formData.avatar]);
 
     useEffect(() => {
         // Fetch countries
@@ -366,8 +377,12 @@ const Dashboard = () => {
                                 <div className="avatar-upload" style={{ marginBottom: 0 }}>
                                     <label className="avatar-wrapper">
                                         <div className="avatar-preview">
-                                            {formData.avatar ? (
-                                                <img src={formData.avatar} alt="Avatar" />
+                                            {formData.avatar && !imageError ? (
+                                                <img
+                                                    src={getAvatarUrl(formData.avatar)}
+                                                    alt="Avatar"
+                                                    onError={() => setImageError(true)}
+                                                />
                                             ) : (
                                                 <span>👤</span>
                                             )}
@@ -977,8 +992,13 @@ const Dashboard = () => {
                         <div className="profile-view" style={{ padding: '1rem 0' }}>
                             <div style={{ display: 'flex', gap: '2rem', alignItems: 'center', marginBottom: '2rem' }}>
                                 <div className="avatar-preview" style={{ width: '120px', height: '120px', borderRadius: '50%', overflow: 'hidden' }}>
-                                    {formData.avatar ? (
-                                        <img src={`${API_URL}${formData.avatar}`} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    {formData.avatar && !imageError ? (
+                                        <img
+                                            src={getAvatarUrl(formData.avatar)}
+                                            alt="Profile"
+                                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                            onError={() => setImageError(true)}
+                                        />
                                     ) : (
                                         <div className="avatar-placeholder" style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#eee', fontSize: '3rem' }}>
                                             {formData.name?.[0]}
