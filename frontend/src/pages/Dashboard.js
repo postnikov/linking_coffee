@@ -271,49 +271,52 @@ const Dashboard = () => {
                     )}
 
                     <form onSubmit={handleSubmit} className="profile-form">
-                        {/* Avatar */}
-                        <div className="avatar-upload">
-                            <label className="avatar-wrapper">
-                                <div className="avatar-preview">
-                                    {formData.avatar ? (
-                                        <img src={formData.avatar} alt="Avatar" />
-                                    ) : (
-                                        <span>👤</span>
-                                    )}
-                                </div>
-                                <div className="avatar-overlay">
-                                    <span>{t('dashboard.profile.upload_avatar', 'Upload Photo')}</span>
-                                </div>
-                                <input
-                                    type="file"
-                                    accept="image/png, image/jpeg, image/jpg"
-                                    onChange={handleAvatarChange}
-                                    style={{ display: 'none' }}
-                                />
-                            </label>
-                        </div>
-
-                        {/* Name & Family */}
-                        <div className="form-row">
-                            <div className="form-group">
-                                <label>{t('dashboard.profile.name', 'Name')}</label>
-                                <input
-                                    type="text"
-                                    name="name"
-                                    className="form-control"
-                                    value={formData.name}
-                                    onChange={handleChange}
-                                />
+                        {/* Avatar and Name Row */}
+                        <div style={{ display: 'flex', gap: '2rem', alignItems: 'center', marginBottom: '1.5rem' }}>
+                            {/* Avatar */}
+                            <div className="avatar-upload" style={{ marginBottom: 0 }}>
+                                <label className="avatar-wrapper">
+                                    <div className="avatar-preview">
+                                        {formData.avatar ? (
+                                            <img src={formData.avatar} alt="Avatar" />
+                                        ) : (
+                                            <span>👤</span>
+                                        )}
+                                    </div>
+                                    <div className="avatar-overlay">
+                                        <span>{t('dashboard.profile.upload_avatar', 'Upload Photo')}</span>
+                                    </div>
+                                    <input
+                                        type="file"
+                                        accept="image/png, image/jpeg, image/jpg"
+                                        onChange={handleAvatarChange}
+                                        style={{ display: 'none' }}
+                                    />
+                                </label>
                             </div>
-                            <div className="form-group">
-                                <label>{t('dashboard.profile.family', 'Family Name')}</label>
-                                <input
-                                    type="text"
-                                    name="family"
-                                    className="form-control"
-                                    value={formData.family}
-                                    onChange={handleChange}
-                                />
+
+                            {/* Name & Family */}
+                            <div className="form-row" style={{ flex: 1, marginBottom: 0 }}>
+                                <div className="form-group">
+                                    <label>{t('dashboard.profile.name', 'Name')}</label>
+                                    <input
+                                        type="text"
+                                        name="name"
+                                        className="form-control"
+                                        value={formData.name}
+                                        onChange={handleChange}
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>{t('dashboard.profile.family', 'Family Name')}</label>
+                                    <input
+                                        type="text"
+                                        name="family"
+                                        className="form-control"
+                                        value={formData.family}
+                                        onChange={handleChange}
+                                    />
+                                </div>
                             </div>
                         </div>
 
