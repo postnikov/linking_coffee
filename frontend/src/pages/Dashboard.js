@@ -18,6 +18,10 @@ const LANGUAGES = ["English", "Russian", "Spanish", "French", "German"];
 
 const COFFEE_GOALS = ["Casual Chat", "Professional Chat"];
 
+const DAYS_OF_WEEK = [
+    "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
+];
+
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
 const Dashboard = () => {
@@ -28,7 +32,7 @@ const Dashboard = () => {
         country: '',
         city: '',
         timezone: 'UTC (UTC+0)',
-        bestTime: '',
+        bestMeetingDays: [],
         languages: [],
         profession: '',
         grade: 'Prefer not to say',
@@ -48,6 +52,7 @@ const Dashboard = () => {
     const [showSuccess, setShowSuccess] = useState(false);
     const [showLanguageModal, setShowLanguageModal] = useState(false);
     const [showTimezoneModal, setShowTimezoneModal] = useState(false);
+    const [showDaysModal, setShowDaysModal] = useState(false);
 
     useEffect(() => {
         if (message.type === 'success' && message.text) {
@@ -314,17 +319,66 @@ const Dashboard = () => {
                                 </div>
                             </div>
                             <div className="form-group">
-                                <label>{t('dashboard.profile.best_time', 'Best time for meetings')}</label>
-                                <input
-                                    type="text"
-                                    name="bestTime"
-                                    className="form-control"
-                                    placeholder="e.g. Weekdays 10-12 AM"
-                                    value={formData.bestTime}
-                                    onChange={handleChange}
-                                />
+                                <label>{t('dashboard.profile.best_days', 'Best Meeting Days')}</label>
+                                <div className="language-chips">
+                                    {formData.bestMeetingDays.map(day => (
+                                        <div key={day} className="chip">
+                                            {day}
+                                            <button
+                                                type="button"
+                                                className="chip-remove"
+                                                onClick={() => handleMultiSelectChange('bestMeetingDays', day)}
+                                            >
+                                                ×
+                                            </button>
+                                        </div>
+                                    ))}
+                                    <button
+                                        type="button"
+                                        className="add-language-btn"
+                                        onClick={() => setShowDaysModal(true)}
+                                    >
+                                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M6 1V11M1 6H11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
+                                        {t('dashboard.profile.add_day', 'Add')}
+                                    </button>
+                                </div>
                             </div>
                         </div>
+
+                        {/* Days Modal */}
+                        {showDaysModal && (
+                            <div className="modal-overlay" onClick={() => setShowDaysModal(false)}>
+                                <div className="modal-content" onClick={e => e.stopPropagation()}>
+                                    <div className="modal-header">
+                                        <h3>{t('dashboard.profile.select_days', 'Select Days')}</h3>
+                                        <button className="close-btn" onClick={() => setShowDaysModal(false)}>×</button>
+                                    </div>
+                                    <div className="modal-body">
+                                        <div className="language-grid" style={{ gridTemplateColumns: 'repeat(1, 1fr)', gridTemplateRows: 'auto', gridAutoFlow: 'row' }}>
+                                            {DAYS_OF_WEEK.map(day => (
+                                                <label key={day} className={`language-option ${formData.bestMeetingDays.includes(day) ? 'selected' : ''}`}>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={formData.bestMeetingDays.includes(day)}
+                                                        onChange={() => handleMultiSelectChange('bestMeetingDays', day)}
+                                                        style={{ display: 'none' }}
+                                                    />
+                                                    {day}
+                                                    {formData.bestMeetingDays.includes(day) && <span className="check-icon">✓</span>}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="modal-footer">
+                                        <button className="save-btn" onClick={() => setShowDaysModal(false)} style={{ width: '100%', marginTop: 0 }}>
+                                            {t('common.done', 'Done')}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
                         {/* Timezone Modal */}
                         {showTimezoneModal && (

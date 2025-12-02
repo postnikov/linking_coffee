@@ -409,7 +409,7 @@ app.get('/api/profile', async (req, res) => {
         personalInterests: fields.Personal_Interests ? fields.Personal_Interests.join(', ') : '',
         coffeeGoals: fields.Coffee_Goals || [],
         languages: fields.Languages || [],
-        bestTime: '', // Not in schema yet?
+        bestMeetingDays: fields.Best_Meetings_Days || [],
         avatar: fields.Avatar && fields.Avatar.length > 0 ? fields.Avatar[0].url : ''
       };
 
@@ -455,7 +455,8 @@ app.put('/api/profile', async (req, res) => {
         Professional_Description: profile.professionalDesc,
         Personal_Description: profile.personalDesc,
         Coffee_Goals: profile.coffeeGoals,
-        Languages: profile.languages
+        Languages: profile.languages,
+        Best_Meetings_Days: profile.bestMeetingDays
         // Interests need to be arrays if they are multipleSelects
         // If the user sends a string (comma separated), we might need to split it?
         // The frontend currently sends a string for interests.
