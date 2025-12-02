@@ -30,7 +30,7 @@ const Dashboard = () => {
         name: '',
         family: '',
         country: null,
-        city: '',
+        city: null,
         timezone: 'UTC (UTC+0)',
         bestMeetingDays: [],
         languages: [],
@@ -54,7 +54,9 @@ const Dashboard = () => {
     const [showTimezoneModal, setShowTimezoneModal] = useState(false);
     const [showDaysModal, setShowDaysModal] = useState(false);
     const [showCountryModal, setShowCountryModal] = useState(false);
+    const [showCityModal, setShowCityModal] = useState(false);
     const [countries, setCountries] = useState([]);
+    const [cities, setCities] = useState([]);
 
     useEffect(() => {
         // Fetch countries
@@ -71,6 +73,30 @@ const Dashboard = () => {
         };
         fetchCountries();
     }, []);
+
+    // Fetch cities when country changes or modal opens
+    useEffect(() => {
+        const fetchCities = async () => {
+            if (!formData.country || !formData.country.iso) {
+                setCities([]);
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/api/cities?countryIso=${formData.country.iso}`);
+                const data = await response.json();
+                if (data.success) {
+                    setCities(data.cities);
+                }
+            } catch (error) {
+                console.error('Failed to fetch cities:', error);
+            }
+        };
+
+        if (showCityModal || (formData.country && formData.country.iso)) {
+            fetchCities();
+        }
+    }, [formData.country, showCityModal]);
 
     useEffect(() => {
         if (message.type === 'success' && message.text) {
@@ -315,13 +341,30 @@ const Dashboard = () => {
                             </div>
                             <div className="form-group">
                                 <label>{t('dashboard.profile.city', 'City')}</label>
-                                <input
-                                    type="text"
-                                    name="city"
-                                    className="form-control"
-                                    value={formData.city}
-                                    onChange={handleChange}
-                                />
+                                <div className="language-chips">
+                                    {formData.city && (
+                                        <div className="chip">
+                                            {formData.city.name}
+                                        </div>
+                                    )}
+                                    <button
+                                        type="button"
+                                        className="add-language-btn"
+                                        onClick={() => {
+                                            if (!formData.country) {
+                                                alert(t('dashboard.profile.select_country_first', 'Please select a country first'));
+                                                return;
+                                            }
+                                            setShowCityModal(true);
+                                        }}
+                                    >
+                                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M1.5 8.5L1 11L3.5 10.5L9.75 4.25L7.75 2.25L1.5 8.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                            <path d="M9.75 4.25L7.75 2.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
+                                        {t('dashboard.profile.change_city', 'Change')}
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
@@ -342,7 +385,7 @@ const Dashboard = () => {
                                                         name="country-modal"
                                                         checked={formData.country?.id === country.id}
                                                         onChange={() => {
-                                                            setFormData(prev => ({ ...prev, country: country }));
+                                                            setFormData(prev => ({ ...prev, country: country, city: null })); // Reset city on country change
                                                             setShowCountryModal(false);
                                                         }}
                                                         style={{ display: 'none' }}
@@ -355,6 +398,49 @@ const Dashboard = () => {
                                     </div>
                                     <div className="modal-footer">
                                         <button className="save-btn" onClick={() => setShowCountryModal(false)} style={{ width: '100%', marginTop: 0 }}>
+                                            {t('common.cancel', 'Cancel')}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* City Modal */}
+                        {showCityModal && (
+                            <div className="modal-overlay" onClick={() => setShowCityModal(false)}>
+                                <div className="modal-content" onClick={e => e.stopPropagation()}>
+                                    <div className="modal-header">
+                                        <h3>{t('dashboard.profile.select_city', 'Select City')}</h3>
+                                        <button className="close-btn" onClick={() => setShowCityModal(false)}>×</button>
+                                    </div>
+                                    <div className="modal-body">
+                                        <div className="language-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)', gridTemplateRows: 'auto', gridAutoFlow: 'row' }}>
+                                            {cities.length > 0 ? (
+                                                cities.map(city => (
+                                                    <label key={city.id} className={`language-option ${formData.city?.id === city.id ? 'selected' : ''}`}>
+                                                        <input
+                                                            type="radio"
+                                                            name="city-modal"
+                                                            checked={formData.city?.id === city.id}
+                                                            onChange={() => {
+                                                                setFormData(prev => ({ ...prev, city: city }));
+                                                                setShowCityModal(false);
+                                                            }}
+                                                            style={{ display: 'none' }}
+                                                        />
+                                                        <span>{city.name}</span>
+                                                        {formData.city?.id === city.id && <span className="check-icon">✓</span>}
+                                                    </label>
+                                                ))
+                                            ) : (
+                                                <p style={{ gridColumn: '1 / -1', textAlign: 'center', color: '#888' }}>
+                                                    {t('dashboard.profile.no_cities', 'No cities found for this country.')}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="modal-footer">
+                                        <button className="save-btn" onClick={() => setShowCityModal(false)} style={{ width: '100%', marginTop: 0 }}>
                                             {t('common.cancel', 'Cancel')}
                                         </button>
                                     </div>

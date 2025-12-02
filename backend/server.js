@@ -386,7 +386,8 @@ app.get('/api/countries', async (req, res) => {
       return {
         id: record.id,
         name: record.fields.Name_en,
-        flag: flag
+        flag: flag,
+        iso: isoCode
       };
     });
 
@@ -394,6 +395,34 @@ app.get('/api/countries', async (req, res) => {
   } catch (error) {
     console.error('Get countries error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch countries' });
+  }
+});
+
+// Step 3.6: Get Cities
+app.get('/api/cities', async (req, res) => {
+  const { countryIso } = req.query;
+  try {
+    const filterFormula = countryIso
+      ? `AND({Approved} = 1, {country_iso} = '${countryIso}')`
+      : `{Approved} = 1`;
+
+    const records = await base(process.env.AIRTABLE_CITIES_TABLE || 'Cities')
+      .select({
+        filterByFormula: filterFormula,
+        sort: [{ field: "name_en", direction: "asc" }]
+      })
+      .all();
+
+    const cities = records.map(record => ({
+      id: record.id,
+      name: record.fields.name_en,
+      slug: record.fields.Slug
+    }));
+
+    res.json({ success: true, cities });
+  } catch (error) {
+    console.error('Get cities error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch cities' });
   }
 });
 
@@ -430,10 +459,25 @@ app.get('/api/profile', async (req, res) => {
           country = {
             id: countryRecord.id,
             name: countryRecord.fields.Name_en,
-            flag: flag
+            flag: flag,
+            iso: isoCode
           };
         } catch (err) {
           console.error('Error fetching linked country:', err);
+        }
+      }
+
+      // Fetch linked city details if exists
+      let city = null;
+      if (fields.City_Link && fields.City_Link.length > 0) {
+        try {
+          const cityRecord = await base(process.env.AIRTABLE_CITIES_TABLE || 'Cities').find(fields.City_Link[0]);
+          city = {
+            id: cityRecord.id,
+            name: cityRecord.fields.name_en
+          };
+        } catch (err) {
+          console.error('Error fetching linked city:', err);
         }
       }
 
@@ -443,7 +487,7 @@ app.get('/api/profile', async (req, res) => {
         family: fields.Family || '',
         // Country is now an object { id, name, flag }
         country: country,
-        city: '', // City field is not in schema yet
+        city: city,
         timezone: fields.Time_Zone || 'UTC (UTC+0)',
         profession: fields.Profession || '',
         grade: fields.Grade || 'Prefer not to say',
@@ -505,6 +549,11 @@ app.put('/api/profile', async (req, res) => {
       // Handle Country Linking
       if (profile.country && profile.country.id) {
         updateFields.Countries = [profile.country.id];
+      }
+
+      // Handle City Linking
+      if (profile.city && profile.city.id) {
+        updateFields.City_Link = [profile.city.id];
       }
 
       // Handle Interests - split string into array
