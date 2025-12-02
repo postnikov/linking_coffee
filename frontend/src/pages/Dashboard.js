@@ -47,6 +47,7 @@ const Dashboard = () => {
     const [isSaving, setIsSaving] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
     const [showLanguageModal, setShowLanguageModal] = useState(false);
+    const [showTimezoneModal, setShowTimezoneModal] = useState(false);
 
     useEffect(() => {
         if (message.type === 'success' && message.text) {
@@ -294,16 +295,23 @@ const Dashboard = () => {
                         <div className="form-row">
                             <div className="form-group">
                                 <label>{t('dashboard.profile.timezone', 'Time Zone')}</label>
-                                <select
-                                    name="timezone"
-                                    className="form-control"
-                                    value={formData.timezone}
-                                    onChange={handleChange}
-                                >
-                                    {TIMEZONES.map(tz => (
-                                        <option key={tz} value={tz}>{tz}</option>
-                                    ))}
-                                </select>
+                                <div className="language-chips">
+                                    {formData.timezone && (
+                                        <div className="chip">
+                                            {formData.timezone}
+                                        </div>
+                                    )}
+                                    <button
+                                        type="button"
+                                        className="add-language-btn"
+                                        onClick={() => setShowTimezoneModal(true)}
+                                    >
+                                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M1 6H11M6 1V11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
+                                        {t('dashboard.profile.change_timezone', 'Change')}
+                                    </button>
+                                </div>
                             </div>
                             <div className="form-group">
                                 <label>{t('dashboard.profile.best_time', 'Best time for meetings')}</label>
@@ -317,6 +325,43 @@ const Dashboard = () => {
                                 />
                             </div>
                         </div>
+
+                        {/* Timezone Modal */}
+                        {showTimezoneModal && (
+                            <div className="modal-overlay" onClick={() => setShowTimezoneModal(false)}>
+                                <div className="modal-content" onClick={e => e.stopPropagation()}>
+                                    <div className="modal-header">
+                                        <h3>{t('dashboard.profile.select_timezone', 'Select Time Zone')}</h3>
+                                        <button className="close-btn" onClick={() => setShowTimezoneModal(false)}>×</button>
+                                    </div>
+                                    <div className="modal-body">
+                                        <div className="language-grid">
+                                            {TIMEZONES.map(tz => (
+                                                <label key={tz} className={`language-option ${formData.timezone === tz ? 'selected' : ''}`}>
+                                                    <input
+                                                        type="radio"
+                                                        name="timezone-modal"
+                                                        checked={formData.timezone === tz}
+                                                        onChange={() => {
+                                                            setFormData(prev => ({ ...prev, timezone: tz }));
+                                                            setShowTimezoneModal(false);
+                                                        }}
+                                                        style={{ display: 'none' }}
+                                                    />
+                                                    {tz}
+                                                    {formData.timezone === tz && <span className="check-icon">✓</span>}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="modal-footer">
+                                        <button className="save-btn" onClick={() => setShowTimezoneModal(false)} style={{ width: '100%', marginTop: 0 }}>
+                                            {t('common.cancel', 'Cancel')}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
                         {/* Languages */}
                         <div className="form-group">
