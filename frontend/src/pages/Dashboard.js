@@ -48,8 +48,8 @@ const Dashboard = () => {
         grade: 'Prefer not to say',
         professionalDesc: '',
         personalDesc: '',
-        professionalInterests: '',
-        personalInterests: '',
+        professionalInterests: [],
+        personalInterests: [],
         coffeeGoals: []
     });
 
@@ -137,7 +137,9 @@ const Dashboard = () => {
                 if (data.success) {
                     const profileData = {
                         ...formData, // Keep defaults for missing fields
-                        ...data.profile
+                        ...data.profile,
+                        professionalInterests: Array.isArray(data.profile.professionalInterests) ? data.profile.professionalInterests : [],
+                        personalInterests: Array.isArray(data.profile.personalInterests) ? data.profile.personalInterests : []
                     };
                     setFormData(profileData);
                     setInitialFormData(profileData);
