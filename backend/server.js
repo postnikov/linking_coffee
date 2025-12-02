@@ -380,7 +380,8 @@ app.get('/api/profile', async (req, res) => {
         personalInterests: fields.Personal_Interests ? fields.Personal_Interests.join(', ') : '',
         coffeeGoals: fields.Coffee_Goals || [],
         languages: fields.Languages || [],
-        bestTime: '' // Not in schema yet?
+        bestTime: '', // Not in schema yet?
+        avatar: fields.Avatar && fields.Avatar.length > 0 ? fields.Avatar[0].url : ''
       };
 
       res.json({ success: true, profile });
