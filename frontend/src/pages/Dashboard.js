@@ -24,6 +24,16 @@ const DAYS_OF_WEEK = [
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
+const DAY_COLORS = {
+    'Monday': '#fee2e2',
+    'Tuesday': '#ffedd5',
+    'Wednesday': '#fef9c3',
+    'Thursday': '#dcfce7',
+    'Friday': '#dbeafe',
+    'Saturday': '#f3e8ff',
+    'Sunday': '#fae8ff'
+};
+
 const Dashboard = () => {
     const { t } = useTranslation();
     const [formData, setFormData] = useState({
@@ -727,7 +737,7 @@ const Dashboard = () => {
                             <label>{t('dashboard.profile.best_days', 'Best Meeting Days')}</label>
                             <div className="language-chips">
                                 {formData.bestMeetingDays.map(day => (
-                                    <div key={day} className="chip">
+                                    <div key={day} className="chip" style={{ backgroundColor: DAY_COLORS[day] || '#f3f4f6' }}>
                                         {t(`days.${day}`, day)}
                                         <button
                                             type="button"
