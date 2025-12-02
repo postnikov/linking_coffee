@@ -57,6 +57,7 @@ const Dashboard = () => {
     const [showCityModal, setShowCityModal] = useState(false);
     const [countries, setCountries] = useState([]);
     const [cities, setCities] = useState([]);
+    const [countrySearch, setCountrySearch] = useState('');
 
     useEffect(() => {
         // Fetch countries
@@ -329,7 +330,10 @@ const Dashboard = () => {
                                     <button
                                         type="button"
                                         className="add-language-btn"
-                                        onClick={() => setShowCountryModal(true)}
+                                        onClick={() => {
+                                            setShowCountryModal(true);
+                                            setCountrySearch('');
+                                        }}
                                     >
                                         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
                                             <path d="M1.5 8.5L1 11L3.5 10.5L9.75 4.25L7.75 2.25L1.5 8.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -377,23 +381,35 @@ const Dashboard = () => {
                                         <button className="close-btn" onClick={() => setShowCountryModal(false)}>×</button>
                                     </div>
                                     <div className="modal-body">
+                                        <input
+                                            type="text"
+                                            placeholder={t('dashboard.profile.search_country', 'Search country...')}
+                                            className="form-control"
+                                            style={{ marginBottom: '1rem' }}
+                                            value={countrySearch}
+                                            onChange={(e) => setCountrySearch(e.target.value)}
+                                            autoFocus
+                                        />
                                         <div className="language-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)', gridTemplateRows: 'auto', gridAutoFlow: 'row' }}>
-                                            {countries.map(country => (
-                                                <label key={country.id} className={`language-option ${formData.country?.id === country.id ? 'selected' : ''}`}>
-                                                    <input
-                                                        type="radio"
-                                                        name="country-modal"
-                                                        checked={formData.country?.id === country.id}
-                                                        onChange={() => {
-                                                            setFormData(prev => ({ ...prev, country: country, city: null })); // Reset city on country change
-                                                            setShowCountryModal(false);
-                                                        }}
-                                                        style={{ display: 'none' }}
-                                                    />
-                                                    <span>{country.flag} {country.name}</span>
-                                                    {formData.country?.id === country.id && <span className="check-icon">✓</span>}
-                                                </label>
-                                            ))}
+                                            {countries
+                                                .filter(c => c.name.toLowerCase().includes(countrySearch.toLowerCase()))
+                                                .map(country => (
+                                                    <label key={country.id} className={`language-option ${formData.country?.id === country.id ? 'selected' : ''}`}>
+                                                        <input
+                                                            type="radio"
+                                                            name="country-modal"
+                                                            checked={formData.country?.id === country.id}
+                                                            onChange={() => {
+                                                                setFormData(prev => ({ ...prev, country: country, city: null })); // Reset city on country change
+                                                                setShowCountryModal(false);
+                                                                setCountrySearch('');
+                                                            }}
+                                                            style={{ display: 'none' }}
+                                                        />
+                                                        <span>{country.flag} {country.name}</span>
+                                                        {formData.country?.id === country.id && <span className="check-icon">✓</span>}
+                                                    </label>
+                                                ))}
                                         </div>
                                     </div>
                                     <div className="modal-footer">
