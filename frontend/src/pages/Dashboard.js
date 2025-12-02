@@ -665,7 +665,7 @@ const Dashboard = () => {
                                                         onChange={() => handleMultiSelectChange('bestMeetingDays', day)}
                                                         style={{ display: 'none' }}
                                                     />
-                                                    {day}
+                                                    {t(`days.${day}`, day)}
                                                     {formData.bestMeetingDays.includes(day) && <span className="check-icon">✓</span>}
                                                 </label>
                                             ))}
@@ -728,7 +728,7 @@ const Dashboard = () => {
                             <div className="language-chips">
                                 {formData.bestMeetingDays.map(day => (
                                     <div key={day} className="chip">
-                                        {day}
+                                        {t(`days.${day}`, day)}
                                         <button
                                             type="button"
                                             className="chip-remove"
