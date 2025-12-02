@@ -266,7 +266,7 @@ textarea.form-control {
     display: flex;
     align-items: flex-start;
     justify-content: center;
-    padding-top: 4vh;
+    padding-top: 6vh;
     z-index: 1000;
     backdrop-filter: blur(4px);
 }
