@@ -443,7 +443,7 @@ app.get('/api/profile', async (req, res) => {
         family: fields.Family || '',
         // Country is now an object { id, name, flag }
         country: country,
-        city: fields.City_String || '', // Use City_String for now as Cities table linking is complex
+        city: '', // City field is not in schema yet
         timezone: fields.Time_Zone || 'UTC (UTC+0)',
         profession: fields.Profession || '',
         grade: fields.Grade || 'Prefer not to say',
@@ -499,8 +499,7 @@ app.put('/api/profile', async (req, res) => {
         Personal_Description: profile.personalDesc,
         Coffee_Goals: profile.coffeeGoals,
         Languages: profile.languages,
-        Best_Meetings_Days: profile.bestMeetingDays,
-        City_String: profile.city
+        Best_Meetings_Days: profile.bestMeetingDays
       };
 
       // Handle Country Linking
