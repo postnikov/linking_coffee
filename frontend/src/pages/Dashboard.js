@@ -385,7 +385,7 @@ const Dashboard = () => {
                                             type="text"
                                             placeholder={t('dashboard.profile.search_country', 'Search country...')}
                                             className="form-control"
-                                            style={{ marginBottom: '1rem' }}
+                                            style={{ marginBottom: '1rem', width: '100%' }}
                                             value={countrySearch}
                                             onChange={(e) => setCountrySearch(e.target.value)}
                                             autoFocus
