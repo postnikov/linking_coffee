@@ -42,6 +42,11 @@ const Dashboard = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [message, setMessage] = useState({ type: '', text: '' });
 
+    const [initialFormData, setInitialFormData] = useState(null);
+    const [hasChanges, setHasChanges] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [showSuccess, setShowSuccess] = useState(false);
+
     useEffect(() => {
         if (message.type === 'success' && message.text) {
             const timer = setTimeout(() => {
@@ -65,10 +70,12 @@ const Dashboard = () => {
                 const data = await response.json();
 
                 if (data.success) {
-                    setFormData(prev => ({
-                        ...prev,
+                    const profileData = {
+                        ...formData, // Keep defaults for missing fields
                         ...data.profile
-                    }));
+                    };
+                    setFormData(profileData);
+                    setInitialFormData(profileData);
                 }
             } catch (error) {
                 console.error('Failed to fetch profile:', error);
@@ -79,6 +86,14 @@ const Dashboard = () => {
 
         fetchProfile();
     }, []);
+
+    // Check for changes whenever formData updates
+    useEffect(() => {
+        if (!initialFormData) return;
+
+        const isChanged = JSON.stringify(formData) !== JSON.stringify(initialFormData);
+        setHasChanges(isChanged);
+    }, [formData, initialFormData]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -105,7 +120,7 @@ const Dashboard = () => {
         const user = JSON.parse(storedUser);
 
         try {
-            setIsLoading(true);
+            setIsSaving(true);
             const response = await fetch(`${API_URL}/api/profile`, {
                 method: 'PUT',
                 headers: {
@@ -120,7 +135,14 @@ const Dashboard = () => {
             const data = await response.json();
 
             if (data.success) {
-                setMessage({ type: 'success', text: t('dashboard.profile.saved', 'Profile saved successfully!') });
+                setInitialFormData(formData); // Update initial state to new saved state
+                setHasChanges(false);
+                setShowSuccess(true);
+
+                // Hide success message after 2 seconds
+                setTimeout(() => {
+                    setShowSuccess(false);
+                }, 2000);
             } else {
                 setMessage({ type: 'error', text: data.message || 'Failed to save profile' });
             }
@@ -128,7 +150,7 @@ const Dashboard = () => {
             console.error('Error saving profile:', error);
             setMessage({ type: 'error', text: 'An error occurred while saving' });
         } finally {
-            setIsLoading(false);
+            setIsSaving(false);
         }
     };
 
@@ -145,6 +167,9 @@ const Dashboard = () => {
         formDataUpload.append('username', user.username);
 
         try {
+            // Don't set global loading, just maybe local? 
+            // Actually existing logic used global isLoading, let's keep it simple or use a specific one.
+            // For now, let's keep using isLoading for avatar as it's a separate action.
             setIsLoading(true);
             const response = await fetch(`${API_URL}/api/upload-avatar`, {
                 method: 'POST',
@@ -155,6 +180,9 @@ const Dashboard = () => {
 
             if (data.success) {
                 setFormData(prev => ({ ...prev, avatar: data.avatarUrl }));
+                // Also update initialFormData so "Save Changes" doesn't appear just for avatar
+                setInitialFormData(prev => ({ ...prev, avatar: data.avatarUrl }));
+
                 setMessage({ type: 'success', text: t('dashboard.profile.avatar_updated', 'Avatar updated successfully!') });
             } else {
                 setMessage({ type: 'error', text: data.message || 'Failed to upload avatar' });
@@ -174,7 +202,17 @@ const Dashboard = () => {
                 <div className="profile-section glass-card">
                     <h2 className="section-title">{t('dashboard.profile.title', 'Your Profile')}</h2>
 
-                    {message.text && (
+                    {/* Only show error messages here now, success is handled by button replacement */}
+                    {message.text && message.type === 'error' && (
+                        <div className={`alert alert-${message.type}`} style={{ marginBottom: '1rem' }}>
+                            {message.text}
+                        </div>
+                    )}
+                    {/* Keep avatar success message for now as it's separate? Or maybe remove it too? 
+                        User asked about "Save changes" button specifically. 
+                        Let's keep general messages for Avatar for now.
+                    */}
+                    {message.text && message.type === 'success' && !showSuccess && (
                         <div className={`alert alert-${message.type}`} style={{ marginBottom: '1rem' }}>
                             {message.text}
                         </div>
@@ -384,9 +422,31 @@ const Dashboard = () => {
                             </div>
                         </div>
 
-                        <button type="submit" className="save-btn">
-                            {t('dashboard.profile.save', 'Save Changes')}
-                        </button>
+                        <div style={{ minHeight: '3rem', display: 'flex', alignItems: 'center' }}>
+                            {showSuccess ? (
+                                <div className="success-message" style={{ color: 'var(--success)', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <span>✅</span> {t('dashboard.profile.saved_success', 'All changes are saved')}
+                                </div>
+                            ) : (
+                                (hasChanges || isSaving) && (
+                                    <button
+                                        type="submit"
+                                        className="save-btn"
+                                        disabled={isSaving}
+                                        style={{ marginTop: 0 }}
+                                    >
+                                        {isSaving ? (
+                                            <>
+                                                <span className="spinner-small"></span>
+                                                {t('dashboard.profile.saving', 'Saving...')}
+                                            </>
+                                        ) : (
+                                            t('dashboard.profile.save', 'Save Changes')
+                                        )}
+                                    </button>
+                                )
+                            )}
+                        </div>
                     </form>
                 </div>
 
