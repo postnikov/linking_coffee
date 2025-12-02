@@ -1083,7 +1083,7 @@ const Dashboard = () => {
 
                                     {formData.bestMeetingDays?.length > 0 && (
                                         <div>
-                                            <h4 style={{ fontSize: '0.9rem', color: '#888', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>{t('dashboard.profile.best_time')}</h4>
+                                            <h4 style={{ fontSize: '0.9rem', color: '#888', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>{t('dashboard.profile.best_days')}</h4>
                                             <div className="language-chips" style={{ flexWrap: 'wrap' }}>
                                                 {formData.bestMeetingDays.map(day => (
                                                     <span key={day} className="chip" style={{ backgroundColor: DAY_COLORS[day] || '#f3f4f6' }}>

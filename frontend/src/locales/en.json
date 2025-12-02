@@ -22,6 +22,7 @@
             "city": "City",
             "timezone": "Time Zone",
             "best_time": "Best time for meetings",
+            "best_days": "Best Meeting Days",
             "languages": "Languages",
             "profession": "Profession",
             "grade": "Grade",
