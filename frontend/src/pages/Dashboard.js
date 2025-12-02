@@ -528,7 +528,7 @@ const Dashboard = () => {
                                                     type="button"
                                                     className="save-btn"
                                                     onClick={handleAddCity}
-                                                    style={{ marginTop: 0, padding: '0.5rem 1rem', whiteSpace: 'nowrap' }}
+                                                    style={{ marginTop: 0, padding: '0 1.5rem', whiteSpace: 'nowrap', alignSelf: 'stretch', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                                     disabled={!newCityName.trim()}
                                                 >
                                                     {t('common.add', 'Add')}
