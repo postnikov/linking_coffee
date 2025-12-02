@@ -70,6 +70,7 @@ const Dashboard = () => {
     const [countrySearch, setCountrySearch] = useState('');
     const [newCityName, setNewCityName] = useState('');
     const [savedSections, setSavedSections] = useState({});
+    const [isEditMode, setIsEditMode] = useState(true);
 
     useEffect(() => {
         // Fetch countries
@@ -338,639 +339,742 @@ const Dashboard = () => {
             <div className="dashboard-container">
                 {/* Left Side: Profile */}
                 <div className="profile-section glass-card">
-                    <h2 className="section-title">{t('dashboard.profile.title', 'Your Profile')}</h2>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                        <h2 className="section-title" style={{ marginBottom: 0 }}>{t('dashboard.profile.title', 'Your Profile')}</h2>
+                        <button
+                            className="add-language-btn"
+                            onClick={() => setIsEditMode(!isEditMode)}
+                            style={{ padding: '0.5rem 1rem' }}
+                        >
+                            {isEditMode ? 'View Mode' : 'Edit Mode'}
+                        </button>
+                    </div>
 
-                    {/* Only show error messages here now, success is handled by button replacement */}
                     {message.text && message.type === 'error' && (
                         <div className={`alert alert-${message.type}`} style={{ marginBottom: '1rem' }}>
                             {message.text}
                         </div>
                     )}
-                    {/* Keep avatar success message for now as it's separate? Or maybe remove it too? 
-                        User asked about "Save changes" button specifically. 
-                        Let's keep general messages for Avatar for now.
-                    */}
-                    {message.text && message.type === 'success' && !showSuccess && (
-                        <div className={`alert alert-${message.type}`} style={{ marginBottom: '1rem' }}>
-                            {message.text}
-                        </div>
-                    )}
 
-                    <form onSubmit={handleSubmit} className="profile-form">
-                        {/* Avatar and Name Row */}
-                        <div style={{ display: 'flex', gap: '2rem', alignItems: 'center', marginBottom: '1.5rem' }}>
-                            {/* Avatar */}
-                            <div className="avatar-upload" style={{ marginBottom: 0 }}>
-                                <label className="avatar-wrapper">
-                                    <div className="avatar-preview">
-                                        {formData.avatar ? (
-                                            <img src={formData.avatar} alt="Avatar" />
-                                        ) : (
-                                            <span>👤</span>
-                                        )}
-                                    </div>
-                                    <div className="avatar-overlay">
-                                        <span>{t('dashboard.profile.upload_avatar', 'Upload Photo')}</span>
-                                    </div>
-                                    <input
-                                        type="file"
-                                        accept="image/png, image/jpeg, image/jpg"
-                                        onChange={handleAvatarChange}
-                                        style={{ display: 'none' }}
-                                    />
-                                </label>
-                            </div>
-
-                            {/* Name & Family */}
-                            <div className="form-row" style={{ flex: 1, marginBottom: 0 }}>
-                                <div className="form-group">
-                                    <label>{t('dashboard.profile.name', 'Name')}</label>
-                                    <input
-                                        type="text"
-                                        name="name"
-                                        className="form-control"
-                                        value={formData.name}
-                                        onChange={handleChange}
-                                    />
-                                </div>
-                                <div className="form-group">
-                                    <label>{t('dashboard.profile.family', 'Family Name')}</label>
-                                    <input
-                                        type="text"
-                                        name="family"
-                                        className="form-control"
-                                        value={formData.family}
-                                        onChange={handleChange}
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Location */}
-                        <div className="form-row">
-                            <div className="form-group">
-                                <label>{t('dashboard.profile.country', 'Country')}</label>
-                                <div className="language-chips">
-                                    {formData.country && (
-                                        <div className="chip">
-                                            {formData.country.flag} {formData.country.name}
+                    {isEditMode ? (
+                        <form onSubmit={handleSubmit} className="profile-form">
+                            {/* Avatar and Name Row */}
+                            <div style={{ display: 'flex', gap: '2rem', alignItems: 'center', marginBottom: '1.5rem' }}>
+                                {/* Avatar */}
+                                <div className="avatar-upload" style={{ marginBottom: 0 }}>
+                                    <label className="avatar-wrapper">
+                                        <div className="avatar-preview">
+                                            {formData.avatar ? (
+                                                <img src={formData.avatar} alt="Avatar" />
+                                            ) : (
+                                                <span>👤</span>
+                                            )}
                                         </div>
-                                    )}
-                                    <button
-                                        type="button"
-                                        className={`add-language-btn ${savedSections.country ? 'saved' : ''}`}
-                                        onClick={() => {
-                                            setShowCountryModal(true);
-                                            setCountrySearch('');
-                                        }}
-                                        style={savedSections.country ? { backgroundColor: '#dcfce7', color: '#166534', borderColor: '#bbf7d0' } : {}}
-                                    >
-                                        {savedSections.country ? (
-                                            <>
-                                                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                    <path d="M10 3L4.5 8.5L2 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                                </svg>
-                                                {t('common.saved', 'Saved')}
-                                            </>
-                                        ) : (
-                                            <>
-                                                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                    <path d="M1.5 8.5L1 11L3.5 10.5L9.75 4.25L7.75 2.25L1.5 8.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                                    <path d="M9.75 4.25L7.75 2.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                                </svg>
-                                                {t('dashboard.profile.change_country', 'Change')}
-                                            </>
-                                        )}
-                                    </button>
-                                </div>
-                            </div>
-                            <div className="form-group">
-                                <label>{t('dashboard.profile.city', 'City')}</label>
-                                <div className="language-chips">
-                                    {formData.city && (
-                                        <div className="chip">
-                                            {formData.city.name}
+                                        <div className="avatar-overlay">
+                                            <span>{t('dashboard.profile.upload_avatar', 'Upload Photo')}</span>
                                         </div>
-                                    )}
-                                    <button
-                                        type="button"
-                                        className={`add-language-btn ${savedSections.city ? 'saved' : ''}`}
-                                        onClick={() => {
-                                            if (!formData.country) {
-                                                alert(t('dashboard.profile.select_country_first', 'Please select a country first'));
-                                                return;
-                                            }
-                                            setShowCityModal(true);
-                                        }}
-                                        style={savedSections.city ? { backgroundColor: '#dcfce7', color: '#166534', borderColor: '#bbf7d0' } : {}}
-                                    >
-                                        {savedSections.city ? (
-                                            <>
-                                                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                    <path d="M10 3L4.5 8.5L2 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                                </svg>
-                                                {t('common.saved', 'Saved')}
-                                            </>
-                                        ) : (
-                                            <>
-                                                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                    <path d="M1.5 8.5L1 11L3.5 10.5L9.75 4.25L7.75 2.25L1.5 8.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                                    <path d="M9.75 4.25L7.75 2.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                                </svg>
-                                                {t('dashboard.profile.change_city', 'Change')}
-                                            </>
-                                        )}
-                                    </button>
+                                        <input
+                                            type="file"
+                                            accept="image/png, image/jpeg, image/jpg"
+                                            onChange={handleAvatarChange}
+                                            style={{ display: 'none' }}
+                                        />
+                                    </label>
                                 </div>
-                            </div>
-                        </div>
 
-                        {/* Country Modal */}
-                        {showCountryModal && (
-                            <div className="modal-overlay" onClick={() => setShowCountryModal(false)}>
-                                <div className="modal-content" onClick={e => e.stopPropagation()}>
-                                    <div className="modal-header">
-                                        <h3>{t('dashboard.profile.select_country', 'Select Country')}</h3>
-                                        <button className="close-btn" onClick={() => setShowCountryModal(false)}>×</button>
-                                    </div>
-                                    <div className="modal-body">
+                                {/* Name & Family */}
+                                <div className="form-row" style={{ flex: 1, marginBottom: 0 }}>
+                                    <div className="form-group">
+                                        <label>{t('dashboard.profile.name', 'Name')}</label>
                                         <input
                                             type="text"
-                                            placeholder={t('dashboard.profile.search_country', 'Search country...')}
+                                            name="name"
                                             className="form-control"
-                                            style={{ marginBottom: '1rem', width: '100%' }}
-                                            value={countrySearch}
-                                            onChange={(e) => setCountrySearch(e.target.value)}
-                                            autoFocus
+                                            value={formData.name}
+                                            onChange={handleChange}
                                         />
-                                        <div className="language-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)', gridTemplateRows: 'auto', gridAutoFlow: 'row' }}>
-                                            {countries
-                                                .filter(c => c.name.toLowerCase().includes(countrySearch.toLowerCase()))
-                                                .map(country => (
-                                                    <label key={country.id} className={`language-option ${formData.country?.id === country.id ? 'selected' : ''}`}>
+                                    </div>
+                                    <div className="form-group">
+                                        <label>{t('dashboard.profile.family', 'Family Name')}</label>
+                                        <input
+                                            type="text"
+                                            name="family"
+                                            className="form-control"
+                                            value={formData.family}
+                                            onChange={handleChange}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Location */}
+                            <div className="form-row">
+                                <div className="form-group">
+                                    <label>{t('dashboard.profile.country', 'Country')}</label>
+                                    <div className="language-chips">
+                                        {formData.country && (
+                                            <div className="chip">
+                                                {formData.country.flag} {formData.country.name}
+                                            </div>
+                                        )}
+                                        <button
+                                            type="button"
+                                            className={`add-language-btn ${savedSections.country ? 'saved' : ''}`}
+                                            onClick={() => {
+                                                setShowCountryModal(true);
+                                                setCountrySearch('');
+                                            }}
+                                            style={savedSections.country ? { backgroundColor: '#dcfce7', color: '#166534', borderColor: '#bbf7d0' } : {}}
+                                        >
+                                            {savedSections.country ? (
+                                                <>
+                                                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                        <path d="M10 3L4.5 8.5L2 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                    </svg>
+                                                    {t('common.saved', 'Saved')}
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                        <path d="M1.5 8.5L1 11L3.5 10.5L9.75 4.25L7.75 2.25L1.5 8.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                        <path d="M9.75 4.25L7.75 2.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                    </svg>
+                                                    {t('dashboard.profile.change_country', 'Change')}
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
+                                </div>
+                                <div className="form-group">
+                                    <label>{t('dashboard.profile.city', 'City')}</label>
+                                    <div className="language-chips">
+                                        {formData.city && (
+                                            <div className="chip">
+                                                {formData.city.name}
+                                            </div>
+                                        )}
+                                        <button
+                                            type="button"
+                                            className={`add-language-btn ${savedSections.city ? 'saved' : ''}`}
+                                            onClick={() => {
+                                                if (!formData.country) {
+                                                    alert(t('dashboard.profile.select_country_first', 'Please select a country first'));
+                                                    return;
+                                                }
+                                                setShowCityModal(true);
+                                            }}
+                                            style={savedSections.city ? { backgroundColor: '#dcfce7', color: '#166534', borderColor: '#bbf7d0' } : {}}
+                                        >
+                                            {savedSections.city ? (
+                                                <>
+                                                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                        <path d="M10 3L4.5 8.5L2 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                    </svg>
+                                                    {t('common.saved', 'Saved')}
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                        <path d="M1.5 8.5L1 11L3.5 10.5L9.75 4.25L7.75 2.25L1.5 8.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                        <path d="M9.75 4.25L7.75 2.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                    </svg>
+                                                    {t('dashboard.profile.change_city', 'Change')}
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Country Modal */}
+                            {showCountryModal && (
+                                <div className="modal-overlay" onClick={() => setShowCountryModal(false)}>
+                                    <div className="modal-content" onClick={e => e.stopPropagation()}>
+                                        <div className="modal-header">
+                                            <h3>{t('dashboard.profile.select_country', 'Select Country')}</h3>
+                                            <button className="close-btn" onClick={() => setShowCountryModal(false)}>×</button>
+                                        </div>
+                                        <div className="modal-body">
+                                            <input
+                                                type="text"
+                                                placeholder={t('dashboard.profile.search_country', 'Search country...')}
+                                                className="form-control"
+                                                style={{ marginBottom: '1rem', width: '100%' }}
+                                                value={countrySearch}
+                                                onChange={(e) => setCountrySearch(e.target.value)}
+                                                autoFocus
+                                            />
+                                            <div className="language-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)', gridTemplateRows: 'auto', gridAutoFlow: 'row' }}>
+                                                {countries
+                                                    .filter(c => c.name.toLowerCase().includes(countrySearch.toLowerCase()))
+                                                    .map(country => (
+                                                        <label key={country.id} className={`language-option ${formData.country?.id === country.id ? 'selected' : ''}`}>
+                                                            <input
+                                                                type="radio"
+                                                                name="country-modal"
+                                                                checked={formData.country?.id === country.id}
+                                                                onChange={() => {
+                                                                    const newData = { ...formData, country: country, city: null };
+                                                                    setFormData(newData);
+                                                                    setShowCountryModal(false);
+                                                                    setCountrySearch('');
+                                                                    autoSaveProfile(newData, 'country');
+                                                                }}
+                                                                style={{ display: 'none' }}
+                                                            />
+                                                            <span>{country.flag} {country.name}</span>
+                                                            {formData.country?.id === country.id && <span className="check-icon">✓</span>}
+                                                        </label>
+                                                    ))}
+                                            </div>
+                                        </div>
+                                        <div className="modal-footer">
+                                            <button className="save-btn" onClick={() => setShowCountryModal(false)} style={{ width: '100%', marginTop: 0 }}>
+                                                {t('common.cancel', 'Cancel')}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* City Modal */}
+                            {showCityModal && (
+                                <div className="modal-overlay" onClick={() => setShowCityModal(false)}>
+                                    <div className="modal-content" onClick={e => e.stopPropagation()}>
+                                        <div className="modal-header">
+                                            <h3>{t('dashboard.profile.select_city', 'Select City')}</h3>
+                                            <button className="close-btn" onClick={() => setShowCityModal(false)}>×</button>
+                                        </div>
+                                        <div className="modal-body">
+                                            <div className="language-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)', gridTemplateRows: 'auto', gridAutoFlow: 'row' }}>
+                                                {cities.map(city => (
+                                                    <label key={city.id} className={`language-option ${formData.city?.id === city.id ? 'selected' : ''}`}>
                                                         <input
                                                             type="radio"
-                                                            name="country-modal"
-                                                            checked={formData.country?.id === country.id}
+                                                            name="city-modal"
+                                                            checked={formData.city?.id === city.id}
                                                             onChange={() => {
-                                                                const newData = { ...formData, country: country, city: null };
+                                                                const newData = { ...formData, city: city };
                                                                 setFormData(newData);
-                                                                setShowCountryModal(false);
-                                                                setCountrySearch('');
-                                                                autoSaveProfile(newData, 'country');
+                                                                setShowCityModal(false);
+                                                                autoSaveProfile(newData, 'city');
                                                             }}
                                                             style={{ display: 'none' }}
                                                         />
-                                                        <span>{country.flag} {country.name}</span>
-                                                        {formData.country?.id === country.id && <span className="check-icon">✓</span>}
+                                                        <span>{city.name}</span>
+                                                        {formData.city?.id === city.id && <span className="check-icon">✓</span>}
                                                     </label>
                                                 ))}
-                                        </div>
-                                    </div>
-                                    <div className="modal-footer">
-                                        <button className="save-btn" onClick={() => setShowCountryModal(false)} style={{ width: '100%', marginTop: 0 }}>
-                                            {t('common.cancel', 'Cancel')}
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
 
-                        {/* City Modal */}
-                        {showCityModal && (
-                            <div className="modal-overlay" onClick={() => setShowCityModal(false)}>
-                                <div className="modal-content" onClick={e => e.stopPropagation()}>
-                                    <div className="modal-header">
-                                        <h3>{t('dashboard.profile.select_city', 'Select City')}</h3>
-                                        <button className="close-btn" onClick={() => setShowCityModal(false)}>×</button>
-                                    </div>
-                                    <div className="modal-body">
-                                        <div className="language-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)', gridTemplateRows: 'auto', gridAutoFlow: 'row' }}>
-                                            {cities.map(city => (
-                                                <label key={city.id} className={`language-option ${formData.city?.id === city.id ? 'selected' : ''}`}>
-                                                    <input
-                                                        type="radio"
-                                                        name="city-modal"
-                                                        checked={formData.city?.id === city.id}
-                                                        onChange={() => {
-                                                            const newData = { ...formData, city: city };
-                                                            setFormData(newData);
-                                                            setShowCityModal(false);
-                                                            autoSaveProfile(newData, 'city');
-                                                        }}
-                                                        style={{ display: 'none' }}
-                                                    />
-                                                    <span>{city.name}</span>
-                                                    {formData.city?.id === city.id && <span className="check-icon">✓</span>}
+                                                {/* Show selected city if not in list (e.g. unapproved or just added) */}
+                                                {formData.city && !cities.find(c => c.id === formData.city.id) && (
+                                                    <label key={formData.city.id} className="language-option selected">
+                                                        <input
+                                                            type="radio"
+                                                            name="city-modal"
+                                                            checked={true}
+                                                            readOnly
+                                                            style={{ display: 'none' }}
+                                                        />
+                                                        <span>{formData.city.name}</span>
+                                                        <span className="check-icon">✓</span>
+                                                    </label>
+                                                )}
+
+                                                {cities.length === 0 && !formData.city && (
+                                                    <p style={{ gridColumn: '1 / -1', textAlign: 'center', color: '#888' }}>
+                                                        {t('dashboard.profile.no_cities', 'No cities found for this country.')}
+                                                    </p>
+                                                )}
+                                            </div>
+
+                                            {/* Add City Section */}
+                                            <div style={{ marginTop: '1.5rem', borderTop: '1px solid #eee', paddingTop: '1rem' }}>
+                                                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: '#666', fontWeight: 600 }}>
+                                                    {t('dashboard.profile.add_city_label', 'Add your City')}
                                                 </label>
-                                            ))}
-
-                                            {/* Show selected city if not in list (e.g. unapproved or just added) */}
-                                            {formData.city && !cities.find(c => c.id === formData.city.id) && (
-                                                <label key={formData.city.id} className="language-option selected">
+                                                <div style={{ display: 'flex', gap: '0.5rem' }}>
                                                     <input
-                                                        type="radio"
-                                                        name="city-modal"
-                                                        checked={true}
-                                                        readOnly
-                                                        style={{ display: 'none' }}
+                                                        type="text"
+                                                        className="form-control"
+                                                        placeholder={t('dashboard.profile.add_city_placeholder', 'Enter city name')}
+                                                        value={newCityName}
+                                                        onChange={(e) => setNewCityName(e.target.value)}
+                                                        style={{ flex: 1 }}
                                                     />
-                                                    <span>{formData.city.name}</span>
-                                                    <span className="check-icon">✓</span>
-                                                </label>
-                                            )}
-
-                                            {cities.length === 0 && !formData.city && (
-                                                <p style={{ gridColumn: '1 / -1', textAlign: 'center', color: '#888' }}>
-                                                    {t('dashboard.profile.no_cities', 'No cities found for this country.')}
-                                                </p>
-                                            )}
-                                        </div>
-
-                                        {/* Add City Section */}
-                                        <div style={{ marginTop: '1.5rem', borderTop: '1px solid #eee', paddingTop: '1rem' }}>
-                                            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: '#666', fontWeight: 600 }}>
-                                                {t('dashboard.profile.add_city_label', 'Add your City')}
-                                            </label>
-                                            <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                                <input
-                                                    type="text"
-                                                    className="form-control"
-                                                    placeholder={t('dashboard.profile.add_city_placeholder', 'Enter city name')}
-                                                    value={newCityName}
-                                                    onChange={(e) => setNewCityName(e.target.value)}
-                                                    style={{ flex: 1 }}
-                                                />
-                                                <button
-                                                    type="button"
-                                                    className="save-btn"
-                                                    onClick={handleAddCity}
-                                                    style={{ marginTop: 0, padding: '0 1.5rem', whiteSpace: 'nowrap', alignSelf: 'stretch', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                                                    disabled={!newCityName.trim()}
-                                                >
-                                                    {t('common.add', 'Add')}
-                                                </button>
+                                                    <button
+                                                        type="button"
+                                                        className="save-btn"
+                                                        onClick={handleAddCity}
+                                                        style={{ marginTop: 0, padding: '0 1.5rem', whiteSpace: 'nowrap', alignSelf: 'stretch', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                                        disabled={!newCityName.trim()}
+                                                    >
+                                                        {t('common.add', 'Add')}
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                    <div className="modal-footer">
-                                        <button className="save-btn" onClick={() => setShowCityModal(false)} style={{ width: '100%', marginTop: 0 }}>
-                                            {t('common.cancel', 'Cancel')}
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Timezone */}
-                        <div className="form-group">
-                            <label>{t('dashboard.profile.timezone', 'Time Zone')}</label>
-                            <div className="language-chips">
-                                {formData.timezone && (
-                                    <div className="chip">
-                                        {formData.timezone}
-                                    </div>
-                                )}
-                                <button
-                                    type="button"
-                                    className={`add-language-btn ${savedSections.timezone ? 'saved' : ''}`}
-                                    onClick={() => setShowTimezoneModal(true)}
-                                    style={savedSections.timezone ? { backgroundColor: '#dcfce7', color: '#166534', borderColor: '#bbf7d0' } : {}}
-                                >
-                                    {savedSections.timezone ? (
-                                        <>
-                                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                <path d="M10 3L4.5 8.5L2 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                            </svg>
-                                            {t('common.saved', 'Saved')}
-                                        </>
-                                    ) : (
-                                        <>
-                                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                <path d="M1.5 8.5L1 11L3.5 10.5L9.75 4.25L7.75 2.25L1.5 8.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                                <path d="M9.75 4.25L7.75 2.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                            </svg>
-                                            {t('dashboard.profile.change_timezone', 'Change')}
-                                        </>
-                                    )}
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Days Modal */}
-                        {showDaysModal && (
-                            <div className="modal-overlay" onClick={() => setShowDaysModal(false)}>
-                                <div className="modal-content" onClick={e => e.stopPropagation()}>
-                                    <div className="modal-header">
-                                        <h3>{t('dashboard.profile.select_days', 'Select Days')}</h3>
-                                        <button className="close-btn" onClick={() => setShowDaysModal(false)}>×</button>
-                                    </div>
-                                    <div className="modal-body">
-                                        <div className="language-grid" style={{ gridTemplateColumns: 'repeat(1, 1fr)', gridTemplateRows: 'auto', gridAutoFlow: 'row' }}>
-                                            {DAYS_OF_WEEK.map(day => (
-                                                <label key={day} className={`language-option ${formData.bestMeetingDays.includes(day) ? 'selected' : ''}`}>
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={formData.bestMeetingDays.includes(day)}
-                                                        onChange={() => handleMultiSelectChange('bestMeetingDays', day)}
-                                                        style={{ display: 'none' }}
-                                                    />
-                                                    {t(`days.${day}`, day)}
-                                                    {formData.bestMeetingDays.includes(day) && <span className="check-icon">✓</span>}
-                                                </label>
-                                            ))}
+                                        <div className="modal-footer">
+                                            <button className="save-btn" onClick={() => setShowCityModal(false)} style={{ width: '100%', marginTop: 0 }}>
+                                                {t('common.cancel', 'Cancel')}
+                                            </button>
                                         </div>
                                     </div>
-                                    <div className="modal-footer">
-                                        <button className="save-btn" onClick={() => {
-                                            setShowDaysModal(false);
-                                            autoSaveProfile(formData, 'bestMeetingDays');
-                                        }} style={{ width: '100%', marginTop: 0 }}>
-                                            {t('common.done', 'Done')}
-                                        </button>
-                                    </div>
                                 </div>
-                            </div>
-                        )}
+                            )}
 
-                        {/* Timezone Modal */}
-                        {showTimezoneModal && (
-                            <div className="modal-overlay" onClick={() => setShowTimezoneModal(false)}>
-                                <div className="modal-content" onClick={e => e.stopPropagation()}>
-                                    <div className="modal-header">
-                                        <h3>{t('dashboard.profile.select_timezone', 'Select Time Zone')}</h3>
-                                        <button className="close-btn" onClick={() => setShowTimezoneModal(false)}>×</button>
-                                    </div>
-                                    <div className="modal-body">
-                                        <div className="language-grid">
-                                            {TIMEZONES.map(tz => (
-                                                <label key={tz} className={`language-option ${formData.timezone === tz ? 'selected' : ''}`}>
-                                                    <input
-                                                        type="radio"
-                                                        name="timezone-modal"
-                                                        checked={formData.timezone === tz}
-                                                        onChange={() => {
-                                                            const newData = { ...formData, timezone: tz };
-                                                            setFormData(newData);
-                                                            setShowTimezoneModal(false);
-                                                            autoSaveProfile(newData, 'timezone');
-                                                        }}
-                                                        style={{ display: 'none' }}
-                                                    />
-                                                    {tz}
-                                                    {formData.timezone === tz && <span className="check-icon">✓</span>}
-                                                </label>
-                                            ))}
-                                        </div>
-                                    </div>
-                                    <div className="modal-footer">
-                                        <button className="save-btn" onClick={() => setShowTimezoneModal(false)} style={{ width: '100%', marginTop: 0 }}>
-                                            {t('common.cancel', 'Cancel')}
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Best Meeting Days */}
-                        <div className="form-group">
-                            <label>{t('dashboard.profile.best_days', 'Best Meeting Days')}</label>
-                            <div className="language-chips">
-                                {formData.bestMeetingDays.map(day => (
-                                    <div key={day} className="chip" style={{ backgroundColor: DAY_COLORS[day] || '#f3f4f6' }}>
-                                        {t(`days.${day}`, day)}
-                                        <button
-                                            type="button"
-                                            className="chip-remove"
-                                            onClick={() => handleMultiSelectChange('bestMeetingDays', day)}
-                                        >
-                                            ×
-                                        </button>
-                                    </div>
-                                ))}
-                                <button
-                                    type="button"
-                                    className={`add-language-btn ${savedSections.bestMeetingDays ? 'saved' : ''}`}
-                                    onClick={() => setShowDaysModal(true)}
-                                    style={savedSections.bestMeetingDays ? { backgroundColor: '#dcfce7', color: '#166534', borderColor: '#bbf7d0' } : {}}
-                                >
-                                    {savedSections.bestMeetingDays ? (
-                                        <>
-                                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                <path d="M10 3L4.5 8.5L2 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                            </svg>
-                                            {t('common.saved', 'Saved')}
-                                        </>
-                                    ) : (
-                                        <>
-                                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                <path d="M1.5 8.5L1 11L3.5 10.5L9.75 4.25L7.75 2.25L1.5 8.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                                <path d="M9.75 4.25L7.75 2.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                            </svg>
-                                            {t('dashboard.profile.change_days', 'Change')}
-                                        </>
-                                    )}
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Languages */}
-                        <div className="form-group">
-                            <label>{t('dashboard.profile.languages', 'Languages')}</label>
-                            <div className="language-chips">
-                                {formData.languages.map(lang => (
-                                    <div key={lang} className="chip">
-                                        {lang}
-                                        <button
-                                            type="button"
-                                            className="chip-remove"
-                                            onClick={() => handleMultiSelectChange('languages', lang)}
-                                        >
-                                            ×
-                                        </button>
-                                    </div>
-                                ))}
-                                <button
-                                    type="button"
-                                    className={`add-language-btn ${savedSections.languages ? 'saved' : ''}`}
-                                    onClick={() => setShowLanguageModal(true)}
-                                    style={savedSections.languages ? { backgroundColor: '#dcfce7', color: '#166534', borderColor: '#bbf7d0' } : {}}
-                                >
-                                    {savedSections.languages ? (
-                                        <>
-                                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                <path d="M10 3L4.5 8.5L2 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                            </svg>
-                                            {t('common.saved', 'Saved')}
-                                        </>
-                                    ) : (
-                                        <>
-                                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                <path d="M1.5 8.5L1 11L3.5 10.5L9.75 4.25L7.75 2.25L1.5 8.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                                <path d="M9.75 4.25L7.75 2.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                            </svg>
-                                            {t('dashboard.profile.change_languages', 'Change')}
-                                        </>
-                                    )}
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Language Modal */}
-                        {showLanguageModal && (
-                            <div className="modal-overlay" onClick={() => setShowLanguageModal(false)}>
-                                <div className="modal-content" onClick={e => e.stopPropagation()}>
-                                    <div className="modal-header">
-                                        <h3>{t('dashboard.profile.select_languages', 'Select Languages')}</h3>
-                                        <button className="close-btn" onClick={() => setShowLanguageModal(false)}>×</button>
-                                    </div>
-                                    <div className="modal-body">
-                                        <div className="language-grid">
-                                            {LANGUAGES.map(lang => (
-                                                <label key={lang} className={`language-option ${formData.languages.includes(lang) ? 'selected' : ''}`}>
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={formData.languages.includes(lang)}
-                                                        onChange={() => handleMultiSelectChange('languages', lang)}
-                                                        style={{ display: 'none' }}
-                                                    />
-                                                    {lang}
-                                                    {formData.languages.includes(lang) && <span className="check-icon">✓</span>}
-                                                </label>
-                                            ))}
-                                        </div>
-                                    </div>
-                                    <div className="modal-footer">
-                                        <button className="save-btn" onClick={() => {
-                                            setShowLanguageModal(false);
-                                            autoSaveProfile(formData, 'languages');
-                                        }} style={{ width: '100%', marginTop: 0 }}>
-                                            {t('common.done', 'Done')}
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Profession & Grade */}
-                        <div className="form-row">
+                            {/* Timezone */}
                             <div className="form-group">
-                                <label>{t('dashboard.profile.profession', 'Profession')}</label>
-                                <input
-                                    type="text"
-                                    name="profession"
+                                <label>{t('dashboard.profile.timezone', 'Time Zone')}</label>
+                                <div className="language-chips">
+                                    {formData.timezone && (
+                                        <div className="chip">
+                                            {formData.timezone}
+                                        </div>
+                                    )}
+                                    <button
+                                        type="button"
+                                        className={`add-language-btn ${savedSections.timezone ? 'saved' : ''}`}
+                                        onClick={() => setShowTimezoneModal(true)}
+                                        style={savedSections.timezone ? { backgroundColor: '#dcfce7', color: '#166534', borderColor: '#bbf7d0' } : {}}
+                                    >
+                                        {savedSections.timezone ? (
+                                            <>
+                                                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                    <path d="M10 3L4.5 8.5L2 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                </svg>
+                                                {t('common.saved', 'Saved')}
+                                            </>
+                                        ) : (
+                                            <>
+                                                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                    <path d="M1.5 8.5L1 11L3.5 10.5L9.75 4.25L7.75 2.25L1.5 8.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                    <path d="M9.75 4.25L7.75 2.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                </svg>
+                                                {t('dashboard.profile.change_timezone', 'Change')}
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Days Modal */}
+                            {showDaysModal && (
+                                <div className="modal-overlay" onClick={() => setShowDaysModal(false)}>
+                                    <div className="modal-content" onClick={e => e.stopPropagation()}>
+                                        <div className="modal-header">
+                                            <h3>{t('dashboard.profile.select_days', 'Select Days')}</h3>
+                                            <button className="close-btn" onClick={() => setShowDaysModal(false)}>×</button>
+                                        </div>
+                                        <div className="modal-body">
+                                            <div className="language-grid" style={{ gridTemplateColumns: 'repeat(1, 1fr)', gridTemplateRows: 'auto', gridAutoFlow: 'row' }}>
+                                                {DAYS_OF_WEEK.map(day => (
+                                                    <label key={day} className={`language-option ${formData.bestMeetingDays.includes(day) ? 'selected' : ''}`}>
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={formData.bestMeetingDays.includes(day)}
+                                                            onChange={() => handleMultiSelectChange('bestMeetingDays', day)}
+                                                            style={{ display: 'none' }}
+                                                        />
+                                                        {t(`days.${day}`, day)}
+                                                        {formData.bestMeetingDays.includes(day) && <span className="check-icon">✓</span>}
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <div className="modal-footer">
+                                            <button className="save-btn" onClick={() => {
+                                                setShowDaysModal(false);
+                                                autoSaveProfile(formData, 'bestMeetingDays');
+                                            }} style={{ width: '100%', marginTop: 0 }}>
+                                                {t('common.done', 'Done')}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Timezone Modal */}
+                            {showTimezoneModal && (
+                                <div className="modal-overlay" onClick={() => setShowTimezoneModal(false)}>
+                                    <div className="modal-content" onClick={e => e.stopPropagation()}>
+                                        <div className="modal-header">
+                                            <h3>{t('dashboard.profile.select_timezone', 'Select Time Zone')}</h3>
+                                            <button className="close-btn" onClick={() => setShowTimezoneModal(false)}>×</button>
+                                        </div>
+                                        <div className="modal-body">
+                                            <div className="language-grid">
+                                                {TIMEZONES.map(tz => (
+                                                    <label key={tz} className={`language-option ${formData.timezone === tz ? 'selected' : ''}`}>
+                                                        <input
+                                                            type="radio"
+                                                            name="timezone-modal"
+                                                            checked={formData.timezone === tz}
+                                                            onChange={() => {
+                                                                const newData = { ...formData, timezone: tz };
+                                                                setFormData(newData);
+                                                                setShowTimezoneModal(false);
+                                                                autoSaveProfile(newData, 'timezone');
+                                                            }}
+                                                            style={{ display: 'none' }}
+                                                        />
+                                                        {tz}
+                                                        {formData.timezone === tz && <span className="check-icon">✓</span>}
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <div className="modal-footer">
+                                            <button className="save-btn" onClick={() => setShowTimezoneModal(false)} style={{ width: '100%', marginTop: 0 }}>
+                                                {t('common.cancel', 'Cancel')}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Best Meeting Days */}
+                            <div className="form-group">
+                                <label>{t('dashboard.profile.best_days', 'Best Meeting Days')}</label>
+                                <div className="language-chips">
+                                    {formData.bestMeetingDays.map(day => (
+                                        <div key={day} className="chip" style={{ backgroundColor: DAY_COLORS[day] || '#f3f4f6' }}>
+                                            {t(`days.${day}`, day)}
+                                            <button
+                                                type="button"
+                                                className="chip-remove"
+                                                onClick={() => handleMultiSelectChange('bestMeetingDays', day)}
+                                            >
+                                                ×
+                                            </button>
+                                        </div>
+                                    ))}
+                                    <button
+                                        type="button"
+                                        className={`add-language-btn ${savedSections.bestMeetingDays ? 'saved' : ''}`}
+                                        onClick={() => setShowDaysModal(true)}
+                                        style={savedSections.bestMeetingDays ? { backgroundColor: '#dcfce7', color: '#166534', borderColor: '#bbf7d0' } : {}}
+                                    >
+                                        {savedSections.bestMeetingDays ? (
+                                            <>
+                                                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                    <path d="M10 3L4.5 8.5L2 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                </svg>
+                                                {t('common.saved', 'Saved')}
+                                            </>
+                                        ) : (
+                                            <>
+                                                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                    <path d="M1.5 8.5L1 11L3.5 10.5L9.75 4.25L7.75 2.25L1.5 8.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                    <path d="M9.75 4.25L7.75 2.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                </svg>
+                                                {t('dashboard.profile.change_days', 'Change')}
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Languages */}
+                            <div className="form-group">
+                                <label>{t('dashboard.profile.languages', 'Languages')}</label>
+                                <div className="language-chips">
+                                    {formData.languages.map(lang => (
+                                        <div key={lang} className="chip">
+                                            {lang}
+                                            <button
+                                                type="button"
+                                                className="chip-remove"
+                                                onClick={() => handleMultiSelectChange('languages', lang)}
+                                            >
+                                                ×
+                                            </button>
+                                        </div>
+                                    ))}
+                                    <button
+                                        type="button"
+                                        className={`add-language-btn ${savedSections.languages ? 'saved' : ''}`}
+                                        onClick={() => setShowLanguageModal(true)}
+                                        style={savedSections.languages ? { backgroundColor: '#dcfce7', color: '#166534', borderColor: '#bbf7d0' } : {}}
+                                    >
+                                        {savedSections.languages ? (
+                                            <>
+                                                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                    <path d="M10 3L4.5 8.5L2 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                </svg>
+                                                {t('common.saved', 'Saved')}
+                                            </>
+                                        ) : (
+                                            <>
+                                                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                    <path d="M1.5 8.5L1 11L3.5 10.5L9.75 4.25L7.75 2.25L1.5 8.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                    <path d="M9.75 4.25L7.75 2.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                </svg>
+                                                {t('dashboard.profile.change_languages', 'Change')}
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Language Modal */}
+                            {showLanguageModal && (
+                                <div className="modal-overlay" onClick={() => setShowLanguageModal(false)}>
+                                    <div className="modal-content" onClick={e => e.stopPropagation()}>
+                                        <div className="modal-header">
+                                            <h3>{t('dashboard.profile.select_languages', 'Select Languages')}</h3>
+                                            <button className="close-btn" onClick={() => setShowLanguageModal(false)}>×</button>
+                                        </div>
+                                        <div className="modal-body">
+                                            <div className="language-grid">
+                                                {LANGUAGES.map(lang => (
+                                                    <label key={lang} className={`language-option ${formData.languages.includes(lang) ? 'selected' : ''}`}>
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={formData.languages.includes(lang)}
+                                                            onChange={() => handleMultiSelectChange('languages', lang)}
+                                                            style={{ display: 'none' }}
+                                                        />
+                                                        {lang}
+                                                        {formData.languages.includes(lang) && <span className="check-icon">✓</span>}
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <div className="modal-footer">
+                                            <button className="save-btn" onClick={() => {
+                                                setShowLanguageModal(false);
+                                                autoSaveProfile(formData, 'languages');
+                                            }} style={{ width: '100%', marginTop: 0 }}>
+                                                {t('common.done', 'Done')}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Profession & Grade */}
+                            <div className="form-row">
+                                <div className="form-group">
+                                    <label>{t('dashboard.profile.profession', 'Profession')}</label>
+                                    <input
+                                        type="text"
+                                        name="profession"
+                                        className="form-control"
+                                        value={formData.profession}
+                                        onChange={handleChange}
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>{t('dashboard.profile.grade', 'Grade')}</label>
+                                    <select
+                                        name="grade"
+                                        className="form-control"
+                                        value={formData.grade}
+                                        onChange={handleChange}
+                                    >
+                                        {GRADES.map(grade => (
+                                            <option key={grade} value={grade}>{grade}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+
+                            {/* Descriptions */}
+                            <div className="form-group">
+                                <label>{t('dashboard.profile.professional_desc', 'Professional Description')}</label>
+                                <textarea
+                                    name="professionalDesc"
                                     className="form-control"
-                                    value={formData.profession}
+                                    value={formData.professionalDesc}
                                     onChange={handleChange}
                                 />
                             </div>
                             <div className="form-group">
-                                <label>{t('dashboard.profile.grade', 'Grade')}</label>
-                                <select
-                                    name="grade"
+                                <label>{t('dashboard.profile.personal_desc', 'Personal Description')}</label>
+                                <textarea
+                                    name="personalDesc"
                                     className="form-control"
-                                    value={formData.grade}
+                                    value={formData.personalDesc}
                                     onChange={handleChange}
-                                >
-                                    {GRADES.map(grade => (
-                                        <option key={grade} value={grade}>{grade}</option>
+                                />
+                            </div>
+
+                            {/* Interests */}
+                            <div className="form-group">
+                                <label>{t('dashboard.profile.professional_interests', 'Professional Interests')}</label>
+                                <input
+                                    type="text"
+                                    name="professionalInterests"
+                                    className="form-control"
+                                    placeholder="e.g. AI, Startups, Fintech"
+                                    value={formData.professionalInterests}
+                                    onChange={handleChange}
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>{t('dashboard.profile.personal_interests', 'Personal Interests')}</label>
+                                <input
+                                    type="text"
+                                    name="personalInterests"
+                                    className="form-control"
+                                    placeholder="e.g. Hiking, Chess, Jazz"
+                                    value={formData.personalInterests}
+                                    onChange={handleChange}
+                                />
+                            </div>
+
+                            {/* Coffee Goals */}
+                            <div className="form-group">
+                                <label>{t('dashboard.profile.coffee_goals', 'Coffee Goals')}</label>
+                                <div style={{ display: 'flex', gap: '1rem' }}>
+                                    {COFFEE_GOALS.map(goal => (
+                                        <label key={goal} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                                            <input
+                                                type="checkbox"
+                                                checked={formData.coffeeGoals.includes(goal)}
+                                                onChange={() => handleMultiSelectChange('coffeeGoals', goal)}
+                                            />
+                                            {goal}
+                                        </label>
                                     ))}
-                                </select>
+                                </div>
                             </div>
-                        </div>
 
-                        {/* Descriptions */}
-                        <div className="form-group">
-                            <label>{t('dashboard.profile.professional_desc', 'Professional Description')}</label>
-                            <textarea
-                                name="professionalDesc"
-                                className="form-control"
-                                value={formData.professionalDesc}
-                                onChange={handleChange}
-                            />
-                        </div>
-                        <div className="form-group">
-                            <label>{t('dashboard.profile.personal_desc', 'Personal Description')}</label>
-                            <textarea
-                                name="personalDesc"
-                                className="form-control"
-                                value={formData.personalDesc}
-                                onChange={handleChange}
-                            />
-                        </div>
-
-                        {/* Interests */}
-                        <div className="form-group">
-                            <label>{t('dashboard.profile.professional_interests', 'Professional Interests')}</label>
-                            <input
-                                type="text"
-                                name="professionalInterests"
-                                className="form-control"
-                                placeholder="e.g. AI, Startups, Fintech"
-                                value={formData.professionalInterests}
-                                onChange={handleChange}
-                            />
-                        </div>
-                        <div className="form-group">
-                            <label>{t('dashboard.profile.personal_interests', 'Personal Interests')}</label>
-                            <input
-                                type="text"
-                                name="personalInterests"
-                                className="form-control"
-                                placeholder="e.g. Hiking, Chess, Jazz"
-                                value={formData.personalInterests}
-                                onChange={handleChange}
-                            />
-                        </div>
-
-                        {/* Coffee Goals */}
-                        <div className="form-group">
-                            <label>{t('dashboard.profile.coffee_goals', 'Coffee Goals')}</label>
-                            <div style={{ display: 'flex', gap: '1rem' }}>
-                                {COFFEE_GOALS.map(goal => (
-                                    <label key={goal} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                                        <input
-                                            type="checkbox"
-                                            checked={formData.coffeeGoals.includes(goal)}
-                                            onChange={() => handleMultiSelectChange('coffeeGoals', goal)}
-                                        />
-                                        {goal}
-                                    </label>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div style={{ minHeight: '3rem', display: 'flex', alignItems: 'center' }}>
-                            {showSuccess ? (
-                                <button
-                                    type="button"
-                                    className="save-btn success"
-                                    disabled={true}
-                                    style={{ marginTop: 0, background: '#10b981', cursor: 'default' }}
-                                >
-                                    {t('dashboard.profile.saved_success', 'All changes are saved')}
-                                </button>
-                            ) : (
-                                (hasChanges || isSaving) && (
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '2rem' }}>
+                                {showSuccess ? (
                                     <button
-                                        type="submit"
+                                        type="button"
                                         className="save-btn"
-                                        disabled={isSaving}
-                                        style={{ marginTop: 0 }}
+                                        style={{ marginTop: 0, background: '#10b981', cursor: 'default' }}
                                     >
-                                        {isSaving ? (
-                                            <>
-                                                <span className="spinner-small"></span>
-                                                {t('dashboard.profile.saving', 'Saving...')}
-                                            </>
-                                        ) : (
-                                            t('dashboard.profile.save', 'Save Changes')
-                                        )}
+                                        {t('dashboard.profile.saved_success', 'All changes are saved')}
                                     </button>
-                                )
-                            )}
+                                ) : (
+                                    (hasChanges || isSaving) && (
+                                        <button
+                                            type="submit"
+                                            className="save-btn"
+                                            disabled={isSaving}
+                                            style={{ marginTop: 0 }}
+                                        >
+                                            {isSaving ? (
+                                                <>
+                                                    <span className="spinner-small"></span>
+                                                    {t('dashboard.profile.saving', 'Saving...')}
+                                                </>
+                                            ) : (
+                                                t('dashboard.profile.save', 'Save Changes')
+                                            )}
+                                        </button>
+                                    )
+                                )}
+                            </div>
+                        </form>
+                    ) : (
+                        <div className="profile-view" style={{ padding: '1rem 0' }}>
+                            <div style={{ display: 'flex', gap: '2rem', alignItems: 'center', marginBottom: '2rem' }}>
+                                <div className="avatar-preview" style={{ width: '120px', height: '120px', borderRadius: '50%', overflow: 'hidden' }}>
+                                    {formData.avatar ? (
+                                        <img src={`${API_URL}${formData.avatar}`} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    ) : (
+                                        <div className="avatar-placeholder" style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#eee', fontSize: '3rem' }}>
+                                            {formData.name?.[0]}
+                                        </div>
+                                    )}
+                                </div>
+                                <div>
+                                    <h3 style={{ fontSize: '1.8rem', fontWeight: 700, margin: 0 }}>{formData.name} {formData.family}</h3>
+                                    <p style={{ color: '#666', margin: '0.5rem 0', fontSize: '1.1rem' }}>
+                                        {formData.profession}
+                                        {formData.grade && <span style={{ opacity: 0.7 }}> • {formData.grade}</span>}
+                                    </p>
+                                    {formData.country && (
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#666' }}>
+                                            <span style={{ fontSize: '1.2rem' }}>{formData.country.flag}</span>
+                                            <span>{formData.country.name}</span>
+                                            {formData.city && <span>• {formData.city.name}</span>}
+                                            {formData.timezone && <span>• {formData.timezone}</span>}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'grid', gap: '2rem' }}>
+                                {formData.professionalDesc && (
+                                    <div>
+                                        <h4 style={{ fontSize: '0.9rem', color: '#888', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>{t('dashboard.profile.professional_desc')}</h4>
+                                        <p style={{ lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{formData.professionalDesc}</p>
+                                    </div>
+                                )}
+
+                                {formData.personalDesc && (
+                                    <div>
+                                        <h4 style={{ fontSize: '0.9rem', color: '#888', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>{t('dashboard.profile.personal_desc')}</h4>
+                                        <p style={{ lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{formData.personalDesc}</p>
+                                    </div>
+                                )}
+
+                                {(formData.professionalInterests?.length > 0 || formData.personalInterests?.length > 0) && (
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+                                        {formData.professionalInterests?.length > 0 && (
+                                            <div>
+                                                <h4 style={{ fontSize: '0.9rem', color: '#888', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>{t('dashboard.profile.professional_interests')}</h4>
+                                                <div className="language-chips" style={{ flexWrap: 'wrap' }}>
+                                                    {formData.professionalInterests.map(item => (
+                                                        <span key={item} className="chip">{item}</span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                        {formData.personalInterests?.length > 0 && (
+                                            <div>
+                                                <h4 style={{ fontSize: '0.9rem', color: '#888', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>{t('dashboard.profile.personal_interests')}</h4>
+                                                <div className="language-chips" style={{ flexWrap: 'wrap' }}>
+                                                    {formData.personalInterests.map(item => (
+                                                        <span key={item} className="chip">{item}</span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {formData.coffeeGoals && (
+                                    <div>
+                                        <h4 style={{ fontSize: '0.9rem', color: '#888', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>{t('dashboard.profile.coffee_goals')}</h4>
+                                        <p style={{ lineHeight: 1.6 }}>{formData.coffeeGoals}</p>
+                                    </div>
+                                )}
+
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+                                    {formData.languages?.length > 0 && (
+                                        <div>
+                                            <h4 style={{ fontSize: '0.9rem', color: '#888', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>{t('dashboard.profile.languages')}</h4>
+                                            <div className="language-chips" style={{ flexWrap: 'wrap' }}>
+                                                {formData.languages.map(lang => (
+                                                    <span key={lang} className="chip">{lang}</span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {formData.bestMeetingDays?.length > 0 && (
+                                        <div>
+                                            <h4 style={{ fontSize: '0.9rem', color: '#888', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>{t('dashboard.profile.best_time')}</h4>
+                                            <div className="language-chips" style={{ flexWrap: 'wrap' }}>
+                                                {formData.bestMeetingDays.map(day => (
+                                                    <span key={day} className="chip" style={{ backgroundColor: DAY_COLORS[day] || '#f3f4f6' }}>
+                                                        {t(`days.${day}`, day)}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
                         </div>
-                    </form>
+                    )}
                 </div>
 
                 {/* Right Side: Matching */}
