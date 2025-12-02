@@ -29,7 +29,7 @@ const Dashboard = () => {
     const [formData, setFormData] = useState({
         name: '',
         family: '',
-        country: '',
+        country: null,
         city: '',
         timezone: 'UTC (UTC+0)',
         bestMeetingDays: [],
@@ -53,6 +53,24 @@ const Dashboard = () => {
     const [showLanguageModal, setShowLanguageModal] = useState(false);
     const [showTimezoneModal, setShowTimezoneModal] = useState(false);
     const [showDaysModal, setShowDaysModal] = useState(false);
+    const [showCountryModal, setShowCountryModal] = useState(false);
+    const [countries, setCountries] = useState([]);
+
+    useEffect(() => {
+        // Fetch countries
+        const fetchCountries = async () => {
+            try {
+                const response = await fetch(`${API_URL}/api/countries`);
+                const data = await response.json();
+                if (data.success) {
+                    setCountries(data.countries);
+                }
+            } catch (error) {
+                console.error('Failed to fetch countries:', error);
+            }
+        };
+        fetchCountries();
+    }, []);
 
     useEffect(() => {
         if (message.type === 'success' && message.text) {
@@ -276,13 +294,23 @@ const Dashboard = () => {
                         <div className="form-row">
                             <div className="form-group">
                                 <label>{t('dashboard.profile.country', 'Country')}</label>
-                                <input
-                                    type="text"
-                                    name="country"
-                                    className="form-control"
-                                    value={formData.country}
-                                    onChange={handleChange}
-                                />
+                                <div className="language-chips">
+                                    {formData.country && (
+                                        <div className="chip">
+                                            {formData.country.flag} {formData.country.name}
+                                        </div>
+                                    )}
+                                    <button
+                                        type="button"
+                                        className="add-language-btn"
+                                        onClick={() => setShowCountryModal(true)}
+                                    >
+                                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M1 6H11M6 1V11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
+                                        {t('dashboard.profile.change_country', 'Change')}
+                                    </button>
+                                </div>
                             </div>
                             <div className="form-group">
                                 <label>{t('dashboard.profile.city', 'City')}</label>
@@ -295,6 +323,43 @@ const Dashboard = () => {
                                 />
                             </div>
                         </div>
+
+                        {/* Country Modal */}
+                        {showCountryModal && (
+                            <div className="modal-overlay" onClick={() => setShowCountryModal(false)}>
+                                <div className="modal-content" onClick={e => e.stopPropagation()}>
+                                    <div className="modal-header">
+                                        <h3>{t('dashboard.profile.select_country', 'Select Country')}</h3>
+                                        <button className="close-btn" onClick={() => setShowCountryModal(false)}>×</button>
+                                    </div>
+                                    <div className="modal-body">
+                                        <div className="language-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)', gridTemplateRows: 'auto', gridAutoFlow: 'row' }}>
+                                            {countries.map(country => (
+                                                <label key={country.id} className={`language-option ${formData.country?.id === country.id ? 'selected' : ''}`}>
+                                                    <input
+                                                        type="radio"
+                                                        name="country-modal"
+                                                        checked={formData.country?.id === country.id}
+                                                        onChange={() => {
+                                                            setFormData(prev => ({ ...prev, country: country }));
+                                                            setShowCountryModal(false);
+                                                        }}
+                                                        style={{ display: 'none' }}
+                                                    />
+                                                    <span>{country.flag} {country.name}</span>
+                                                    {formData.country?.id === country.id && <span className="check-icon">✓</span>}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="modal-footer">
+                                        <button className="save-btn" onClick={() => setShowCountryModal(false)} style={{ width: '100%', marginTop: 0 }}>
+                                            {t('common.cancel', 'Cancel')}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
                         {/* Timezone & Best Time */}
                         <div className="form-row">

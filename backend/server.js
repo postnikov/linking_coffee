@@ -369,6 +369,28 @@ app.post('/api/consent', async (req, res) => {
   }
 });
 
+// Step 3.5: Get Countries
+app.get('/api/countries', async (req, res) => {
+  try {
+    const records = await base(process.env.AIRTABLE_COUNTRIES_TABLE || 'Countries')
+      .select({
+        view: 'Grid view' // Optional: specify view if needed
+      })
+      .all();
+
+    const countries = records.map(record => ({
+      id: record.id,
+      name: record.fields.Name,
+      flag: record.fields.Flag
+    }));
+
+    res.json({ success: true, countries });
+  } catch (error) {
+    console.error('Get countries error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch countries' });
+  }
+});
+
 // Step 4: Get User Profile
 app.get('/api/profile', async (req, res) => {
   const { username } = req.query;
@@ -391,21 +413,34 @@ app.get('/api/profile', async (req, res) => {
       const record = records[0];
       const fields = record.fields;
 
+      // Fetch linked country details if exists
+      let country = null;
+      if (fields.Countries && fields.Countries.length > 0) {
+        try {
+          const countryRecord = await base(process.env.AIRTABLE_COUNTRIES_TABLE || 'Countries').find(fields.Countries[0]);
+          country = {
+            id: countryRecord.id,
+            name: countryRecord.fields.Name,
+            flag: countryRecord.fields.Flag
+          };
+        } catch (err) {
+          console.error('Error fetching linked country:', err);
+        }
+      }
+
       // Map Airtable fields to frontend format
       const profile = {
         name: fields.Name || '',
         family: fields.Family || '',
-        // Country and City handling to be improved with proper linking later
-        // For now we just return what we have if possible, or empty
+        // Country is now an object { id, name, flag }
+        country: country,
+        city: fields.City_String || '', // Use City_String for now as Cities table linking is complex
         timezone: fields.Time_Zone || 'UTC (UTC+0)',
         profession: fields.Profession || '',
         grade: fields.Grade || 'Prefer not to say',
         professionalDesc: fields.Professional_Description || '',
         personalDesc: fields.Personal_Description || '',
-        professionalInterests: fields.Professional_Interests ? fields.Professional_Interests.join(', ') : '', // Assuming multiselect or text? Schema says multipleSelects for Interests is empty? Wait, schema said "multipleSelects ()". If it's empty options, maybe it's just text? Or dynamic?
-        // Actually schema says: Professional_Interests | multipleSelects () | -
-        // If it's multipleSelects, we should send an array.
-        // Let's assume array for now.
+        professionalInterests: fields.Professional_Interests ? fields.Professional_Interests.join(', ') : '',
         personalInterests: fields.Personal_Interests ? fields.Personal_Interests.join(', ') : '',
         coffeeGoals: fields.Coffee_Goals || [],
         languages: fields.Languages || [],
@@ -445,7 +480,6 @@ app.put('/api/profile', async (req, res) => {
       const record = records[0];
 
       // Prepare fields for Airtable
-      // Note: We are not updating Countries yet as it requires linking logic
       const updateFields = {
         Name: profile.name,
         Family: profile.family,
@@ -456,14 +490,14 @@ app.put('/api/profile', async (req, res) => {
         Personal_Description: profile.personalDesc,
         Coffee_Goals: profile.coffeeGoals,
         Languages: profile.languages,
-        Best_Meetings_Days: profile.bestMeetingDays
-        // Interests need to be arrays if they are multipleSelects
-        // If the user sends a string (comma separated), we might need to split it?
-        // The frontend currently sends a string for interests.
-        // But the schema says multipleSelects.
-        // If we send strings to Airtable multipleSelects, it might fail if options don't exist and "Typecast" is not enabled.
-        // We will enable typecast: true
+        Best_Meetings_Days: profile.bestMeetingDays,
+        City_String: profile.city
       };
+
+      // Handle Country Linking
+      if (profile.country && profile.country.id) {
+        updateFields.Countries = [profile.country.id];
+      }
 
       // Handle Interests - split string into array
       if (profile.professionalInterests) {
