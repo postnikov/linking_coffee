@@ -78,7 +78,7 @@ const Prices = ({ user }) => {
                             </div>
                         )}
 
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', height: '50px' }}>
+                        <div style={{ display: 'flex', justifyContent: currentPlan === 'EarlyBird' ? 'center' : 'space-between', alignItems: 'center', marginBottom: '1.5rem', height: '50px' }}>
                             <h2 style={{ fontSize: '2rem', margin: 0, background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                                 {currentPlan === 'EarlyBird' ? 'Early Bird' : t('pages.prices.pro.title')}
                             </h2>
@@ -121,7 +121,7 @@ const Prices = ({ user }) => {
                             )}
                         </div>
 
-                        <div style={{ fontSize: '1.8rem', fontWeight: 'bold', marginBottom: '2rem', textAlign: 'center', color: '#6366f1', marginTop: '-1px' }}>
+                        <div style={{ fontSize: '1.8rem', fontWeight: 'bold', marginBottom: '2rem', textAlign: 'center', color: currentPlan === 'EarlyBird' ? '#10b981' : '#6366f1', marginTop: '-1px' }}>
                             {currentPlan === 'EarlyBird'
                                 ? t('pages.prices.early_bird.price', 'Free for you')
                                 : (billingCycle === 'monthly' ? t('pages.prices.pro.price_monthly') : t('pages.prices.pro.price_yearly'))
