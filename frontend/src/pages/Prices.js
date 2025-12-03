@@ -42,7 +42,7 @@ const Prices = ({ user }) => {
                 }}>
                     {/* Free Block */}
                     <div className="glass-card" style={{ flex: '1 1 300px', padding: '2rem', position: 'relative', display: 'flex', flexDirection: 'column' }}>
-                        {user && (currentPlan === 'Free' || currentPlan === 'EarlyBird') && (
+                        {user && currentPlan === 'Free' && (
                             <div className="early-bird-badge" style={{ position: 'absolute', top: '-15px', left: '50%', transform: 'translateX(-50%)', whiteSpace: 'nowrap', zIndex: 2 }}>
                                 {t('pages.prices.free.current')}
                             </div>
