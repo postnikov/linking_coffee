@@ -1242,25 +1242,31 @@ const Dashboard = () => {
                                     </div>
                                 )}
 
-                                {(formData.professionalInterests || formData.personalInterests) && (
+                                {(formData.professionalInterests.length > 0 || formData.otherProfessionalInterests || formData.personalInterests.length > 0 || formData.otherPersonalInterests) && (
                                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
-                                        {formData.professionalInterests && (
+                                        {(formData.professionalInterests.length > 0 || formData.otherProfessionalInterests) && (
                                             <div>
                                                 <h4 style={{ fontSize: '0.9rem', color: '#888', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>{t('dashboard.profile.professional_interests')}</h4>
                                                 <div className="language-chips" style={{ flexWrap: 'wrap' }}>
-                                                    {formData.professionalInterests.split(',').map(item => item.trim()).filter(item => item).map(item => (
-                                                        <span key={item} className="chip">{item}</span>
+                                                    {formData.professionalInterests.map(item => (
+                                                        <span key={item} className="chip">{getLocalizedInterest(item, 'professional')}</span>
                                                     ))}
+                                                    {formData.otherProfessionalInterests && (
+                                                        <span className="chip" style={{ background: '#f3f4f6', border: '1px dashed #ccc' }}>{formData.otherProfessionalInterests}</span>
+                                                    )}
                                                 </div>
                                             </div>
                                         )}
-                                        {formData.personalInterests && (
+                                        {(formData.personalInterests.length > 0 || formData.otherPersonalInterests) && (
                                             <div>
                                                 <h4 style={{ fontSize: '0.9rem', color: '#888', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>{t('dashboard.profile.personal_interests')}</h4>
                                                 <div className="language-chips" style={{ flexWrap: 'wrap' }}>
-                                                    {formData.personalInterests.split(',').map(item => item.trim()).filter(item => item).map(item => (
-                                                        <span key={item} className="chip">{item}</span>
+                                                    {formData.personalInterests.map(item => (
+                                                        <span key={item} className="chip">{getLocalizedInterest(item, 'personal')}</span>
                                                     ))}
+                                                    {formData.otherPersonalInterests && (
+                                                        <span className="chip" style={{ background: '#f3f4f6', border: '1px dashed #ccc' }}>{formData.otherPersonalInterests}</span>
+                                                    )}
                                                 </div>
                                             </div>
                                         )}
