@@ -137,10 +137,12 @@
             "premium": {
                 "title": "Premium",
                 "coming_soon": "Coming soon"
+            },
+            "early_bird": {
+                "price": "Free for you"
             }
         },
         "rules": {
-            "title": "Community Guidelines",
             "basics": {
                 "title": "The basics",
                 "items": [

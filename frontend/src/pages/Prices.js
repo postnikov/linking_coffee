@@ -123,7 +123,7 @@ const Prices = ({ user }) => {
 
                         <div style={{ fontSize: '1.8rem', fontWeight: 'bold', marginBottom: '2rem', textAlign: 'center', color: '#6366f1', marginTop: '-1px' }}>
                             {currentPlan === 'EarlyBird'
-                                ? '0 EUR'
+                                ? t('pages.prices.early_bird.price', 'Free for you')
                                 : (billingCycle === 'monthly' ? t('pages.prices.pro.price_monthly') : t('pages.prices.pro.price_yearly'))
                             }
                         </div>

@@ -138,10 +138,12 @@
             "premium": {
                 "title": "Premium",
                 "coming_soon": "Скоро"
+            },
+            "early_bird": {
+                "price": "Бесплатно для вас"
             }
         },
         "rules": {
-            "title": "Правила сообщества",
             "basics": {
                 "title": "Основное",
                 "items": [
