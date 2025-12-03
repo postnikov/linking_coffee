@@ -56,7 +56,8 @@ const Dashboard = () => {
         personalDesc: '',
         professionalInterests: '',
         personalInterests: '',
-        coffeeGoals: []
+        coffeeGoals: [],
+        serendipity: 5
     });
 
     const [isLoading, setIsLoading] = useState(false);
@@ -1108,9 +1109,44 @@ const Dashboard = () => {
                 {/* Right Side: Matching */}
                 <div className="matching-section">
                     <div className="glass-card" style={{ height: '100%', padding: '2rem' }}>
-                        <h2 className="section-title">{t('dashboard.matching.title', 'Matching')}</h2>
-                        <div className="matching-placeholder">
-                            <p>{t('dashboard.matching.placeholder', 'Matching features coming soon...')}</p>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                            <h2 className="section-title" style={{ marginBottom: 0 }}>{t('dashboard.matching.title', 'Matching Settings')}</h2>
+                            {savedSections['serendipity'] && (
+                                <span style={{ color: '#10b981', fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                    {t('common.saved', 'Saved')}
+                                </span>
+                            )}
+                        </div>
+
+                        <div className="input-group">
+                            <label className="form-label" style={{ textAlign: 'left', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between' }}>
+                                <span>{t('dashboard.matching.serendipity', 'Serendipity Level')}</span>
+                                <span style={{ color: '#7c3aed', fontWeight: 'bold' }}>{formData.serendipity}</span>
+                            </label>
+
+                            <input
+                                type="range"
+                                min="1"
+                                max="10"
+                                value={formData.serendipity}
+                                onChange={(e) => setFormData({ ...formData, serendipity: parseInt(e.target.value) })}
+                                onMouseUp={() => autoSaveProfile({ ...formData }, 'serendipity')}
+                                onTouchEnd={() => autoSaveProfile({ ...formData }, 'serendipity')}
+                                style={{
+                                    width: '100%',
+                                    accentColor: '#7c3aed',
+                                    height: '6px',
+                                    borderRadius: '3px',
+                                    marginBottom: '0.5rem',
+                                    cursor: 'pointer'
+                                }}
+                            />
+
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#666' }}>
+                                <span>{t('dashboard.matching.low', 'Low (like me)')} (1)</span>
+                                <span>{t('dashboard.matching.high', 'High')} (10)</span>
+                            </div>
                         </div>
                     </div>
                 </div>

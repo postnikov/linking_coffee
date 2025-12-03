@@ -534,6 +534,7 @@ app.get('/api/profile', async (req, res) => {
         coffeeGoals: fields.Coffee_Goals || [],
         languages: fields.Languages || [],
         bestMeetingDays: fields.Best_Meetings_Days || [],
+        serendipity: fields.Serendipity || 5,
         avatar: fields.Avatar && fields.Avatar.length > 0 ? fields.Avatar[0].url : ''
       };
 
@@ -579,7 +580,8 @@ app.put('/api/profile', async (req, res) => {
         Personal_Description: profile.personalDesc,
         Coffee_Goals: profile.coffeeGoals,
         Languages: profile.languages,
-        Best_Meetings_Days: profile.bestMeetingDays
+        Best_Meetings_Days: profile.bestMeetingDays,
+        Serendipity: profile.serendipity
       };
 
       // Handle Country Linking

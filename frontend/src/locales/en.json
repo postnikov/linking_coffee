@@ -50,8 +50,11 @@
             "select_country_first": "Please select a country first"
         },
         "matching": {
-            "title": "Matching",
-            "placeholder": "Matching features coming soon..."
+            "title": "Matching Settings",
+            "placeholder": "Matching features coming soon...",
+            "serendipity": "Serendipity Level",
+            "low": "Low (like me)",
+            "high": "High"
         }
     },
     "form": {
