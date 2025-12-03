@@ -359,3 +359,33 @@ textarea.form-control {
     padding: 1.5rem;
     border-top: 1px solid #e5e7eb;
 }
+
+/* Avatar and Name Container */
+.avatar-name-container {
+    display: flex;
+    gap: 2rem;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.avatar-name-container .avatar-upload {
+    margin-bottom: 0;
+}
+
+.avatar-name-container .name-family-row {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+@media (max-width: 768px) {
+    .avatar-name-container {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .avatar-name-container .name-family-row {
+        width: 100%;
+        flex-direction: column;
+    }
+}

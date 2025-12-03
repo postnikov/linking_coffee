@@ -440,9 +440,9 @@ const Dashboard = () => {
                     {isEditMode ? (
                         <form onSubmit={handleSubmit} className="profile-form">
                             {/* Avatar and Name Row */}
-                            <div style={{ display: 'flex', gap: '2rem', alignItems: 'center', marginBottom: '1.5rem' }}>
+                            <div className="avatar-name-container">
                                 {/* Avatar */}
-                                <div className="avatar-upload" style={{ marginBottom: 0 }}>
+                                <div className="avatar-upload">
                                     <label className="avatar-wrapper">
                                         <div className="avatar-preview">
                                             {formData.avatar && !imageError ? (
@@ -468,7 +468,7 @@ const Dashboard = () => {
                                 </div>
 
                                 {/* Name & Family */}
-                                <div className="form-row" style={{ flex: 1, marginBottom: 0 }}>
+                                <div className="form-row name-family-row">
                                     <div className="form-group">
                                         <label>{t('dashboard.profile.name', 'Name')}</label>
                                         <input
