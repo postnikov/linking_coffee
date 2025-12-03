@@ -1191,6 +1191,7 @@ const Dashboard = () => {
                                     placeholder={t('dashboard.profile.other_professional_interests_placeholder', 'Other professional interests...')}
                                     value={formData.otherProfessionalInterests}
                                     onChange={handleChange}
+                                    onBlur={() => autoSaveProfile(formData, 'otherProfessionalInterests')}
                                 />
                             </div>
 
@@ -1252,6 +1253,7 @@ const Dashboard = () => {
                                     placeholder={t('dashboard.profile.other_personal_interests_placeholder', 'Other personal interests...')}
                                     value={formData.otherPersonalInterests}
                                     onChange={handleChange}
+                                    onBlur={() => autoSaveProfile(formData, 'otherPersonalInterests')}
                                 />
                             </div>
 
