@@ -47,7 +47,11 @@
             "change_timezone": "Изменить",
             "change_days": "Изменить",
             "change_languages": "Изменить",
-            "select_country_first": "Сначала выберите страну"
+            "select_country_first": "Сначала выберите страну",
+            "select_professional_interests": "Выберите профессиональные интересы",
+            "select_personal_interests": "Выберите личные интересы",
+            "other_interests_placeholder": "Другие интересы...",
+            "change_interests": "Изменить"
         },
         "matching": {
             "title": "Настройки мэтчинга",

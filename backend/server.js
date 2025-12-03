@@ -307,7 +307,7 @@ app.post('/api/verify', async (req, res) => {
           id: record.id,
           fields: updateFields
         }
-      ]);
+      ], { typecast: true });
 
       console.log(`✅ Successfully updated record!`);
       res.json({
@@ -462,6 +462,22 @@ app.post('/api/cities', async (req, res) => {
   }
 });
 
+// Step 3.5: Get Interests
+app.get('/api/interests', (req, res) => {
+  try {
+    const interestsPath = path.join(__dirname, '../docs/interests.json');
+    if (fs.existsSync(interestsPath)) {
+      const interests = JSON.parse(fs.readFileSync(interestsPath, 'utf8'));
+      res.json({ success: true, interests });
+    } else {
+      res.status(404).json({ success: false, message: 'Interests file not found' });
+    }
+  } catch (error) {
+    console.error('Error reading interests:', error);
+    res.status(500).json({ success: false, message: 'Failed to read interests' });
+  }
+});
+
 // Step 4: Get User Profile
 app.get('/api/profile', async (req, res) => {
   const { username } = req.query;
@@ -529,8 +545,10 @@ app.get('/api/profile', async (req, res) => {
         grade: fields.Grade || 'Prefer not to say',
         professionalDesc: fields.Professional_Description || '',
         personalDesc: fields.Personal_Description || '',
-        professionalInterests: fields.Professional_Interests ? fields.Professional_Interests.join(', ') : '',
-        personalInterests: fields.Personal_Interests ? fields.Personal_Interests.join(', ') : '',
+        professionalInterests: fields.Professional_Interests || [],
+        otherProfessionalInterests: fields.Other_Professional_Interests || '',
+        personalInterests: fields.Personal_Interests || [],
+        otherPersonalInterests: fields.Other_Personal_Interests || '',
         coffeeGoals: fields.Coffee_Goals || [],
         languages: fields.Languages || [],
         bestMeetingDays: fields.Best_Meetings_Days || [],
@@ -581,7 +599,11 @@ app.put('/api/profile', async (req, res) => {
         Coffee_Goals: profile.coffeeGoals,
         Languages: profile.languages,
         Best_Meetings_Days: profile.bestMeetingDays,
-        Serendipity: profile.serendipity
+        Serendipity: profile.serendipity,
+        Professional_Interests: profile.professionalInterests,
+        Other_Professional_Interests: profile.otherProfessionalInterests,
+        Personal_Interests: profile.personalInterests,
+        Other_Personal_Interests: profile.otherPersonalInterests
       };
 
       // Handle Country Linking
@@ -592,14 +614,6 @@ app.put('/api/profile', async (req, res) => {
       // Handle City Linking
       if (profile.city && profile.city.id) {
         updateFields.City_Link = [profile.city.id];
-      }
-
-      // Handle Interests - split string into array
-      if (profile.professionalInterests) {
-        updateFields.Professional_Interests = profile.professionalInterests.split(',').map(s => s.trim()).filter(s => s);
-      }
-      if (profile.personalInterests) {
-        updateFields.Personal_Interests = profile.personalInterests.split(',').map(s => s.trim()).filter(s => s);
       }
 
       await base(process.env.AIRTABLE_MEMBERS_TABLE).update([

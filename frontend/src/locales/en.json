@@ -47,7 +47,11 @@
             "change_timezone": "Change",
             "change_days": "Change",
             "change_languages": "Change",
-            "select_country_first": "Please select a country first"
+            "select_country_first": "Please select a country first",
+            "select_professional_interests": "Select Professional Interests",
+            "select_personal_interests": "Select Personal Interests",
+            "other_interests_placeholder": "Other interests...",
+            "change_interests": "Change"
         },
         "matching": {
             "title": "Matching Settings",

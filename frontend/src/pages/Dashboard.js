@@ -41,7 +41,7 @@ const getAvatarUrl = (avatarPath) => {
 };
 
 const Dashboard = () => {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const [formData, setFormData] = useState({
         name: '',
         family: '',
@@ -54,8 +54,10 @@ const Dashboard = () => {
         grade: 'Prefer not to say',
         professionalDesc: '',
         personalDesc: '',
-        professionalInterests: '',
-        personalInterests: '',
+        professionalInterests: [],
+        otherProfessionalInterests: '',
+        personalInterests: [],
+        otherPersonalInterests: '',
         coffeeGoals: [],
         serendipity: 5
     });
@@ -72,8 +74,11 @@ const Dashboard = () => {
     const [showDaysModal, setShowDaysModal] = useState(false);
     const [showCountryModal, setShowCountryModal] = useState(false);
     const [showCityModal, setShowCityModal] = useState(false);
+    const [showProfessionalInterestsModal, setShowProfessionalInterestsModal] = useState(false);
+    const [showPersonalInterestsModal, setShowPersonalInterestsModal] = useState(false);
     const [countries, setCountries] = useState([]);
     const [cities, setCities] = useState([]);
+    const [interests, setInterests] = useState({ professional: [], personal: [], categories: {} });
     const [countrySearch, setCountrySearch] = useState('');
     const [newCityName, setNewCityName] = useState('');
     const [savedSections, setSavedSections] = useState({});
@@ -98,6 +103,20 @@ const Dashboard = () => {
             }
         };
         fetchCountries();
+
+        // Fetch interests
+        const fetchInterests = async () => {
+            try {
+                const response = await fetch(`${API_URL}/api/interests`);
+                const data = await response.json();
+                if (data.success) {
+                    setInterests(data.interests);
+                }
+            } catch (error) {
+                console.error('Failed to fetch interests:', error);
+            }
+        };
+        fetchInterests();
     }, []);
 
     // Fetch cities when country changes or modal opens
@@ -646,6 +665,101 @@ const Dashboard = () => {
                                     </div>
                                 </div>
                             )}
+                            {/* Professional Interests Modal */}
+                            {showProfessionalInterestsModal && (
+                                <div className="modal-overlay" onClick={() => setShowProfessionalInterestsModal(false)}>
+                                    <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
+                                        <div className="modal-header">
+                                            <h3>{t('dashboard.profile.select_professional_interests', 'Select Professional Interests')}</h3>
+                                            <button className="close-btn" onClick={() => setShowProfessionalInterestsModal(false)}>×</button>
+                                        </div>
+                                        <div className="modal-body" style={{ overflowY: 'auto', padding: '1rem' }}>
+                                            {interests.categories.professional && interests.categories.professional.map(category => (
+                                                <div key={category.id} style={{ marginBottom: '1.5rem' }}>
+                                                    <h4 style={{ fontSize: '1rem', color: '#666', marginBottom: '0.5rem', borderBottom: '1px solid #eee', paddingBottom: '0.25rem' }}>
+                                                        {i18n.language === 'ru' ? category.name_ru : category.name_en}
+                                                    </h4>
+                                                    <div className="language-grid">
+                                                        {interests.professional
+                                                            .filter(item => item.category === category.id)
+                                                            .map(item => {
+                                                                const itemName = i18n.language === 'ru' ? item.name_ru : item.name_en;
+                                                                return (
+                                                                    <label key={item.id} className={`language-option ${formData.professionalInterests.includes(itemName) ? 'selected' : ''}`}>
+                                                                        <input
+                                                                            type="checkbox"
+                                                                            checked={formData.professionalInterests.includes(itemName)}
+                                                                            onChange={() => handleMultiSelectChange('professionalInterests', itemName)}
+                                                                            style={{ display: 'none' }}
+                                                                        />
+                                                                        {itemName}
+                                                                        {formData.professionalInterests.includes(itemName) && <span className="check-icon">✓</span>}
+                                                                    </label>
+                                                                );
+                                                            })}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div className="modal-footer">
+                                            <button className="save-btn" onClick={() => {
+                                                setShowProfessionalInterestsModal(false);
+                                                autoSaveProfile(formData, 'professionalInterests');
+                                            }} style={{ width: '100%', marginTop: 0 }}>
+                                                {t('common.done', 'Done')}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Personal Interests Modal */}
+                            {showPersonalInterestsModal && (
+                                <div className="modal-overlay" onClick={() => setShowPersonalInterestsModal(false)}>
+                                    <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
+                                        <div className="modal-header">
+                                            <h3>{t('dashboard.profile.select_personal_interests', 'Select Personal Interests')}</h3>
+                                            <button className="close-btn" onClick={() => setShowPersonalInterestsModal(false)}>×</button>
+                                        </div>
+                                        <div className="modal-body" style={{ overflowY: 'auto', padding: '1rem' }}>
+                                            {interests.categories.personal && interests.categories.personal.map(category => (
+                                                <div key={category.id} style={{ marginBottom: '1.5rem' }}>
+                                                    <h4 style={{ fontSize: '1rem', color: '#666', marginBottom: '0.5rem', borderBottom: '1px solid #eee', paddingBottom: '0.25rem' }}>
+                                                        {i18n.language === 'ru' ? category.name_ru : category.name_en}
+                                                    </h4>
+                                                    <div className="language-grid">
+                                                        {interests.personal
+                                                            .filter(item => item.category === category.id)
+                                                            .map(item => {
+                                                                const itemName = i18n.language === 'ru' ? item.name_ru : item.name_en;
+                                                                return (
+                                                                    <label key={item.id} className={`language-option ${formData.personalInterests.includes(itemName) ? 'selected' : ''}`}>
+                                                                        <input
+                                                                            type="checkbox"
+                                                                            checked={formData.personalInterests.includes(itemName)}
+                                                                            onChange={() => handleMultiSelectChange('personalInterests', itemName)}
+                                                                            style={{ display: 'none' }}
+                                                                        />
+                                                                        {itemName}
+                                                                        {formData.personalInterests.includes(itemName) && <span className="check-icon">✓</span>}
+                                                                    </label>
+                                                                );
+                                                            })}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div className="modal-footer">
+                                            <button className="save-btn" onClick={() => {
+                                                setShowPersonalInterestsModal(false);
+                                                autoSaveProfile(formData, 'personalInterests');
+                                            }} style={{ width: '100%', marginTop: 0 }}>
+                                                {t('common.done', 'Done')}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Timezone */}
                             <div className="form-group">
@@ -927,23 +1041,98 @@ const Dashboard = () => {
                             {/* Interests */}
                             <div className="form-group">
                                 <label>{t('dashboard.profile.professional_interests', 'Professional Interests')}</label>
+                                <div className="language-chips" style={{ marginBottom: '1rem' }}>
+                                    {formData.professionalInterests.map(interest => (
+                                        <div key={interest} className="chip">
+                                            {interest}
+                                            <button
+                                                type="button"
+                                                className="chip-remove"
+                                                onClick={() => handleMultiSelectChange('professionalInterests', interest)}
+                                            >
+                                                ×
+                                            </button>
+                                        </div>
+                                    ))}
+                                    <button
+                                        type="button"
+                                        className={`add-language-btn ${savedSections.professionalInterests ? 'saved' : ''}`}
+                                        onClick={() => setShowProfessionalInterestsModal(true)}
+                                        style={savedSections.professionalInterests ? { backgroundColor: '#dcfce7', color: '#166534', borderColor: '#bbf7d0' } : {}}
+                                    >
+                                        {savedSections.professionalInterests ? (
+                                            <>
+                                                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                    <path d="M10 3L4.5 8.5L2 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                </svg>
+                                                {t('common.saved', 'Saved')}
+                                            </>
+                                        ) : (
+                                            <>
+                                                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                    <path d="M1.5 8.5L1 11L3.5 10.5L9.75 4.25L7.75 2.25L1.5 8.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                    <path d="M9.75 4.25L7.75 2.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                </svg>
+                                                {t('dashboard.profile.change_interests', 'Change')}
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
                                 <input
                                     type="text"
-                                    name="professionalInterests"
+                                    name="otherProfessionalInterests"
                                     className="form-control"
-                                    placeholder="e.g. AI, Startups, Fintech"
-                                    value={formData.professionalInterests}
+                                    placeholder={t('dashboard.profile.other_interests_placeholder', 'Other professional interests...')}
+                                    value={formData.otherProfessionalInterests}
                                     onChange={handleChange}
                                 />
                             </div>
+
                             <div className="form-group">
                                 <label>{t('dashboard.profile.personal_interests', 'Personal Interests')}</label>
+                                <div className="language-chips" style={{ marginBottom: '1rem' }}>
+                                    {formData.personalInterests.map(interest => (
+                                        <div key={interest} className="chip">
+                                            {interest}
+                                            <button
+                                                type="button"
+                                                className="chip-remove"
+                                                onClick={() => handleMultiSelectChange('personalInterests', interest)}
+                                            >
+                                                ×
+                                            </button>
+                                        </div>
+                                    ))}
+                                    <button
+                                        type="button"
+                                        className={`add-language-btn ${savedSections.personalInterests ? 'saved' : ''}`}
+                                        onClick={() => setShowPersonalInterestsModal(true)}
+                                        style={savedSections.personalInterests ? { backgroundColor: '#dcfce7', color: '#166534', borderColor: '#bbf7d0' } : {}}
+                                    >
+                                        {savedSections.personalInterests ? (
+                                            <>
+                                                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                    <path d="M10 3L4.5 8.5L2 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                </svg>
+                                                {t('common.saved', 'Saved')}
+                                            </>
+                                        ) : (
+                                            <>
+                                                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                    <path d="M1.5 8.5L1 11L3.5 10.5L9.75 4.25L7.75 2.25L1.5 8.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                    <path d="M9.75 4.25L7.75 2.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                </svg>
+                                                {t('dashboard.profile.change_interests', 'Change')}
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
                                 <input
                                     type="text"
-                                    name="personalInterests"
+                                    name="otherPersonalInterests"
                                     className="form-control"
-                                    placeholder="e.g. Hiking, Chess, Jazz"
-                                    value={formData.personalInterests}
+                                    placeholder={t('dashboard.profile.other_interests_placeholder', 'Other personal interests...')}
+                                    value={formData.otherPersonalInterests}
                                     onChange={handleChange}
                                 />
                             </div>
