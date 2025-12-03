@@ -76,7 +76,7 @@ const Dashboard = () => {
     const [countrySearch, setCountrySearch] = useState('');
     const [newCityName, setNewCityName] = useState('');
     const [savedSections, setSavedSections] = useState({});
-    const [isEditMode, setIsEditMode] = useState(true);
+    const [isEditMode, setIsEditMode] = useState(false);
     const [imageError, setImageError] = useState(false);
 
     useEffect(() => {
