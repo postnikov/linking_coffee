@@ -50,7 +50,8 @@
             "select_country_first": "Сначала выберите страну",
             "select_professional_interests": "Выберите профессиональные интересы",
             "select_personal_interests": "Выберите личные интересы",
-            "other_interests_placeholder": "Другие интересы...",
+            "other_professional_interests_placeholder": "Другие профессиональные интересы...",
+            "other_personal_interests_placeholder": "Другие личные интересы...",
             "change_interests": "Изменить"
         },
         "matching": {

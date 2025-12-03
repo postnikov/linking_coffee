@@ -683,6 +683,7 @@ const Dashboard = () => {
                                     </div>
                                 </div>
                             )}
+
                             {/* Professional Interests Modal */}
                             {showProfessionalInterestsModal && (
                                 <div className="modal-overlay" onClick={() => setShowProfessionalInterestsModal(false)}>
@@ -691,6 +692,27 @@ const Dashboard = () => {
                                             <h3>{t('dashboard.profile.select_professional_interests', 'Select Professional Interests')}</h3>
                                             <button className="close-btn" onClick={() => setShowProfessionalInterestsModal(false)}>×</button>
                                         </div>
+                                        {formData.professionalInterests.length > 0 && (
+                                            <div className="modal-selected-section">
+                                                <h4 style={{ fontSize: '0.9rem', color: '#6b7280', marginBottom: '0.5rem', textTransform: 'uppercase' }}>
+                                                    {t('common.selected', 'Selected')} ({formData.professionalInterests.length})
+                                                </h4>
+                                                <div className="language-chips">
+                                                    {formData.professionalInterests.map(interest => (
+                                                        <div key={interest} className="chip" style={{ backgroundColor: getInterestColor(interest) }}>
+                                                            {getLocalizedInterest(interest, 'professional')}
+                                                            <button
+                                                                type="button"
+                                                                className="chip-remove"
+                                                                onClick={() => handleMultiSelectChange('professionalInterests', interest)}
+                                                            >
+                                                                ×
+                                                            </button>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
                                         <div className="modal-body" style={{ overflowY: 'auto', padding: '1rem' }}>
                                             {interests.categories.professional && interests.categories.professional.map(category => (
                                                 <div key={category.id} style={{ marginBottom: '1.5rem' }}>
@@ -740,6 +762,27 @@ const Dashboard = () => {
                                             <h3>{t('dashboard.profile.select_personal_interests', 'Select Personal Interests')}</h3>
                                             <button className="close-btn" onClick={() => setShowPersonalInterestsModal(false)}>×</button>
                                         </div>
+                                        {formData.personalInterests.length > 0 && (
+                                            <div className="modal-selected-section">
+                                                <h4 style={{ fontSize: '0.9rem', color: '#6b7280', marginBottom: '0.5rem', textTransform: 'uppercase' }}>
+                                                    {t('common.selected', 'Selected')} ({formData.personalInterests.length})
+                                                </h4>
+                                                <div className="language-chips">
+                                                    {formData.personalInterests.map(interest => (
+                                                        <div key={interest} className="chip" style={{ backgroundColor: getInterestColor(interest) }}>
+                                                            {getLocalizedInterest(interest, 'personal')}
+                                                            <button
+                                                                type="button"
+                                                                className="chip-remove"
+                                                                onClick={() => handleMultiSelectChange('personalInterests', interest)}
+                                                            >
+                                                                ×
+                                                            </button>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
                                         <div className="modal-body" style={{ overflowY: 'auto', padding: '1rem' }}>
                                             {interests.categories.personal && interests.categories.personal.map(category => (
                                                 <div key={category.id} style={{ marginBottom: '1.5rem' }}>
@@ -1102,7 +1145,7 @@ const Dashboard = () => {
                                     type="text"
                                     name="otherProfessionalInterests"
                                     className="form-control"
-                                    placeholder={t('dashboard.profile.other_interests_placeholder', 'Other professional interests...')}
+                                    placeholder={t('dashboard.profile.other_professional_interests_placeholder', 'Other professional interests...')}
                                     value={formData.otherProfessionalInterests}
                                     onChange={handleChange}
                                 />
@@ -1112,7 +1155,7 @@ const Dashboard = () => {
                                 <label>{t('dashboard.profile.personal_interests', 'Personal Interests')}</label>
                                 <div className="language-chips" style={{ marginBottom: '1rem' }}>
                                     {formData.personalInterests.map(interest => (
-                                        <div key={interest} className="chip">
+                                        <div key={interest} className="chip" style={{ backgroundColor: getInterestColor(interest) }}>
                                             {getLocalizedInterest(interest, 'personal')}
                                             <button
                                                 type="button"
@@ -1151,7 +1194,7 @@ const Dashboard = () => {
                                     type="text"
                                     name="otherPersonalInterests"
                                     className="form-control"
-                                    placeholder={t('dashboard.profile.other_interests_placeholder', 'Other personal interests...')}
+                                    placeholder={t('dashboard.profile.other_personal_interests_placeholder', 'Other personal interests...')}
                                     value={formData.otherPersonalInterests}
                                     onChange={handleChange}
                                 />

@@ -264,9 +264,9 @@ textarea.form-control {
     height: 100%;
     background: rgba(0, 0, 0, 0.5);
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: center;
-    padding-top: 10vh;
+    padding-top: 0;
     z-index: 1000;
     backdrop-filter: blur(4px);
 }
@@ -275,8 +275,8 @@ textarea.form-control {
     background: white;
     border-radius: 16px;
     width: 90%;
-    max-width: 600px;
-    height: 700px;
+    max-width: 800px;
+    height: 85vh;
     display: flex;
     flex-direction: column;
     max-height: 90vh;
@@ -306,9 +306,19 @@ textarea.form-control {
     cursor: pointer;
 }
 
+.modal-selected-section {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+    background: #f9fafb;
+    flex-shrink: 0;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
 .modal-body {
     padding: 1.5rem;
     overflow-y: auto;
+    flex: 1;
 }
 
 .language-grid {

@@ -50,7 +50,8 @@
             "select_country_first": "Please select a country first",
             "select_professional_interests": "Select Professional Interests",
             "select_personal_interests": "Select Personal Interests",
-            "other_interests_placeholder": "Other interests...",
+            "other_professional_interests_placeholder": "Other professional interests...",
+            "other_personal_interests_placeholder": "Other personal interests...",
             "change_interests": "Change"
         },
         "matching": {
