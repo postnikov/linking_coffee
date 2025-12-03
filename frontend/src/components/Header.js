@@ -53,9 +53,9 @@ const Header = ({ user, onLogout }) => {
                     </nav>
                 </div>
 
-                <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <div className="header-actions" style={{ display: 'flex', alignItems: 'baseline', gap: '1rem' }}>
                     {user && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '1rem' }}>
                             {profileName && (
                                 <span style={{ color: 'white', fontWeight: 500 }}>{profileName}</span>
                             )}
