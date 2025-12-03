@@ -54,8 +54,8 @@ const Dashboard = () => {
         grade: 'Prefer not to say',
         professionalDesc: '',
         personalDesc: '',
-        professionalInterests: [],
-        personalInterests: [],
+        professionalInterests: '',
+        personalInterests: '',
         coffeeGoals: []
     });
 
@@ -148,9 +148,7 @@ const Dashboard = () => {
                 if (data.success) {
                     const profileData = {
                         ...formData, // Keep defaults for missing fields
-                        ...data.profile,
-                        professionalInterests: Array.isArray(data.profile.professionalInterests) ? data.profile.professionalInterests : [],
-                        personalInterests: Array.isArray(data.profile.personalInterests) ? data.profile.personalInterests : []
+                        ...data.profile
                     };
                     setFormData(profileData);
                     setInitialFormData(profileData);
@@ -1037,23 +1035,23 @@ const Dashboard = () => {
                                     </div>
                                 )}
 
-                                {(formData.professionalInterests?.length > 0 || formData.personalInterests?.length > 0) && (
+                                {(formData.professionalInterests || formData.personalInterests) && (
                                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
-                                        {formData.professionalInterests?.length > 0 && (
+                                        {formData.professionalInterests && (
                                             <div>
                                                 <h4 style={{ fontSize: '0.9rem', color: '#888', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>{t('dashboard.profile.professional_interests')}</h4>
                                                 <div className="language-chips" style={{ flexWrap: 'wrap' }}>
-                                                    {formData.professionalInterests.map(item => (
+                                                    {formData.professionalInterests.split(',').map(item => item.trim()).filter(item => item).map(item => (
                                                         <span key={item} className="chip">{item}</span>
                                                     ))}
                                                 </div>
                                             </div>
                                         )}
-                                        {formData.personalInterests?.length > 0 && (
+                                        {formData.personalInterests && (
                                             <div>
                                                 <h4 style={{ fontSize: '0.9rem', color: '#888', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>{t('dashboard.profile.personal_interests')}</h4>
                                                 <div className="language-chips" style={{ flexWrap: 'wrap' }}>
-                                                    {formData.personalInterests.map(item => (
+                                                    {formData.personalInterests.split(',').map(item => item.trim()).filter(item => item).map(item => (
                                                         <span key={item} className="chip">{item}</span>
                                                     ))}
                                                 </div>
