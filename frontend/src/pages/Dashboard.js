@@ -1305,30 +1305,29 @@ const Dashboard = () => {
                             </div>
                         </form>
                     ) : (
-                        <div className="profile-view" style={{ padding: '1rem 0' }}>
-                            <div style={{ display: 'flex', gap: '2rem', alignItems: 'center', marginBottom: '2rem' }}>
-                                <div className="avatar-preview" style={{ width: '120px', height: '120px', borderRadius: '50%', overflow: 'hidden' }}>
+                        <div className="profile-view">
+                            <div className="profile-view-header">
+                                <div className="avatar-preview view-mode-avatar">
                                     {formData.avatar && !imageError ? (
                                         <img
                                             src={getAvatarUrl(formData.avatar)}
                                             alt="Profile"
-                                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                             onError={() => setImageError(true)}
                                         />
                                     ) : (
-                                        <div className="avatar-placeholder" style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#eee', fontSize: '3rem' }}>
+                                        <div className="avatar-placeholder">
                                             {formData.name?.[0]}
                                         </div>
                                     )}
                                 </div>
-                                <div>
-                                    <h3 style={{ fontSize: '1.8rem', fontWeight: 700, margin: 0 }}>{formData.name} {formData.family}</h3>
-                                    <p style={{ color: '#666', margin: '0.5rem 0', fontSize: '1.1rem' }}>
+                                <div className="profile-view-info">
+                                    <h3>{formData.name} {formData.family}</h3>
+                                    <p className="profile-subtitle">
                                         {formData.profession}
                                         {formData.grade && <span style={{ opacity: 0.7 }}> • {formData.grade}</span>}
                                     </p>
                                     {formData.country && (
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#666' }}>
+                                        <div className="profile-location">
                                             <span style={{ fontSize: '1.2rem' }}>{formData.country.flag}</span>
                                             <span>{formData.country.name}</span>
                                             {formData.city && <span>• {formData.city.name}</span>}
@@ -1338,26 +1337,26 @@ const Dashboard = () => {
                                 </div>
                             </div>
 
-                            <div style={{ display: 'grid', gap: '2rem' }}>
+                            <div className="profile-content-grid">
                                 {formData.professionalDesc && (
-                                    <div>
-                                        <h4 style={{ fontSize: '0.9rem', color: '#888', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>{t('dashboard.profile.professional_desc')}</h4>
-                                        <p style={{ lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{formData.professionalDesc}</p>
+                                    <div className="profile-section-block">
+                                        <h4>{t('dashboard.profile.professional_desc')}</h4>
+                                        <p>{formData.professionalDesc}</p>
                                     </div>
                                 )}
 
                                 {formData.personalDesc && (
-                                    <div>
-                                        <h4 style={{ fontSize: '0.9rem', color: '#888', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>{t('dashboard.profile.personal_desc')}</h4>
-                                        <p style={{ lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{formData.personalDesc}</p>
+                                    <div className="profile-section-block">
+                                        <h4>{t('dashboard.profile.personal_desc')}</h4>
+                                        <p>{formData.personalDesc}</p>
                                     </div>
                                 )}
 
                                 {(formData.professionalInterests.length > 0 || formData.otherProfessionalInterests || formData.personalInterests.length > 0 || formData.otherPersonalInterests) && (
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+                                    <div className="profile-interests-grid">
                                         {(formData.professionalInterests.length > 0 || formData.otherProfessionalInterests) && (
                                             <div>
-                                                <h4 style={{ fontSize: '0.9rem', color: '#888', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>{t('dashboard.profile.professional_interests')}</h4>
+                                                <h4>{t('dashboard.profile.professional_interests')}</h4>
                                                 <div className="language-chips" style={{ flexWrap: 'wrap' }}>
                                                     {formData.professionalInterests.map(item => (
                                                         <span key={item} className="chip" style={{ backgroundColor: getInterestColor(item) }}>
@@ -1374,7 +1373,7 @@ const Dashboard = () => {
                                         )}
                                         {(formData.personalInterests.length > 0 || formData.otherPersonalInterests) && (
                                             <div>
-                                                <h4 style={{ fontSize: '0.9rem', color: '#888', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>{t('dashboard.profile.personal_interests')}</h4>
+                                                <h4>{t('dashboard.profile.personal_interests')}</h4>
                                                 <div className="language-chips" style={{ flexWrap: 'wrap' }}>
                                                     {formData.personalInterests.map(item => (
                                                         <span key={item} className="chip" style={{ backgroundColor: getInterestColor(item) }}>
@@ -1393,16 +1392,16 @@ const Dashboard = () => {
                                 )}
 
                                 {formData.coffeeGoals && (
-                                    <div>
-                                        <h4 style={{ fontSize: '0.9rem', color: '#888', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>{t('dashboard.profile.coffee_goals')}</h4>
-                                        <p style={{ lineHeight: 1.6 }}>{formData.coffeeGoals}</p>
+                                    <div className="profile-section-block">
+                                        <h4>{t('dashboard.profile.coffee_goals')}</h4>
+                                        <p>{formData.coffeeGoals}</p>
                                     </div>
                                 )}
 
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+                                <div className="profile-interests-grid">
                                     {formData.languages?.length > 0 && (
                                         <div>
-                                            <h4 style={{ fontSize: '0.9rem', color: '#888', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>{t('dashboard.profile.languages')}</h4>
+                                            <h4>{t('dashboard.profile.languages')}</h4>
                                             <div className="language-chips" style={{ flexWrap: 'wrap' }}>
                                                 {formData.languages.map(lang => (
                                                     <span key={lang} className="chip">{lang}</span>
@@ -1413,7 +1412,7 @@ const Dashboard = () => {
 
                                     {formData.bestMeetingDays?.length > 0 && (
                                         <div>
-                                            <h4 style={{ fontSize: '0.9rem', color: '#888', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>{t('dashboard.profile.best_days')}</h4>
+                                            <h4>{t('dashboard.profile.best_days')}</h4>
                                             <div className="language-chips" style={{ flexWrap: 'wrap' }}>
                                                 {formData.bestMeetingDays.map(day => (
                                                     <span key={day} className="chip" style={{ backgroundColor: DAY_COLORS[day] || '#f3f4f6' }}>
