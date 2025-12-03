@@ -72,7 +72,7 @@ const Prices = ({ user }) => {
                         flexDirection: 'column',
                         zIndex: 1
                     }}>
-                        {user && currentPlan === 'PRO' && (
+                        {user && (currentPlan === 'PRO' || currentPlan === 'EarlyBird') && (
                             <div className="early-bird-badge" style={{ position: 'absolute', top: '-15px', left: '50%', transform: 'translateX(-50%)', whiteSpace: 'nowrap', zIndex: 2 }}>
                                 {t('pages.prices.pro.current')}
                             </div>
@@ -80,47 +80,52 @@ const Prices = ({ user }) => {
 
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', height: '50px' }}>
                             <h2 style={{ fontSize: '2rem', margin: 0, background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                                {t('pages.prices.pro.title')}
+                                {currentPlan === 'EarlyBird' ? 'Early Bird' : t('pages.prices.pro.title')}
                             </h2>
                             {/* Toggle Switch */}
-                            <div style={{ display: 'flex', background: 'rgba(255,255,255,0.3)', borderRadius: '20px', padding: '4px' }}>
-                                <button
-                                    onClick={() => setBillingCycle('monthly')}
-                                    style={{
-                                        background: billingCycle === 'monthly' ? '#6366f1' : 'transparent',
-                                        color: billingCycle === 'monthly' ? 'white' : 'var(--text-primary)',
-                                        border: 'none',
-                                        borderRadius: '16px',
-                                        padding: '6px 12px',
-                                        cursor: 'pointer',
-                                        fontSize: '0.9rem',
-                                        fontWeight: '600',
-                                        transition: 'all 0.3s'
-                                    }}
-                                >
-                                    Month
-                                </button>
-                                <button
-                                    onClick={() => setBillingCycle('yearly')}
-                                    style={{
-                                        background: billingCycle === 'yearly' ? '#6366f1' : 'transparent',
-                                        color: billingCycle === 'yearly' ? 'white' : 'var(--text-primary)',
-                                        border: 'none',
-                                        borderRadius: '16px',
-                                        padding: '6px 12px',
-                                        cursor: 'pointer',
-                                        fontSize: '0.9rem',
-                                        fontWeight: '600',
-                                        transition: 'all 0.3s'
-                                    }}
-                                >
-                                    Year
-                                </button>
-                            </div>
+                            {currentPlan !== 'EarlyBird' && (
+                                <div style={{ display: 'flex', background: 'rgba(255,255,255,0.3)', borderRadius: '20px', padding: '4px' }}>
+                                    <button
+                                        onClick={() => setBillingCycle('monthly')}
+                                        style={{
+                                            background: billingCycle === 'monthly' ? '#6366f1' : 'transparent',
+                                            color: billingCycle === 'monthly' ? 'white' : 'var(--text-primary)',
+                                            border: 'none',
+                                            borderRadius: '16px',
+                                            padding: '6px 12px',
+                                            cursor: 'pointer',
+                                            fontSize: '0.9rem',
+                                            fontWeight: '600',
+                                            transition: 'all 0.3s'
+                                        }}
+                                    >
+                                        Month
+                                    </button>
+                                    <button
+                                        onClick={() => setBillingCycle('yearly')}
+                                        style={{
+                                            background: billingCycle === 'yearly' ? '#6366f1' : 'transparent',
+                                            color: billingCycle === 'yearly' ? 'white' : 'var(--text-primary)',
+                                            border: 'none',
+                                            borderRadius: '16px',
+                                            padding: '6px 12px',
+                                            cursor: 'pointer',
+                                            fontSize: '0.9rem',
+                                            fontWeight: '600',
+                                            transition: 'all 0.3s'
+                                        }}
+                                    >
+                                        Year
+                                    </button>
+                                </div>
+                            )}
                         </div>
 
                         <div style={{ fontSize: '1.8rem', fontWeight: 'bold', marginBottom: '2rem', textAlign: 'center', color: '#6366f1', marginTop: '-1px' }}>
-                            {billingCycle === 'monthly' ? t('pages.prices.pro.price_monthly') : t('pages.prices.pro.price_yearly')}
+                            {currentPlan === 'EarlyBird'
+                                ? '0 EUR'
+                                : (billingCycle === 'monthly' ? t('pages.prices.pro.price_monthly') : t('pages.prices.pro.price_yearly'))
+                            }
                         </div>
 
                         <ul style={{ listStyle: 'none', padding: 0, flex: 1, marginBottom: '2rem' }}>
@@ -131,7 +136,7 @@ const Prices = ({ user }) => {
                             ))}
                         </ul>
 
-                        {currentPlan !== 'PRO' && (
+                        {currentPlan !== 'PRO' && currentPlan !== 'EarlyBird' && (
                             <button className="submit-btn" style={{ width: '100%' }}>
                                 {t('pages.prices.pro.button')}
                             </button>
