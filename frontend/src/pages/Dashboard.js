@@ -250,6 +250,13 @@ const Dashboard = () => {
         }
     };
 
+    // Helper to get localized interest name
+    const getLocalizedInterest = (nameEn, type) => {
+        if (!interests || !interests[type]) return nameEn;
+        const item = interests[type].find(i => i.name_en === nameEn);
+        return item && i18n.language === 'ru' ? item.name_ru : nameEn;
+    };
+
     const handleAvatarChange = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -683,17 +690,18 @@ const Dashboard = () => {
                                                         {interests.professional
                                                             .filter(item => item.category === category.id)
                                                             .map(item => {
-                                                                const itemName = i18n.language === 'ru' ? item.name_ru : item.name_en;
+                                                                const displayName = i18n.language === 'ru' ? item.name_ru : item.name_en;
+                                                                const storedValue = item.name_en;
                                                                 return (
-                                                                    <label key={item.id} className={`language-option ${formData.professionalInterests.includes(itemName) ? 'selected' : ''}`}>
+                                                                    <label key={item.id} className={`language-option ${formData.professionalInterests.includes(storedValue) ? 'selected' : ''}`}>
                                                                         <input
                                                                             type="checkbox"
-                                                                            checked={formData.professionalInterests.includes(itemName)}
-                                                                            onChange={() => handleMultiSelectChange('professionalInterests', itemName)}
+                                                                            checked={formData.professionalInterests.includes(storedValue)}
+                                                                            onChange={() => handleMultiSelectChange('professionalInterests', storedValue)}
                                                                             style={{ display: 'none' }}
                                                                         />
-                                                                        {itemName}
-                                                                        {formData.professionalInterests.includes(itemName) && <span className="check-icon">✓</span>}
+                                                                        {displayName}
+                                                                        {formData.professionalInterests.includes(storedValue) && <span className="check-icon">✓</span>}
                                                                     </label>
                                                                 );
                                                             })}
@@ -731,17 +739,18 @@ const Dashboard = () => {
                                                         {interests.personal
                                                             .filter(item => item.category === category.id)
                                                             .map(item => {
-                                                                const itemName = i18n.language === 'ru' ? item.name_ru : item.name_en;
+                                                                const displayName = i18n.language === 'ru' ? item.name_ru : item.name_en;
+                                                                const storedValue = item.name_en;
                                                                 return (
-                                                                    <label key={item.id} className={`language-option ${formData.personalInterests.includes(itemName) ? 'selected' : ''}`}>
+                                                                    <label key={item.id} className={`language-option ${formData.personalInterests.includes(storedValue) ? 'selected' : ''}`}>
                                                                         <input
                                                                             type="checkbox"
-                                                                            checked={formData.personalInterests.includes(itemName)}
-                                                                            onChange={() => handleMultiSelectChange('personalInterests', itemName)}
+                                                                            checked={formData.personalInterests.includes(storedValue)}
+                                                                            onChange={() => handleMultiSelectChange('personalInterests', storedValue)}
                                                                             style={{ display: 'none' }}
                                                                         />
-                                                                        {itemName}
-                                                                        {formData.personalInterests.includes(itemName) && <span className="check-icon">✓</span>}
+                                                                        {displayName}
+                                                                        {formData.personalInterests.includes(storedValue) && <span className="check-icon">✓</span>}
                                                                     </label>
                                                                 );
                                                             })}
@@ -1044,7 +1053,7 @@ const Dashboard = () => {
                                 <div className="language-chips" style={{ marginBottom: '1rem' }}>
                                     {formData.professionalInterests.map(interest => (
                                         <div key={interest} className="chip">
-                                            {interest}
+                                            {getLocalizedInterest(interest, 'professional')}
                                             <button
                                                 type="button"
                                                 className="chip-remove"
@@ -1093,7 +1102,7 @@ const Dashboard = () => {
                                 <div className="language-chips" style={{ marginBottom: '1rem' }}>
                                     {formData.personalInterests.map(interest => (
                                         <div key={interest} className="chip">
-                                            {interest}
+                                            {getLocalizedInterest(interest, 'personal')}
                                             <button
                                                 type="button"
                                                 className="chip-remove"
