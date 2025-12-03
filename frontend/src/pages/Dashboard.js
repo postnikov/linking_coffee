@@ -284,6 +284,14 @@ const Dashboard = () => {
         return colors[index];
     };
 
+    const handleRemoveOtherInterest = (field, interestToRemove) => {
+        const currentString = formData[field];
+        const items = currentString.split(/[,\.;]+/).map(s => s.trim()).filter(s => s.length > 0);
+        const newItems = items.filter(item => item !== interestToRemove);
+        const newString = newItems.join(', ');
+        setFormData(prev => ({ ...prev, [field]: newString }));
+    };
+
     const handleAvatarChange = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -1129,12 +1137,24 @@ const Dashboard = () => {
                                 <label>{t('dashboard.profile.professional_interests', 'Professional Interests')}</label>
                                 <div className="language-chips" style={{ marginBottom: '1rem' }}>
                                     {formData.professionalInterests.map(interest => (
-                                        <div key={interest} className="chip">
+                                        <div key={interest} className="chip" style={{ backgroundColor: getInterestColor(interest) }}>
                                             {getLocalizedInterest(interest, 'professional')}
                                             <button
                                                 type="button"
                                                 className="chip-remove"
                                                 onClick={() => handleMultiSelectChange('professionalInterests', interest)}
+                                            >
+                                                ×
+                                            </button>
+                                        </div>
+                                    ))}
+                                    {formData.otherProfessionalInterests.split(/[,\.;]+/).map(item => item.trim()).filter(item => item.length > 0).map((item, index) => (
+                                        <div key={`other-${index}`} className="chip" style={{ backgroundColor: getInterestColor(item) }}>
+                                            {item}
+                                            <button
+                                                type="button"
+                                                className="chip-remove"
+                                                onClick={() => handleRemoveOtherInterest('otherProfessionalInterests', item)}
                                             >
                                                 ×
                                             </button>
@@ -1184,6 +1204,18 @@ const Dashboard = () => {
                                                 type="button"
                                                 className="chip-remove"
                                                 onClick={() => handleMultiSelectChange('personalInterests', interest)}
+                                            >
+                                                ×
+                                            </button>
+                                        </div>
+                                    ))}
+                                    {formData.otherPersonalInterests.split(/[,\.;]+/).map(item => item.trim()).filter(item => item.length > 0).map((item, index) => (
+                                        <div key={`other-${index}`} className="chip" style={{ backgroundColor: getInterestColor(item) }}>
+                                            {item}
+                                            <button
+                                                type="button"
+                                                className="chip-remove"
+                                                onClick={() => handleRemoveOtherInterest('otherPersonalInterests', item)}
                                             >
                                                 ×
                                             </button>
