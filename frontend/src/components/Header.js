@@ -57,7 +57,9 @@ const Header = ({ user, onLogout }) => {
                     {user && (
                         <div style={{ display: 'flex', alignItems: 'baseline', gap: '1rem' }}>
                             {profileName && (
-                                <span style={{ color: 'white', fontWeight: 500 }}>{profileName}</span>
+                                <Link to="/" style={{ color: 'white', fontWeight: 500, textDecoration: 'none' }}>
+                                    {profileName}
+                                </Link>
                             )}
                             <button
                                 onClick={onLogout}
