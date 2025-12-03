@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import './Dashboard.css';
 
@@ -563,7 +564,7 @@ const Dashboard = () => {
                             </div>
 
                             {/* Country Modal */}
-                            {showCountryModal && (
+                            {showCountryModal && ReactDOM.createPortal(
                                 <div className="modal-overlay" onClick={() => setShowCountryModal(false)}>
                                     <div className="modal-content" onClick={e => e.stopPropagation()}>
                                         <div className="modal-header">
@@ -610,11 +611,12 @@ const Dashboard = () => {
                                             </button>
                                         </div>
                                     </div>
-                                </div>
+                                </div>,
+                                document.body
                             )}
 
                             {/* City Modal */}
-                            {showCityModal && (
+                            {showCityModal && ReactDOM.createPortal(
                                 <div className="modal-overlay" onClick={() => setShowCityModal(false)}>
                                     <div className="modal-content" onClick={e => e.stopPropagation()}>
                                         <div className="modal-header">
@@ -696,11 +698,12 @@ const Dashboard = () => {
                                             </button>
                                         </div>
                                     </div>
-                                </div>
+                                </div>,
+                                document.body
                             )}
 
                             {/* Professional Interests Modal */}
-                            {showProfessionalInterestsModal && (
+                            {showProfessionalInterestsModal && ReactDOM.createPortal(
                                 <div className="modal-overlay" onClick={() => setShowProfessionalInterestsModal(false)}>
                                     <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
                                         <div className="modal-header">
@@ -766,11 +769,12 @@ const Dashboard = () => {
                                             </button>
                                         </div>
                                     </div>
-                                </div>
+                                </div>,
+                                document.body
                             )}
 
                             {/* Personal Interests Modal */}
-                            {showPersonalInterestsModal && (
+                            {showPersonalInterestsModal && ReactDOM.createPortal(
                                 <div className="modal-overlay" onClick={() => setShowPersonalInterestsModal(false)}>
                                     <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
                                         <div className="modal-header">
@@ -836,7 +840,8 @@ const Dashboard = () => {
                                             </button>
                                         </div>
                                     </div>
-                                </div>
+                                </div>,
+                                document.body
                             )}
 
                             {/* Timezone */}
@@ -875,7 +880,7 @@ const Dashboard = () => {
                             </div>
 
                             {/* Days Modal */}
-                            {showDaysModal && (
+                            {showDaysModal && ReactDOM.createPortal(
                                 <div className="modal-overlay" onClick={() => setShowDaysModal(false)}>
                                     <div className="modal-content" onClick={e => e.stopPropagation()}>
                                         <div className="modal-header">
@@ -907,11 +912,12 @@ const Dashboard = () => {
                                             </button>
                                         </div>
                                     </div>
-                                </div>
+                                </div>,
+                                document.body
                             )}
 
                             {/* Timezone Modal */}
-                            {showTimezoneModal && (
+                            {showTimezoneModal && ReactDOM.createPortal(
                                 <div className="modal-overlay" onClick={() => setShowTimezoneModal(false)}>
                                     <div className="modal-content" onClick={e => e.stopPropagation()}>
                                         <div className="modal-header">
@@ -946,7 +952,8 @@ const Dashboard = () => {
                                             </button>
                                         </div>
                                     </div>
-                                </div>
+                                </div>,
+                                document.body
                             )}
 
                             {/* Best Meeting Days */}
@@ -1034,7 +1041,7 @@ const Dashboard = () => {
                             </div>
 
                             {/* Language Modal */}
-                            {showLanguageModal && (
+                            {showLanguageModal && ReactDOM.createPortal(
                                 <div className="modal-overlay" onClick={() => setShowLanguageModal(false)}>
                                     <div className="modal-content" onClick={e => e.stopPropagation()}>
                                         <div className="modal-header">
@@ -1066,7 +1073,8 @@ const Dashboard = () => {
                                             </button>
                                         </div>
                                     </div>
-                                </div>
+                                </div>,
+                                document.body
                             )}
 
                             {/* Profession & Grade */}
