@@ -22,7 +22,7 @@
 
 .header-left-group {
     display: flex;
-    align-items: center;
+    align-items: baseline;
     gap: 3rem;
 }
 
