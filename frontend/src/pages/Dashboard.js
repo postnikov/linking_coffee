@@ -345,6 +345,14 @@ const Dashboard = () => {
         }
     };
 
+    if (isLoading) {
+        return (
+            <main className="main-content" style={{ paddingTop: '8rem', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+                <div className="spinner" style={{ width: '40px', height: '40px', border: '4px solid rgba(0,0,0,0.1)', borderLeftColor: '#7c3aed', borderRadius: '50%' }}></div>
+            </main>
+        );
+    }
+
     return (
         <main className="main-content" style={{ paddingTop: '8rem', alignItems: 'flex-start' }}>
             <div className="dashboard-container">
