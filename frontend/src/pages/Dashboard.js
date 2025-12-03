@@ -257,6 +257,17 @@ const Dashboard = () => {
         return item && i18n.language === 'ru' ? item.name_ru : nameEn;
     };
 
+    // Helper to get a consistent color for an interest string
+    const getInterestColor = (str) => {
+        const colors = Object.values(DAY_COLORS);
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            hash = str.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        const index = Math.abs(hash) % colors.length;
+        return colors[index];
+    };
+
     const handleAvatarChange = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -1249,11 +1260,15 @@ const Dashboard = () => {
                                                 <h4 style={{ fontSize: '0.9rem', color: '#888', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>{t('dashboard.profile.professional_interests')}</h4>
                                                 <div className="language-chips" style={{ flexWrap: 'wrap' }}>
                                                     {formData.professionalInterests.map(item => (
-                                                        <span key={item} className="chip">{getLocalizedInterest(item, 'professional')}</span>
+                                                        <span key={item} className="chip" style={{ backgroundColor: getInterestColor(item) }}>
+                                                            {getLocalizedInterest(item, 'professional')}
+                                                        </span>
                                                     ))}
-                                                    {formData.otherProfessionalInterests && (
-                                                        <span className="chip" style={{ background: '#f3f4f6', border: '1px dashed #ccc' }}>{formData.otherProfessionalInterests}</span>
-                                                    )}
+                                                    {formData.otherProfessionalInterests && formData.otherProfessionalInterests.split(/[,\.;]+/).map(item => item.trim()).filter(item => item).map((item, index) => (
+                                                        <span key={`other-${index}`} className="chip" style={{ backgroundColor: getInterestColor(item) }}>
+                                                            {item}
+                                                        </span>
+                                                    ))}
                                                 </div>
                                             </div>
                                         )}
@@ -1262,11 +1277,15 @@ const Dashboard = () => {
                                                 <h4 style={{ fontSize: '0.9rem', color: '#888', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>{t('dashboard.profile.personal_interests')}</h4>
                                                 <div className="language-chips" style={{ flexWrap: 'wrap' }}>
                                                     {formData.personalInterests.map(item => (
-                                                        <span key={item} className="chip">{getLocalizedInterest(item, 'personal')}</span>
+                                                        <span key={item} className="chip" style={{ backgroundColor: getInterestColor(item) }}>
+                                                            {getLocalizedInterest(item, 'personal')}
+                                                        </span>
                                                     ))}
-                                                    {formData.otherPersonalInterests && (
-                                                        <span className="chip" style={{ background: '#f3f4f6', border: '1px dashed #ccc' }}>{formData.otherPersonalInterests}</span>
-                                                    )}
+                                                    {formData.otherPersonalInterests && formData.otherPersonalInterests.split(/[,\.;]+/).map(item => item.trim()).filter(item => item).map((item, index) => (
+                                                        <span key={`other-${index}`} className="chip" style={{ backgroundColor: getInterestColor(item) }}>
+                                                            {item}
+                                                        </span>
+                                                    ))}
                                                 </div>
                                             </div>
                                         )}
