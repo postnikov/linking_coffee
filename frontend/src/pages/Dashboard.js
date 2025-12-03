@@ -1111,17 +1111,18 @@ const Dashboard = () => {
                     <div className="glass-card" style={{ height: '100%', padding: '2rem' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                             <h2 className="section-title" style={{ marginBottom: 0 }}>{t('dashboard.matching.title', 'Matching Settings')}</h2>
-                            {savedSections['serendipity'] && (
-                                <span style={{ color: '#10b981', fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                    {t('common.saved', 'Saved')}
-                                </span>
-                            )}
                         </div>
 
                         <div className="input-group">
                             <label className="form-label" style={{ textAlign: 'left', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between' }}>
-                                <span>{t('dashboard.matching.serendipity', 'Serendipity Level')}</span>
+                                {savedSections['serendipity'] ? (
+                                    <span style={{ color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                        {t('dashboard.profile.saved', 'Saved')}
+                                    </span>
+                                ) : (
+                                    <span>{t('dashboard.matching.serendipity', 'Serendipity Level')}</span>
+                                )}
                                 <span style={{ color: '#7c3aed', fontWeight: 'bold' }}>{formData.serendipity}</span>
                             </label>
 
@@ -1144,8 +1145,8 @@ const Dashboard = () => {
                             />
 
                             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#666' }}>
-                                <span>{t('dashboard.matching.low', 'Low (like me)')} (1)</span>
-                                <span>{t('dashboard.matching.high', 'High')} (10)</span>
+                                <span>{t('dashboard.matching.low', 'Low (like me)')}</span>
+                                <span>{t('dashboard.matching.high', 'High')}</span>
                             </div>
                         </div>
                     </div>
