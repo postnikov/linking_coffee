@@ -70,7 +70,7 @@ const Header = ({ user, onLogout }) => {
                                     cursor: 'pointer',
                                     padding: '0',
                                     display: 'flex',
-                                    alignItems: 'center',
+                                    alignItems: 'baseline',
                                     gap: '0.5rem',
                                     fontSize: '1rem',
                                     color: 'rgba(255, 255, 255, 0.8)',
