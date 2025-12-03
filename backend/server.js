@@ -553,6 +553,7 @@ app.get('/api/profile', async (req, res) => {
         languages: fields.Languages || [],
         bestMeetingDays: fields.Best_Meetings_Days || [],
         serendipity: fields.Serendipity || 5,
+        proximity: fields.Proximity || 5,
         avatar: fields.Avatar && fields.Avatar.length > 0 ? fields.Avatar[0].url : ''
       };
 
@@ -600,6 +601,7 @@ app.put('/api/profile', async (req, res) => {
         Languages: profile.languages,
         Best_Meetings_Days: profile.bestMeetingDays,
         Serendipity: profile.serendipity,
+        Proximity: profile.proximity,
         Professional_Interests: profile.professionalInterests,
         Other_Professional_Interests: profile.otherProfessionalInterests,
         Personal_Interests: profile.personalInterests,

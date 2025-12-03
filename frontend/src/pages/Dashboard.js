@@ -60,7 +60,8 @@ const Dashboard = () => {
         personalInterests: [],
         otherPersonalInterests: '',
         coffeeGoals: [],
-        serendipity: 5
+        serendipity: 5,
+        proximity: 5
     });
 
     const [isLoading, setIsLoading] = useState(false);
@@ -1469,6 +1470,43 @@ const Dashboard = () => {
                             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#666' }}>
                                 <span>{t('dashboard.matching.low', 'Low (like me)')}</span>
                                 <span>{t('dashboard.matching.high', 'High')}</span>
+                            </div>
+                        </div>
+
+                        <div className="input-group" style={{ marginTop: '2rem' }}>
+                            <label className="form-label" style={{ textAlign: 'left', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between' }}>
+                                {savedSections['proximity'] ? (
+                                    <span style={{ color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                        {t('dashboard.profile.saved', 'Saved')}
+                                    </span>
+                                ) : (
+                                    <span>{t('dashboard.matching.geography', 'Geography')}</span>
+                                )}
+                                <span style={{ color: '#7c3aed', fontWeight: 'bold' }}>{formData.proximity}</span>
+                            </label>
+
+                            <input
+                                type="range"
+                                min="1"
+                                max="10"
+                                value={formData.proximity}
+                                onChange={(e) => setFormData({ ...formData, proximity: parseInt(e.target.value) })}
+                                onMouseUp={() => autoSaveProfile({ ...formData }, 'proximity')}
+                                onTouchEnd={() => autoSaveProfile({ ...formData }, 'proximity')}
+                                style={{
+                                    width: '100%',
+                                    accentColor: '#7c3aed',
+                                    height: '6px',
+                                    borderRadius: '3px',
+                                    marginBottom: '0.5rem',
+                                    cursor: 'pointer'
+                                }}
+                            />
+
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#666' }}>
+                                <span>{t('dashboard.matching.near_me', 'Near me')}</span>
+                                <span>{t('dashboard.matching.far_away', 'Far away')}</span>
                             </div>
                         </div>
                     </div>

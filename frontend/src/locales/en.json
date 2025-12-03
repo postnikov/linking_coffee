@@ -58,8 +58,11 @@
             "title": "Matching Settings",
             "placeholder": "Matching features coming soon...",
             "serendipity": "Serendipity Level",
-            "low": "Low",
-            "high": "High"
+            "low": "Low (like me)",
+            "high": "High",
+            "geography": "Geography",
+            "near_me": "Near me",
+            "far_away": "Far away"
         }
     },
     "form": {
