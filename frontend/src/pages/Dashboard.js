@@ -119,6 +119,21 @@ const Dashboard = () => {
         fetchInterests();
     }, []);
 
+    // Prevent body scroll when any modal is open
+    useEffect(() => {
+        const isAnyModalOpen = showLanguageModal || showTimezoneModal || showDaysModal || showCountryModal || showCityModal || showProfessionalInterestsModal || showPersonalInterestsModal;
+
+        if (isAnyModalOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, [showLanguageModal, showTimezoneModal, showDaysModal, showCountryModal, showCityModal, showProfessionalInterestsModal, showPersonalInterestsModal]);
+
     // Fetch cities when country changes or modal opens
     useEffect(() => {
         const fetchCities = async () => {
