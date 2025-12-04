@@ -1135,6 +1135,7 @@ const Dashboard = () => {
                                         className="form-control"
                                         value={formData.profession}
                                         onChange={handleChange}
+                                        onBlur={() => autoSaveProfile(formData, 'profession')}
                                     />
                                 </div>
                                 <div className="form-group">
@@ -1143,7 +1144,11 @@ const Dashboard = () => {
                                         name="grade"
                                         className="form-control"
                                         value={formData.grade}
-                                        onChange={handleChange}
+                                        onChange={(e) => {
+                                            handleChange(e);
+                                            const newData = { ...formData, grade: e.target.value };
+                                            autoSaveProfile(newData, 'grade');
+                                        }}
                                     >
                                         {GRADES.map(grade => (
                                             <option key={grade} value={grade}>{grade}</option>
@@ -1162,6 +1167,7 @@ const Dashboard = () => {
                                     placeholder="https://linkedin.com/in/..."
                                     value={formData.linkedin || ''}
                                     onChange={handleChange}
+                                    onBlur={() => autoSaveProfile(formData, 'linkedin')}
                                 />
                             </div>
 
