@@ -221,14 +221,17 @@ const Dashboard = () => {
     };
 
     const handleMultiSelectChange = (name, value) => {
-        setFormData(prev => {
-            const current = prev[name] || [];
-            if (current.includes(value)) {
-                return { ...prev, [name]: current.filter(item => item !== value) };
-            } else {
-                return { ...prev, [name]: [...current, value] };
-            }
-        });
+        const current = formData[name] || [];
+        let newValues;
+        if (current.includes(value)) {
+            newValues = current.filter(item => item !== value);
+        } else {
+            newValues = [...current, value];
+        }
+        const updatedData = { ...formData, [name]: newValues };
+
+        setFormData(updatedData);
+        autoSaveProfile(updatedData, name);
     };
 
     const handleSubmit = async (e) => {
@@ -297,7 +300,10 @@ const Dashboard = () => {
         const items = currentString.split(/[,\.;]+/).map(s => s.trim()).filter(s => s.length > 0);
         const newItems = items.filter(item => item !== interestToRemove);
         const newString = newItems.join(', ');
-        setFormData(prev => ({ ...prev, [field]: newString }));
+
+        const updatedData = { ...formData, [field]: newString };
+        setFormData(updatedData);
+        autoSaveProfile(updatedData, field);
     };
 
     const getCurrentWeekDateRange = () => {
@@ -1379,15 +1385,7 @@ const Dashboard = () => {
                                             <input
                                                 type="checkbox"
                                                 checked={formData.coffeeGoals.includes(goal)}
-                                                onChange={() => {
-                                                    handleMultiSelectChange('coffeeGoals', goal);
-                                                    const currentGoals = formData.coffeeGoals;
-                                                    const newGoals = currentGoals.includes(goal)
-                                                        ? currentGoals.filter(g => g !== goal)
-                                                        : [...currentGoals, goal];
-                                                    const newData = { ...formData, coffeeGoals: newGoals };
-                                                    autoSaveProfile(newData, 'coffeeGoals');
-                                                }}
+                                                onChange={() => handleMultiSelectChange('coffeeGoals', goal)}
                                             />
                                             {goal}
                                         </label>
