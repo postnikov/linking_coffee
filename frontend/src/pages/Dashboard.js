@@ -1128,7 +1128,14 @@ const Dashboard = () => {
                             {/* Profession & Grade */}
                             <div className="form-row">
                                 <div className="form-group">
-                                    <label>{t('dashboard.profile.profession', 'Profession')}</label>
+                                    <label>
+                                        {t('dashboard.profile.profession', 'Profession')}
+                                        {savedSections.profession && (
+                                            <span style={{ color: '#166534', fontSize: '0.75rem', marginLeft: '0.5rem', fontWeight: 'normal' }}>
+                                                ✓ {t('common.saved', 'Saved')}
+                                            </span>
+                                        )}
+                                    </label>
                                     <input
                                         type="text"
                                         name="profession"
@@ -1139,7 +1146,14 @@ const Dashboard = () => {
                                     />
                                 </div>
                                 <div className="form-group">
-                                    <label>{t('dashboard.profile.grade', 'Grade')}</label>
+                                    <label>
+                                        {t('dashboard.profile.grade', 'Grade')}
+                                        {savedSections.grade && (
+                                            <span style={{ color: '#166534', fontSize: '0.75rem', marginLeft: '0.5rem', fontWeight: 'normal' }}>
+                                                ✓ {t('common.saved', 'Saved')}
+                                            </span>
+                                        )}
+                                    </label>
                                     <select
                                         name="grade"
                                         className="form-control"
@@ -1159,7 +1173,14 @@ const Dashboard = () => {
 
                             {/* LinkedIn */}
                             <div className="form-group">
-                                <label>LinkedIn</label>
+                                <label>
+                                    LinkedIn
+                                    {savedSections.linkedin && (
+                                        <span style={{ color: '#166534', fontSize: '0.75rem', marginLeft: '0.5rem', fontWeight: 'normal' }}>
+                                            ✓ {t('common.saved', 'Saved')}
+                                        </span>
+                                    )}
+                                </label>
                                 <input
                                     type="text"
                                     name="linkedin"
