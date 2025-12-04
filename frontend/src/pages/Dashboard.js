@@ -1664,8 +1664,8 @@ const Dashboard = () => {
                         </div>
 
                         {/* Next Week Status Switch */}
-                        <div className="input-group" style={{ marginBottom: '2rem', paddingBottom: '2rem', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                        <div className="input-group" style={{ marginBottom: '1.5rem', paddingBottom: '1.5rem', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                                 <label className="form-label" style={{ textAlign: 'left', margin: 0 }}>
                                     {t('dashboard.matching.next_week_status', 'Next week')}
                                     <span style={{ fontWeight: 'normal', fontSize: '0.9em', color: '#666', marginLeft: '0.5rem' }}>{getNextWeekDateRange()}</span>
@@ -1740,7 +1740,7 @@ const Dashboard = () => {
                         </div>
 
                         <div className="input-group">
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                                 <label className="form-label" style={{ textAlign: 'left', margin: 0 }}>
                                     {t('dashboard.matching.serendipity', 'Serendipity Level')}
                                 </label>
@@ -1779,8 +1779,8 @@ const Dashboard = () => {
                             </div>
                         </div>
 
-                        <div className="input-group" style={{ marginTop: '2rem' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                        <div className="input-group" style={{ marginTop: '1.5rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                                 <label className="form-label" style={{ textAlign: 'left', margin: 0 }}>
                                     {t('dashboard.matching.geography', 'Geography')}
                                 </label>
