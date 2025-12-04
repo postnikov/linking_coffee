@@ -13,7 +13,7 @@ const Header = ({ user, onLogout }) => {
             const fetchProfile = async () => {
                 try {
                     const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
-                    const response = await fetch(`${API_URL}/api/profile?username=${user.username}`);
+                    const response = await fetch(`${API_URL}/api/profile?username=${user.username}&requester=${user.username}`);
                     const data = await response.json();
                     if (data.success && data.profile) {
                         setProfileName(`${data.profile.name || ''} ${data.profile.family || ''}`.trim());

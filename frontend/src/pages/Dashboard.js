@@ -182,7 +182,7 @@ const Dashboard = () => {
 
             try {
                 setIsLoading(true);
-                const response = await fetch(`${API_URL}/api/profile?username=${user.username}`);
+                const response = await fetch(`${API_URL}/api/profile?username=${user.username}&requester=${user.username}`);
                 const data = await response.json();
 
                 if (data.success) {

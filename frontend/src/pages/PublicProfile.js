@@ -49,15 +49,20 @@ const PublicProfile = () => {
         const fetchProfile = async () => {
             if (!username) return;
 
+            // Get current user for requester check
+            const storedUser = localStorage.getItem('user');
+            const currentUser = storedUser ? JSON.parse(storedUser) : null;
+            const requester = currentUser ? currentUser.username : '';
+
             try {
                 setIsLoading(true);
-                const response = await fetch(`${API_URL}/api/profile?username=${username}`);
+                const response = await fetch(`${API_URL}/api/profile?username=${username}&requester=${requester}`);
                 const data = await response.json();
 
                 if (data.success) {
                     setFormData(data.profile);
                 } else {
-                    setError('User not found');
+                    setError(data.message || 'User not found');
                 }
             } catch (error) {
                 console.error('Failed to fetch profile:', error);

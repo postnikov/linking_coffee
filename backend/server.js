@@ -480,13 +480,48 @@ app.get('/api/interests', (req, res) => {
 
 // Step 4: Get User Profile
 app.get('/api/profile', async (req, res) => {
-  const { username } = req.query;
+  const { username, requester } = req.query;
 
   if (!username) {
     return res.status(400).json({ success: false, message: 'Username is required' });
   }
 
+  if (!requester) {
+    return res.status(400).json({ success: false, message: 'Requester is required' });
+  }
+
   const cleanUsername = username.replace('@', '').trim().toLowerCase();
+  const cleanRequester = requester.replace('@', '').trim().toLowerCase();
+
+  // Access Control Logic
+  if (cleanUsername !== cleanRequester) {
+    // Check if they are matched
+    try {
+      const matchesTableId = 'tblx2OEN5sSR1xFI2';
+      // Formula to check if a match exists between requester and username
+      // Note: Tg_Username lookups return arrays of strings. FIND returns 0 if not found (falsey in Airtable formula logic? No, FIND returns 0 if not found is NOT true in JS, but in Airtable FIND returns 0 if not found? 
+      // Airtable FIND(stringToFind, whereToSearch, startFromPosition) returns the position (1-based) or 0 if not found.
+      // So FIND(...) > 0 is true.
+      // However, in Airtable formula, 0 is false-ish.
+
+      const matchRecords = await base(matchesTableId)
+        .select({
+          filterByFormula: `OR(
+                      AND(FIND('${cleanRequester}', ARRAYJOIN({Tg_Username (from Member1)})), FIND('${cleanUsername}', ARRAYJOIN({Tg_Username (from Member2)}))),
+                      AND(FIND('${cleanUsername}', ARRAYJOIN({Tg_Username (from Member1)})), FIND('${cleanRequester}', ARRAYJOIN({Tg_Username (from Member2)})))
+                  )`,
+          maxRecords: 1
+        })
+        .firstPage();
+
+      if (matchRecords.length === 0) {
+        return res.status(403).json({ success: false, message: 'Access denied. You can only view profiles of your matches.' });
+      }
+    } catch (error) {
+      console.error('Error checking match permission:', error);
+      return res.status(500).json({ success: false, message: 'Error verifying permissions' });
+    }
+  }
 
   try {
     const records = await base(process.env.AIRTABLE_MEMBERS_TABLE)
