@@ -1543,6 +1543,20 @@ const Dashboard = () => {
                                             @{currentMatch.username.replace('@', '')}
                                         </a>
                                     )}
+                                    <Link
+                                        to={`/profile/${currentMatch.username.replace('@', '')}`}
+                                        style={{
+                                            color: '#6b7280',
+                                            textDecoration: 'none',
+                                            fontSize: '0.85rem',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.25rem',
+                                            marginTop: '0.25rem'
+                                        }}
+                                    >
+                                        {t('dashboard.matching.view_profile', 'View Profile')} &rarr;
+                                    </Link>
                                 </div>
                             </div>
                         </div>
