@@ -26,7 +26,9 @@ if (!process.env.AIRTABLE_API_KEY || !process.env.AIRTABLE_BASE_ID || !process.e
 const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY }).base(process.env.AIRTABLE_BASE_ID);
 
 // Initialize Bot
-const bot = new Telegraf(process.env.BOT_TOKEN);
+const botToken = process.env.NODE_ENV === 'production' ? process.env.BOT_TOKEN : (process.env.ADMIN_BOT_TOKEN || process.env.BOT_TOKEN);
+console.log(`🤖 Using Bot Token: ${botToken ? '...' + botToken.slice(-4) : 'UNDEFINED'}`);
+const bot = new Telegraf(botToken);
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
