@@ -1651,16 +1651,18 @@ const Dashboard = () => {
 
                         {/* Next Week Status Switch */}
                         <div className="input-group" style={{ marginBottom: '2rem', paddingBottom: '2rem', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
-                            <label className="form-label" style={{ textAlign: 'left', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                {savedSections['nextWeekStatus'] ? (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                                <label className="form-label" style={{ textAlign: 'left', margin: 0 }}>
+                                    {t('dashboard.matching.next_week_status', 'Next week')}
+                                    <span style={{ fontWeight: 'normal', fontSize: '0.9em', color: '#666', marginLeft: '0.5rem' }}>{getNextWeekDateRange()}</span>
+                                </label>
+                                {savedSections['nextWeekStatus'] && (
                                     <span style={{ color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.8rem' }}>
                                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                                         {t('dashboard.profile.saved', 'Saved')}
                                     </span>
-                                ) : (
-                                    <span>{t('dashboard.matching.next_week_status', 'Next week')} <span style={{ fontWeight: 'normal', fontSize: '0.9em', color: '#666' }}>{getNextWeekDateRange()}</span></span>
                                 )}
-                            </label>
+                            </div>
 
                             <div
                                 style={{
@@ -1724,17 +1726,20 @@ const Dashboard = () => {
                         </div>
 
                         <div className="input-group">
-                            <label className="form-label" style={{ textAlign: 'left', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between' }}>
-                                {savedSections['serendipity'] ? (
-                                    <span style={{ color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                        {t('dashboard.profile.saved', 'Saved')}
-                                    </span>
-                                ) : (
-                                    <span>{t('dashboard.matching.serendipity', 'Serendipity Level')}</span>
-                                )}
-                                <span style={{ color: '#7c3aed', fontWeight: 'bold' }}>{formData.serendipity}</span>
-                            </label>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                                <label className="form-label" style={{ textAlign: 'left', margin: 0 }}>
+                                    {t('dashboard.matching.serendipity', 'Serendipity Level')}
+                                </label>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    {savedSections['serendipity'] && (
+                                        <span style={{ color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.8rem' }}>
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                            {t('dashboard.profile.saved', 'Saved')}
+                                        </span>
+                                    )}
+                                    <span style={{ color: '#7c3aed', fontWeight: 'bold' }}>{formData.serendipity}</span>
+                                </div>
+                            </div>
 
                             <input
                                 type="range"
@@ -1761,17 +1766,20 @@ const Dashboard = () => {
                         </div>
 
                         <div className="input-group" style={{ marginTop: '2rem' }}>
-                            <label className="form-label" style={{ textAlign: 'left', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between' }}>
-                                {savedSections['proximity'] ? (
-                                    <span style={{ color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                        {t('dashboard.profile.saved', 'Saved')}
-                                    </span>
-                                ) : (
-                                    <span>{t('dashboard.matching.geography', 'Geography')}</span>
-                                )}
-                                <span style={{ color: '#7c3aed', fontWeight: 'bold' }}>{formData.proximity}</span>
-                            </label>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                                <label className="form-label" style={{ textAlign: 'left', margin: 0 }}>
+                                    {t('dashboard.matching.geography', 'Geography')}
+                                </label>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    {savedSections['proximity'] && (
+                                        <span style={{ color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.8rem' }}>
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                            {t('dashboard.profile.saved', 'Saved')}
+                                        </span>
+                                    )}
+                                    <span style={{ color: '#7c3aed', fontWeight: 'bold' }}>{formData.proximity}</span>
+                                </div>
+                            </div>
 
                             <input
                                 type="range"
