@@ -1430,10 +1430,10 @@ const Dashboard = () => {
                                     </div>
                                 )}
 
-                                {formData.coffeeGoals && (
+                                {formData.coffeeGoals && formData.coffeeGoals.length > 0 && (
                                     <div className="profile-section-block">
                                         <h4>{t('dashboard.profile.coffee_goals')}</h4>
-                                        <p>{formData.coffeeGoals}</p>
+                                        <p>{Array.isArray(formData.coffeeGoals) ? formData.coffeeGoals.join(', ') : formData.coffeeGoals}</p>
                                     </div>
                                 )}
 
