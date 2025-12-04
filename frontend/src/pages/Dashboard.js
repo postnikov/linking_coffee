@@ -1497,7 +1497,7 @@ const Dashboard = () => {
                                         gap: '0.5rem'
                                     }}
                                 >
-                                    {t('dashboard.matching.status_active', "I'm in")} ✅
+                                    {t('dashboard.matching.status_active', "I'm in")} <span style={{ filter: formData.nextWeekStatus === 'Active' ? 'none' : 'grayscale(100%) opacity(0.5)' }}>✅</span>
                                 </div>
                                 <div
                                     onClick={() => {
@@ -1521,7 +1521,7 @@ const Dashboard = () => {
                                         gap: '0.5rem'
                                     }}
                                 >
-                                    {t('dashboard.matching.status_passive', "I'll skip")} ❌
+                                    {t('dashboard.matching.status_passive', "I'll skip")} <span style={{ filter: formData.nextWeekStatus === 'Passive' ? 'none' : 'grayscale(100%) opacity(0.5)' }}>❌</span>
                                 </div>
                             </div>
                         </div>
