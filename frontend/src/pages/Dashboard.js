@@ -294,6 +294,21 @@ const Dashboard = () => {
         setFormData(prev => ({ ...prev, [field]: newString }));
     };
 
+    const getNextWeekDateRange = () => {
+        const today = new Date();
+        const nextMonday = new Date(today);
+        nextMonday.setDate(today.getDate() + ((1 + 7 - today.getDay()) % 7 || 7));
+
+        const nextSunday = new Date(nextMonday);
+        nextSunday.setDate(nextMonday.getDate() + 6);
+
+        const options = { month: 'short', day: 'numeric' };
+        const start = nextMonday.toLocaleDateString(i18n.language === 'ru' ? 'ru-RU' : 'en-US', options);
+        const end = nextSunday.toLocaleDateString(i18n.language === 'ru' ? 'ru-RU' : 'en-US', options);
+
+        return `(${start} — ${end})`;
+    };
+
     const handleAvatarChange = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -1440,7 +1455,7 @@ const Dashboard = () => {
                         {/* Next Week Status Switch */}
                         <div className="input-group" style={{ marginBottom: '2rem', paddingBottom: '2rem', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
                             <label className="form-label" style={{ textAlign: 'left', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span>{t('dashboard.matching.next_week_status', 'Next week')}</span>
+                                <span>{t('dashboard.matching.next_week_status', 'Next week')} <span style={{ fontWeight: 'normal', fontSize: '0.9em', color: '#666' }}>{getNextWeekDateRange()}</span></span>
                                 {savedSections['nextWeekStatus'] && (
                                     <span style={{ color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.8rem' }}>
                                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
