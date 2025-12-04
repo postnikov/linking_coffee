@@ -299,6 +299,23 @@ const Dashboard = () => {
         setFormData(prev => ({ ...prev, [field]: newString }));
     };
 
+    const getCurrentWeekDateRange = () => {
+        const today = new Date();
+        const currentMonday = new Date(today);
+        const dayOfWeek = today.getDay(); // 0 (Sun) to 6 (Sat)
+        const diffToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+        currentMonday.setDate(today.getDate() - diffToMonday);
+
+        const currentSunday = new Date(currentMonday);
+        currentSunday.setDate(currentMonday.getDate() + 6);
+
+        const options = { month: 'short', day: 'numeric' };
+        const start = currentMonday.toLocaleDateString(i18n.language === 'ru' ? 'ru-RU' : 'en-US', options);
+        const end = currentSunday.toLocaleDateString(i18n.language === 'ru' ? 'ru-RU' : 'en-US', options);
+
+        return `(${start} — ${end})`;
+    };
+
     const getNextWeekDateRange = () => {
         const today = new Date();
         const nextMonday = new Date(today);
@@ -1455,7 +1472,9 @@ const Dashboard = () => {
                     {/* Current Match Block */}
                     {currentMatch && (
                         <div className="glass-card" style={{ padding: '2rem', marginBottom: '1.5rem', background: 'linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%)' }}>
-                            <h2 className="section-title" style={{ marginBottom: '1.5rem' }}>{t('dashboard.matching.current_match', 'Current match')}</h2>
+                            <h2 className="section-title" style={{ marginBottom: '1.5rem' }}>
+                                {t('dashboard.matching.current_match', 'Current match')} <span style={{ fontWeight: 'normal', fontSize: '0.8em', color: '#666' }}>{getCurrentWeekDateRange()}</span>
+                            </h2>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
                                 <div style={{
                                     width: '60px',
