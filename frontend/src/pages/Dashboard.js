@@ -87,6 +87,7 @@ const Dashboard = () => {
     const [savedSections, setSavedSections] = useState({});
     const [isEditMode, setIsEditMode] = useState(false);
     const [imageError, setImageError] = useState(false);
+    const [currentMatch, setCurrentMatch] = useState(null);
 
     useEffect(() => {
         setImageError(false);
@@ -190,6 +191,9 @@ const Dashboard = () => {
                     };
                     setFormData(profileData);
                     setInitialFormData(profileData);
+                    if (data.currentMatch) {
+                        setCurrentMatch(data.currentMatch);
+                    }
                 }
             } catch (error) {
                 console.error('Failed to fetch profile:', error);
@@ -1447,6 +1451,70 @@ const Dashboard = () => {
 
                 {/* Right Side: Matching */}
                 <div className="matching-section">
+                    {/* Current Match Block */}
+                    {currentMatch && (
+                        <div className="glass-card" style={{ padding: '2rem', marginBottom: '1.5rem', background: 'linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%)' }}>
+                            <h2 className="section-title" style={{ marginBottom: '1.5rem' }}>{t('dashboard.matching.current_match', 'Current match')}</h2>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+                                <div style={{
+                                    width: '80px',
+                                    height: '80px',
+                                    borderRadius: '50%',
+                                    overflow: 'hidden',
+                                    border: '3px solid #fff',
+                                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                                    flexShrink: 0
+                                }}>
+                                    {currentMatch.avatar ? (
+                                        <img
+                                            src={currentMatch.avatar}
+                                            alt={`${currentMatch.name} ${currentMatch.family}`}
+                                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                        />
+                                    ) : (
+                                        <div style={{
+                                            width: '100%',
+                                            height: '100%',
+                                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            color: '#fff',
+                                            fontSize: '2rem',
+                                            fontWeight: 'bold'
+                                        }}>
+                                            {currentMatch.name ? currentMatch.name.charAt(0).toUpperCase() : '?'}
+                                        </div>
+                                    )}
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                    <h3 style={{ margin: 0, fontSize: '1.25rem', color: '#1f2937' }}>
+                                        {currentMatch.name} {currentMatch.family}
+                                    </h3>
+                                    {currentMatch.username && (
+                                        <a
+                                            href={`https://t.me/${currentMatch.username.replace('@', '')}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            style={{
+                                                color: '#3b82f6',
+                                                textDecoration: 'none',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '0.25rem',
+                                                fontSize: '0.95rem',
+                                                fontWeight: '500'
+                                            }}
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 2L11 13"></path><path d="M22 2l-7 20-4-9-9-4 20-7z"></path></svg>
+                                            @{currentMatch.username.replace('@', '')}
+                                        </a>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     <div className="glass-card" style={{ height: '100%', padding: '2rem' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                             <h2 className="section-title" style={{ marginBottom: 0 }}>{t('dashboard.matching.title', 'Matching Settings')}</h2>

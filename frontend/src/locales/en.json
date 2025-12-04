@@ -65,7 +65,8 @@
             "far_away": "Far away",
             "next_week_status": "Next week",
             "status_active": "I'm in",
-            "status_passive": "I'll skip"
+            "status_passive": "I'll skip",
+            "current_match": "Current match"
         }
     },
     "form": {

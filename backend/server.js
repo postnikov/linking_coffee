@@ -558,7 +558,48 @@ app.get('/api/profile', async (req, res) => {
         avatar: fields.Avatar && fields.Avatar.length > 0 ? fields.Avatar[0].url : ''
       };
 
-      res.json({ success: true, profile });
+      // Fetch current match if exists
+      let currentMatch = null;
+      try {
+        const matchesTableId = 'tblx2OEN5sSR1xFI2';
+        // Find matches where Member1 OR Member2 is the current user
+        const matchRecords = await base(matchesTableId)
+          .select({
+            filterByFormula: `OR({Tg_Username (from Member1)} = '${cleanUsername}', {Tg_Username (from Member2)} = '${cleanUsername}')`,
+            sort: [{ field: 'Week_Start', direction: 'desc' }],
+            maxRecords: 1
+          })
+          .firstPage();
+
+        if (matchRecords.length > 0) {
+          const match = matchRecords[0];
+          // Check if user is Member1. Note: Lookup values are arrays.
+          const member1Username = match.fields['Tg_Username (from Member1)'] ? match.fields['Tg_Username (from Member1)'][0] : '';
+          const isMember1 = member1Username === cleanUsername;
+
+          // Get the OTHER member's details
+          const otherMemberPrefix = isMember1 ? 'Member2' : 'Member1';
+          const otherMemberLink = match.fields[otherMemberPrefix];
+
+          if (otherMemberLink && otherMemberLink.length > 0) {
+            const otherMemberId = otherMemberLink[0];
+            const otherMemberRecord = await base(process.env.AIRTABLE_MEMBERS_TABLE).find(otherMemberId);
+
+            if (otherMemberRecord) {
+              currentMatch = {
+                name: otherMemberRecord.fields.Name,
+                family: otherMemberRecord.fields.Family,
+                username: otherMemberRecord.fields.Tg_Username,
+                avatar: otherMemberRecord.fields.Avatar && otherMemberRecord.fields.Avatar.length > 0 ? otherMemberRecord.fields.Avatar[0].url : ''
+              };
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching current match:', err);
+      }
+
+      res.json({ success: true, profile, currentMatch });
     } else {
       res.status(404).json({ success: false, message: 'User not found' });
     }

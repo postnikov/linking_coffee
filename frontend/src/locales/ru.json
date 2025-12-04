@@ -65,7 +65,8 @@
             "far_away": "Далеко",
             "next_week_status": "На следующей неделе",
             "status_active": "Я в деле",
-            "status_passive": "Пропущу"
+            "status_passive": "Пропущу",
+            "current_match": "Текущий собеседник"
         }
     },
     "form": {
