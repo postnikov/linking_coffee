@@ -2,6 +2,17 @@
 
 server: root@91.98.235.147
 
+## ⚡️ Fast Deployment
+
+We have a script that automates the entire deployment process (commit, push, and server update).
+
+Run this from your local machine:
+```bash
+./deploy-prod.sh
+```
+
+---
+
 ## Current Server Setup
 The production server is running **Traefik** as the main reverse proxy.
 - **Network**: All public-facing containers must be connected to the `traefik-public` Docker network.

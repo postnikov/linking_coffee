@@ -37,16 +37,17 @@ function App() {
 
                 <Header user={user} onLogout={handleLogout} />
 
-                <Routes>
-                    <Route path="/" element={user ? <Dashboard /> : <Home onLogin={(u) => {
-                        localStorage.setItem('user', JSON.stringify(u));
-                        setUser(u);
-                    }} />} />
-                    <Route path="/about" element={<About />} />
-                    <Route path="/rules" element={<Rules />} />
-                    <Route path="/prices" element={<Prices user={user} />} />
-
-                </Routes>
+                <main className="main-content">
+                    <Routes>
+                        <Route path="/" element={user ? <Dashboard /> : <Home onLogin={(u) => {
+                            localStorage.setItem('user', JSON.stringify(u));
+                            setUser(u);
+                        }} />} />
+                        <Route path="/about" element={<About />} />
+                        <Route path="/rules" element={<Rules />} />
+                        <Route path="/prices" element={<Prices user={user} />} />
+                    </Routes>
+                </main>
 
                 <Footer />
             </div>
