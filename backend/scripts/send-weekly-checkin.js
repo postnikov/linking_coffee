@@ -38,9 +38,9 @@ async function run() {
 
         let allMembers = [];
 
-        // Fetch all members with a Tg_ID
+        // Fetch all members with a Tg_ID AND Consent_GDPR
         await base(process.env.AIRTABLE_MEMBERS_TABLE).select({
-            filterByFormula: "NOT({Tg_ID} = '')",
+            filterByFormula: "AND(NOT({Tg_ID} = ''), {Consent_GDPR})",
             view: "Grid view" // Optional, but good practice
         }).eachPage((records, fetchNextPage) => {
             allMembers = allMembers.concat(records);
