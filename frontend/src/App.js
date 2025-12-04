@@ -7,6 +7,7 @@ import About from './pages/About';
 import Rules from './pages/Rules';
 import Prices from './pages/Prices';
 import Dashboard from './pages/Dashboard';
+import PublicProfile from './pages/PublicProfile';
 
 
 import './App.css';
@@ -46,6 +47,7 @@ function App() {
                         <Route path="/about" element={<About />} />
                         <Route path="/rules" element={<Rules />} />
                         <Route path="/prices" element={<Prices user={user} />} />
+                        <Route path="/profile/:username" element={<PublicProfile />} />
                     </Routes>
                 </main>
 

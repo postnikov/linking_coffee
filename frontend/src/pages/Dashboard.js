@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import ReactDOM from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import './Dashboard.css';
@@ -1488,9 +1489,14 @@ const Dashboard = () => {
                                     )}
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                                    <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#1f2937' }}>
-                                        {currentMatch.name} {currentMatch.family}
-                                    </h3>
+                                    <Link
+                                        to={`/profile/${currentMatch.username.replace('@', '')}`}
+                                        style={{ textDecoration: 'none' }}
+                                    >
+                                        <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#1f2937', cursor: 'pointer' }}>
+                                            {currentMatch.name} {currentMatch.family}
+                                        </h3>
+                                    </Link>
                                     {currentMatch.username && (
                                         <a
                                             href={`https://t.me/${currentMatch.username.replace('@', '')}`}
