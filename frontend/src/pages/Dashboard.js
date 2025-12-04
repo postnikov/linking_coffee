@@ -1457,8 +1457,8 @@ const Dashboard = () => {
                             <h2 className="section-title" style={{ marginBottom: '1.5rem' }}>{t('dashboard.matching.current_match', 'Current match')}</h2>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
                                 <div style={{
-                                    width: '80px',
-                                    height: '80px',
+                                    width: '60px',
+                                    height: '60px',
                                     borderRadius: '50%',
                                     overflow: 'hidden',
                                     border: '3px solid #fff',
@@ -1487,8 +1487,8 @@ const Dashboard = () => {
                                         </div>
                                     )}
                                 </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                    <h3 style={{ margin: 0, fontSize: '1.25rem', color: '#1f2937' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                                    <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#1f2937' }}>
                                         {currentMatch.name} {currentMatch.family}
                                     </h3>
                                     {currentMatch.username && (
