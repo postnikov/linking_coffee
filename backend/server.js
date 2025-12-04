@@ -96,6 +96,48 @@ bot.start((ctx) => {
   ctx.reply(`☕️☕️☕️\nYour verification code for Linked.Coffee is:\n\n\`${otp}\`\n\nPlease enter this code on the website.`, { parse_mode: 'Markdown' });
 });
 
+// Handle "I'm in" callback from weekly check-in
+bot.action('participate_next_week', async (ctx) => {
+  const telegramId = ctx.from.id.toString();
+  console.log(`🤖 Received participation callback from Tg_ID: ${telegramId}`);
+
+  try {
+    // Find user by Tg_ID
+    const records = await base(process.env.AIRTABLE_MEMBERS_TABLE)
+      .select({
+        filterByFormula: `{Tg_ID} = '${telegramId}'`,
+        maxRecords: 1
+      })
+      .firstPage();
+
+    if (records.length > 0) {
+      const record = records[0];
+
+      // Update Next_Week_Status to 'Active'
+      await base(process.env.AIRTABLE_MEMBERS_TABLE).update([
+        {
+          id: record.id,
+          fields: {
+            'Next_Week_Status': 'Active'
+          }
+        }
+      ]);
+
+      // Answer the callback query
+      await ctx.answerCbQuery('You are in for next week! ☕️');
+
+      // Edit the message to show confirmation
+      await ctx.editMessageText('✅ Great! You are marked as **Active** for next week. Expect a match on Monday!', { parse_mode: 'Markdown' });
+
+    } else {
+      await ctx.answerCbQuery('User not found. Please register first.');
+    }
+  } catch (error) {
+    console.error('Error handling participation callback:', error);
+    await ctx.answerCbQuery('An error occurred. Please try again.');
+  }
+});
+
 bot.launch().then(() => {
   console.log('🤖 Telegram bot started');
 }).catch(err => {
