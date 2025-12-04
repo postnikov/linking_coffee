@@ -62,7 +62,10 @@
             "high": "Высокий",
             "geography": "География",
             "near_me": "Рядом",
-            "far_away": "Далеко"
+            "far_away": "Далеко",
+            "next_week_status": "На следующей неделе",
+            "status_active": "Я в деле",
+            "status_passive": "Пропущу"
         }
     },
     "form": {

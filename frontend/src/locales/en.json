@@ -62,7 +62,10 @@
             "high": "High",
             "geography": "Geography",
             "near_me": "Near me",
-            "far_away": "Far away"
+            "far_away": "Far away",
+            "next_week_status": "Next week",
+            "status_active": "I'm in",
+            "status_passive": "I'll skip"
         }
     },
     "form": {

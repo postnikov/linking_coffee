@@ -61,7 +61,8 @@ const Dashboard = () => {
         otherPersonalInterests: '',
         coffeeGoals: [],
         serendipity: 5,
-        proximity: 5
+        proximity: 5,
+        nextWeekStatus: 'Active'
     });
 
     const [isLoading, setIsLoading] = useState(false);
@@ -1434,6 +1435,79 @@ const Dashboard = () => {
                     <div className="glass-card" style={{ height: '100%', padding: '2rem' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                             <h2 className="section-title" style={{ marginBottom: 0 }}>{t('dashboard.matching.title', 'Matching Settings')}</h2>
+                        </div>
+
+                        {/* Next Week Status Switch */}
+                        <div className="input-group" style={{ marginBottom: '2rem', paddingBottom: '2rem', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
+                            <label className="form-label" style={{ textAlign: 'left', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span>{t('dashboard.matching.next_week_status', 'Next week')}</span>
+                                {savedSections['nextWeekStatus'] && (
+                                    <span style={{ color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.8rem' }}>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                        {t('dashboard.profile.saved', 'Saved')}
+                                    </span>
+                                )}
+                            </label>
+
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    background: '#f3f4f6',
+                                    borderRadius: '0.5rem',
+                                    padding: '0.25rem',
+                                    cursor: 'pointer',
+                                    position: 'relative'
+                                }}
+                            >
+                                <div
+                                    onClick={() => {
+                                        const newState = 'Active';
+                                        setFormData(prev => ({ ...prev, nextWeekStatus: newState }));
+                                        autoSaveProfile({ ...formData, nextWeekStatus: newState }, 'nextWeekStatus');
+                                    }}
+                                    style={{
+                                        flex: 1,
+                                        padding: '0.5rem',
+                                        textAlign: 'center',
+                                        borderRadius: '0.375rem',
+                                        background: formData.nextWeekStatus === 'Active' ? '#fff' : 'transparent',
+                                        boxShadow: formData.nextWeekStatus === 'Active' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                                        color: formData.nextWeekStatus === 'Active' ? '#10b981' : '#6b7280',
+                                        fontWeight: formData.nextWeekStatus === 'Active' ? '600' : '400',
+                                        transition: 'all 0.2s',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '0.5rem'
+                                    }}
+                                >
+                                    {t('dashboard.matching.status_active', "I'm in")} ✅
+                                </div>
+                                <div
+                                    onClick={() => {
+                                        const newState = 'Passive';
+                                        setFormData(prev => ({ ...prev, nextWeekStatus: newState }));
+                                        autoSaveProfile({ ...formData, nextWeekStatus: newState }, 'nextWeekStatus');
+                                    }}
+                                    style={{
+                                        flex: 1,
+                                        padding: '0.5rem',
+                                        textAlign: 'center',
+                                        borderRadius: '0.375rem',
+                                        background: formData.nextWeekStatus === 'Passive' ? '#fff' : 'transparent',
+                                        boxShadow: formData.nextWeekStatus === 'Passive' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                                        color: formData.nextWeekStatus === 'Passive' ? '#ef4444' : '#6b7280',
+                                        fontWeight: formData.nextWeekStatus === 'Passive' ? '600' : '400',
+                                        transition: 'all 0.2s',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '0.5rem'
+                                    }}
+                                >
+                                    {t('dashboard.matching.status_passive', "I'll skip")} ❌
+                                </div>
+                            </div>
                         </div>
 
                         <div className="input-group">
