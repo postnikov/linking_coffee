@@ -61,6 +61,7 @@ const Dashboard = () => {
         personalInterests: [],
         otherPersonalInterests: '',
         coffeeGoals: [],
+        linkedin: '',
         serendipity: 5,
         proximity: 5,
         nextWeekStatus: 'Active'
@@ -1149,6 +1150,19 @@ const Dashboard = () => {
                                         ))}
                                     </select>
                                 </div>
+                            </div>
+
+                            {/* LinkedIn */}
+                            <div className="form-group">
+                                <label>LinkedIn</label>
+                                <input
+                                    type="text"
+                                    name="linkedin"
+                                    className="form-control"
+                                    placeholder="https://linkedin.com/in/..."
+                                    value={formData.linkedin || ''}
+                                    onChange={handleChange}
+                                />
                             </div>
 
                             {/* Descriptions */}
