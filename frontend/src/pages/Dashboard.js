@@ -1658,7 +1658,7 @@ const Dashboard = () => {
                         </div>
                     )}
 
-                    <div className="glass-card" style={{ height: '100%', padding: '2rem' }}>
+                    <div className="glass-card" style={{ padding: '1.5rem' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                             <h2 className="section-title" style={{ marginBottom: 0 }}>{t('dashboard.matching.title', 'Matching Settings')}</h2>
                         </div>
