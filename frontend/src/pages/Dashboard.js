@@ -1194,21 +1194,37 @@ const Dashboard = () => {
 
                             {/* Descriptions */}
                             <div className="form-group">
-                                <label>{t('dashboard.profile.professional_desc', 'Professional Description')}</label>
+                                <label>
+                                    {t('dashboard.profile.professional_desc', 'Professional Description')}
+                                    {savedSections.professionalDesc && (
+                                        <span style={{ color: '#166534', fontSize: '0.75rem', marginLeft: '0.5rem', fontWeight: 'normal' }}>
+                                            ✓ {t('common.saved', 'Saved')}
+                                        </span>
+                                    )}
+                                </label>
                                 <textarea
                                     name="professionalDesc"
                                     className="form-control"
                                     value={formData.professionalDesc}
                                     onChange={handleChange}
+                                    onBlur={() => autoSaveProfile(formData, 'professionalDesc')}
                                 />
                             </div>
                             <div className="form-group">
-                                <label>{t('dashboard.profile.personal_desc', 'Personal Description')}</label>
+                                <label>
+                                    {t('dashboard.profile.personal_desc', 'Personal Description')}
+                                    {savedSections.personalDesc && (
+                                        <span style={{ color: '#166534', fontSize: '0.75rem', marginLeft: '0.5rem', fontWeight: 'normal' }}>
+                                            ✓ {t('common.saved', 'Saved')}
+                                        </span>
+                                    )}
+                                </label>
                                 <textarea
                                     name="personalDesc"
                                     className="form-control"
                                     value={formData.personalDesc}
                                     onChange={handleChange}
+                                    onBlur={() => autoSaveProfile(formData, 'personalDesc')}
                                 />
                             </div>
 
@@ -1273,6 +1289,11 @@ const Dashboard = () => {
                                     onChange={handleChange}
                                     onBlur={() => autoSaveProfile(formData, 'otherProfessionalInterests')}
                                 />
+                                {savedSections.otherProfessionalInterests && (
+                                    <div style={{ color: '#166534', fontSize: '0.75rem', marginTop: '0.25rem', textAlign: 'right' }}>
+                                        ✓ {t('common.saved', 'Saved')}
+                                    </div>
+                                )}
                             </div>
 
                             <div className="form-group">
@@ -1335,18 +1356,38 @@ const Dashboard = () => {
                                     onChange={handleChange}
                                     onBlur={() => autoSaveProfile(formData, 'otherPersonalInterests')}
                                 />
+                                {savedSections.otherPersonalInterests && (
+                                    <div style={{ color: '#166534', fontSize: '0.75rem', marginTop: '0.25rem', textAlign: 'right' }}>
+                                        ✓ {t('common.saved', 'Saved')}
+                                    </div>
+                                )}
                             </div>
 
                             {/* Coffee Goals */}
                             <div className="form-group">
-                                <label>{t('dashboard.profile.coffee_goals', 'Coffee Goals')}</label>
+                                <label>
+                                    {t('dashboard.profile.coffee_goals', 'Coffee Goals')}
+                                    {savedSections.coffeeGoals && (
+                                        <span style={{ color: '#166534', fontSize: '0.75rem', marginLeft: '0.5rem', fontWeight: 'normal' }}>
+                                            ✓ {t('common.saved', 'Saved')}
+                                        </span>
+                                    )}
+                                </label>
                                 <div style={{ display: 'flex', gap: '1rem' }}>
                                     {COFFEE_GOALS.map(goal => (
                                         <label key={goal} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
                                             <input
                                                 type="checkbox"
                                                 checked={formData.coffeeGoals.includes(goal)}
-                                                onChange={() => handleMultiSelectChange('coffeeGoals', goal)}
+                                                onChange={() => {
+                                                    handleMultiSelectChange('coffeeGoals', goal);
+                                                    const currentGoals = formData.coffeeGoals;
+                                                    const newGoals = currentGoals.includes(goal)
+                                                        ? currentGoals.filter(g => g !== goal)
+                                                        : [...currentGoals, goal];
+                                                    const newData = { ...formData, coffeeGoals: newGoals };
+                                                    autoSaveProfile(newData, 'coffeeGoals');
+                                                }}
                                             />
                                             {goal}
                                         </label>
