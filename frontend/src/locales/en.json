@@ -187,5 +187,11 @@
         "Friday": "Friday",
         "Saturday": "Saturday",
         "Sunday": "Sunday"
+    },
+    "header": {
+        "about": "About",
+        "rules": "Rules",
+        "prices": "Prices",
+        "logout": "Logout"
     }
 }
