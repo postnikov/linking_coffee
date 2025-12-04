@@ -66,7 +66,8 @@
             "next_week_status": "На следующей неделе",
             "status_active": "Я в деле",
             "status_passive": "Пропущу",
-            "current_match": "Текущий собеседник"
+            "current_match": "Текущий собеседник",
+            "this_week": "На этой неделе"
         }
     },
     "form": {

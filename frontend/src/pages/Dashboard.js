@@ -1472,9 +1472,17 @@ const Dashboard = () => {
                     {/* Current Match Block */}
                     {currentMatch && (
                         <div className="glass-card" style={{ padding: '2rem', marginBottom: '1.5rem', background: 'linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%)' }}>
-                            <h2 className="section-title" style={{ marginBottom: '1.5rem' }}>
-                                {t('dashboard.matching.current_match', 'Current match')} <span style={{ fontWeight: 'normal', fontSize: '0.8em', color: '#666' }}>{getCurrentWeekDateRange()}</span>
-                            </h2>
+                            <h2 className="section-title" style={{ marginBottom: '0.5rem' }}>{t('dashboard.matching.current_match', 'Current match')}</h2>
+                            <div style={{
+                                textTransform: 'uppercase',
+                                color: '#374151',
+                                fontSize: '0.75rem',
+                                fontWeight: '600',
+                                marginBottom: '1.5rem',
+                                letterSpacing: '0.05em'
+                            }}>
+                                {t('dashboard.matching.this_week', 'This week')} <span style={{ color: '#6b7280', fontWeight: 'normal' }}>{getCurrentWeekDateRange()}</span>
+                            </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
                                 <div style={{
                                     width: '60px',

@@ -66,7 +66,8 @@
             "next_week_status": "Next week",
             "status_active": "I'm in",
             "status_passive": "I'll skip",
-            "current_match": "Current match"
+            "current_match": "Current match",
+            "this_week": "This week"
         }
     },
     "form": {
