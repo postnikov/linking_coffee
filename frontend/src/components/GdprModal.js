@@ -34,7 +34,7 @@ const GdprModal = ({ onAccept, onClose }) => {
                     fontSize: '2.5rem',
                     fontWeight: '700',
                     marginBottom: '1rem',
-                    color: '#000',
+                    color: '#111827',
                     lineHeight: 1.2,
                     textAlign: 'left'
                 }}>
@@ -61,7 +61,7 @@ const GdprModal = ({ onAccept, onClose }) => {
                             <CheckIcon checked={agreements.terms} />
                         </div>
                         <span style={{ fontSize: '1rem', lineHeight: '1.5', color: '#374151', textAlign: 'left' }}>
-                            I accept the <a href="#" onClick={(e) => e.stopPropagation()} style={{ color: '#000', textDecoration: 'underline', fontWeight: '500' }}>Terms of Service</a> and <a href="/GDPR.pdf" target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} style={{ color: '#000', textDecoration: 'underline', fontWeight: '500' }}>Privacy Policy</a>, as may be modified from time to time.
+                            I accept the <a href="/GDPR.pdf" target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} style={{ color: '#7c3aed', textDecoration: 'underline', fontWeight: '600' }}>Terms of Service and Privacy Policy</a>, as may be modified from time to time.
                         </span>
                     </div>
 
@@ -100,13 +100,14 @@ const GdprModal = ({ onAccept, onClose }) => {
                         width: '100%',
                         padding: '1rem',
                         borderRadius: '8px',
-                        background: allAccepted ? '#000' : '#e5e7eb',
+                        background: allAccepted ? 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)' : '#e5e7eb',
                         color: allAccepted ? '#fff' : '#9ca3af',
                         border: 'none',
                         fontSize: '1rem',
                         fontWeight: '600',
                         cursor: allAccepted ? 'pointer' : 'not-allowed',
-                        transition: 'all 0.2s'
+                        transition: 'all 0.2s',
+                        boxShadow: allAccepted ? '0 4px 6px -1px rgba(124, 58, 237, 0.3), 0 2px 4px -1px rgba(124, 58, 237, 0.1)' : 'none'
                     }}
                 >
                     Create an account
@@ -122,16 +123,16 @@ const CheckIcon = ({ checked }) => (
         width: '24px',
         height: '24px',
         borderRadius: '50%',
-        border: checked ? '2px solid #000' : '2px solid #d1d5db',
+        border: checked ? '2px solid #7c3aed' : '2px solid #d1d5db',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         transition: 'all 0.2s',
-        background: 'transparent'
+        background: checked ? '#7c3aed' : 'transparent'
     }}>
         {checked && (
             <svg width="14" height="10" viewBox="0 0 14 10" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M1 5L4.5 8.5L13 1" stroke="#000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M1 5L4.5 8.5L13 1" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
         )}
     </div>
