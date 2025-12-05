@@ -1,0 +1,290 @@
+{
+    "categories": {
+        "professional": [
+            {
+                "id": "dev",
+                "name_en": "Development",
+                "name_ru": "Разработка"
+            },
+            {
+                "id": "design",
+                "name_en": "Design",
+                "name_ru": "Дизайн"
+            },
+            {
+                "id": "product",
+                "name_en": "Product & Management",
+                "name_ru": "Продукт и Менеджмент"
+            },
+            {
+                "id": "marketing",
+                "name_en": "Marketing & Sales",
+                "name_ru": "Маркетинг и Продажи"
+            },
+            {
+                "id": "business",
+                "name_en": "Business & Startups",
+                "name_ru": "Бизнес и Стартапы"
+            }
+        ],
+        "personal": [
+            {
+                "id": "sports",
+                "name_en": "Sports",
+                "name_ru": "Спорт"
+            },
+            {
+                "id": "culture",
+                "name_en": "Culture & Arts",
+                "name_ru": "Культура и Искусство"
+            },
+            {
+                "id": "lifestyle",
+                "name_en": "Lifestyle",
+                "name_ru": "Образ жизни"
+            },
+            {
+                "id": "tech",
+                "name_en": "Technology & Science",
+                "name_ru": "Технологии и Наука"
+            },
+            {
+                "id": "entertainment",
+                "name_en": "Entertainment",
+                "name_ru": "Развлечения"
+            }
+        ]
+    },
+    "professional": [
+        {
+            "id": "dev1",
+            "category": "dev",
+            "name_en": "JavaScript",
+            "name_ru": "JavaScript"
+        },
+        {
+            "id": "dev2",
+            "category": "dev",
+            "name_en": "Python",
+            "name_ru": "Python"
+        },
+        {
+            "id": "dev3",
+            "category": "dev",
+            "name_en": "Go",
+            "name_ru": "Go"
+        },
+        {
+            "id": "dev4",
+            "category": "dev",
+            "name_en": "Backend",
+            "name_ru": "Backend"
+        },
+        {
+            "id": "dev5",
+            "category": "dev",
+            "name_en": "Frontend",
+            "name_ru": "Frontend"
+        },
+        {
+            "id": "dev6",
+            "category": "dev",
+            "name_en": "Mobile Dev",
+            "name_ru": "Mobile Dev"
+        },
+        {
+            "id": "dev7",
+            "category": "dev",
+            "name_en": "DevOps",
+            "name_ru": "DevOps"
+        },
+        {
+            "id": "dev8",
+            "category": "dev",
+            "name_en": "AI/ML",
+            "name_ru": "AI/ML"
+        },
+        {
+            "id": "des1",
+            "category": "design",
+            "name_en": "UI/UX",
+            "name_ru": "UI/UX"
+        },
+        {
+            "id": "des2",
+            "category": "design",
+            "name_en": "Graphic Design",
+            "name_ru": "Графический дизайн"
+        },
+        {
+            "id": "des3",
+            "category": "design",
+            "name_en": "Product Design",
+            "name_ru": "Дизайн продукта"
+        },
+        {
+            "id": "prod1",
+            "category": "product",
+            "name_en": "Product Management",
+            "name_ru": "Product Management"
+        },
+        {
+            "id": "prod2",
+            "category": "product",
+            "name_en": "Project Management",
+            "name_ru": "Project Management"
+        },
+        {
+            "id": "prod3",
+            "category": "product",
+            "name_en": "Agile/Scrum",
+            "name_ru": "Agile/Scrum"
+        },
+        {
+            "id": "mkt1",
+            "category": "marketing",
+            "name_en": "Digital Marketing",
+            "name_ru": "Digital Marketing"
+        },
+        {
+            "id": "mkt2",
+            "category": "marketing",
+            "name_en": "SEO/ASO",
+            "name_ru": "SEO/ASO"
+        },
+        {
+            "id": "mkt3",
+            "category": "marketing",
+            "name_en": "B2B Sales",
+            "name_ru": "B2B Продажи"
+        },
+        {
+            "id": "biz1",
+            "category": "business",
+            "name_en": "Entrepreneurship",
+            "name_ru": "Предпринимательство"
+        },
+        {
+            "id": "biz2",
+            "category": "business",
+            "name_en": "Investment",
+            "name_ru": "Инвестиции"
+        },
+        {
+            "id": "biz3",
+            "category": "business",
+            "name_en": "Consulting",
+            "name_ru": "Консалтинг"
+        }
+    ],
+    "personal": [
+        {
+            "id": "spt1",
+            "category": "sports",
+            "name_en": "Running",
+            "name_ru": "Бег"
+        },
+        {
+            "id": "spt2",
+            "category": "sports",
+            "name_en": "Gym",
+            "name_ru": "Тренажерный зал"
+        },
+        {
+            "id": "spt3",
+            "category": "sports",
+            "name_en": "Yoga",
+            "name_ru": "Йога"
+        },
+        {
+            "id": "spt4",
+            "category": "sports",
+            "name_en": "Cycling",
+            "name_ru": "Велоспорт"
+        },
+        {
+            "id": "spt5",
+            "category": "sports",
+            "name_en": "Football",
+            "name_ru": "Футбол"
+        },
+        {
+            "id": "cult1",
+            "category": "culture",
+            "name_en": "Reading",
+            "name_ru": "Чтение"
+        },
+        {
+            "id": "cult2",
+            "category": "culture",
+            "name_en": "Museums",
+            "name_ru": "Музеи"
+        },
+        {
+            "id": "cult3",
+            "category": "culture",
+            "name_en": "Theater",
+            "name_ru": "Театр"
+        },
+        {
+            "id": "cult4",
+            "category": "culture",
+            "name_en": "Cinema",
+            "name_ru": "Кино"
+        },
+        {
+            "id": "life1",
+            "category": "lifestyle",
+            "name_en": "Travel",
+            "name_ru": "Путешествия"
+        },
+        {
+            "id": "life2",
+            "category": "lifestyle",
+            "name_en": "Cooking",
+            "name_ru": "Кулинария"
+        },
+        {
+            "id": "life3",
+            "category": "lifestyle",
+            "name_en": "Meditation",
+            "name_ru": "Медитация"
+        },
+        {
+            "id": "life4",
+            "category": "lifestyle",
+            "name_en": "Volunteering",
+            "name_ru": "Волонтерство"
+        },
+        {
+            "id": "tech1",
+            "category": "tech",
+            "name_en": "Gadgets",
+            "name_ru": "Гаджеты"
+        },
+        {
+            "id": "tech2",
+            "category": "tech",
+            "name_en": "Space",
+            "name_ru": "Космос"
+        },
+        {
+            "id": "ent1",
+            "category": "entertainment",
+            "name_en": "Gaming",
+            "name_ru": "Игры"
+        },
+        {
+            "id": "ent2",
+            "category": "entertainment",
+            "name_en": "Board Games",
+            "name_ru": "Настольные игры"
+        },
+        {
+            "id": "ent3",
+            "category": "entertainment",
+            "name_en": "Music",
+            "name_ru": "Музыка"
+        }
+    ]
+}

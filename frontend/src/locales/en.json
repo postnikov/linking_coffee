@@ -1,4 +1,13 @@
 {
+    "common": {
+        "select": "Select",
+        "saved": "Saved",
+        "change": "Change",
+        "add": "Add",
+        "done": "Done",
+        "cancel": "Cancel",
+        "selected": "Selected"
+    },
     "hero": {
         "title": "Linked.Coffee",
         "tagline": "Expand your world.<br />One conversation at a time.",
@@ -52,7 +61,9 @@
             "select_personal_interests": "Select Personal Interests",
             "other_professional_interests_placeholder": "Other professional interests...",
             "other_personal_interests_placeholder": "Other personal interests...",
-            "change_interests": "Change"
+            "change_interests": "Change",
+            "ready": "Yes! Your profile is ready!",
+            "complete_profile": "Complete the profile"
         },
         "matching": {
             "title": "Matching Settings",
@@ -157,6 +168,7 @@
             }
         },
         "rules": {
+            "title": "Rules",
             "basics": {
                 "title": "The basics",
                 "items": [
@@ -187,11 +199,5 @@
         "Friday": "Friday",
         "Saturday": "Saturday",
         "Sunday": "Sunday"
-    },
-    "header": {
-        "about": "About",
-        "rules": "Rules",
-        "prices": "Prices",
-        "logout": "Logout"
     }
 }

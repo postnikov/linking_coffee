@@ -99,8 +99,8 @@ const Home = ({ onLogin }) => {
         setHasTelegramId(false);
     };
 
-    const handleGdprAccept = async () => {
-        console.log('handleGdprAccept called. PendingUser:', pendingUser);
+    const handleGdprAccept = async (modalData) => {
+        console.log('handleGdprAccept called. PendingUser:', pendingUser, 'ModalData:', modalData);
         if (!pendingUser || !pendingUser.username) {
             console.error('Missing pendingUser or username');
             alert('Error: User session invalid. Please try logging in again.');
@@ -109,10 +109,15 @@ const Home = ({ onLogin }) => {
 
         try {
             console.log(`Sending consent for ${pendingUser.username} to ${API_URL}/api/consent`);
+            const payload = {
+                username: pendingUser.username,
+                linkedin: modalData?.linkedin || ''
+            };
+
             const response = await fetch(`${API_URL}/api/consent`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username: pendingUser.username })
+                body: JSON.stringify(payload)
             });
 
             console.log('Consent response status:', response.status);

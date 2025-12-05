@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import ReactDOM from 'react-dom';
 import { useTranslation } from 'react-i18next';
@@ -67,6 +67,19 @@ const Dashboard = () => {
         nextWeekStatus: 'Active'
     });
 
+    const isProfileComplete = (data) => {
+        if (!data.name?.trim()) return false;
+        if (!data.family?.trim()) return false;
+        if (!data.country) return false;
+        if (!data.city) return false;
+        if (!data.timezone) return false;
+        if (!data.bestMeetingDays?.length) return false;
+        if (!data.languages?.length) return false;
+        if (!data.profession?.trim()) return false;
+        if (!data.grade) return false;
+        return true;
+    };
+
     const [isLoading, setIsLoading] = useState(false);
     const [message, setMessage] = useState({ type: '', text: '' });
 
@@ -89,6 +102,51 @@ const Dashboard = () => {
     const [savedSections, setSavedSections] = useState({});
     const [isEditMode, setIsEditMode] = useState(false);
     const [imageError, setImageError] = useState(false);
+
+    // Profile Completion Logic
+    const [showCompletionSuccess, setShowCompletionSuccess] = useState(false);
+    const [wasIncomplete, setWasIncomplete] = useState(false);
+
+    const completionFields = useMemo(() => [
+        { key: 'name', label: t('dashboard.profile.name', 'Name'), done: !!formData.name?.trim() },
+        { key: 'family', label: t('dashboard.profile.family', 'Family (Last Name)'), done: !!formData.family?.trim() },
+        { key: 'country', label: t('dashboard.profile.country', 'Country'), done: !!formData.country },
+        { key: 'city', label: t('dashboard.profile.city', 'City'), done: !!formData.city },
+        { key: 'timezone', label: t('dashboard.profile.timezone', 'Time Zone'), done: !!formData.timezone },
+        { key: 'bestMeetingDays', label: t('dashboard.profile.best_days', 'Best Meeting Days'), done: formData.bestMeetingDays?.length > 0 },
+        { key: 'languages', label: t('dashboard.profile.languages', 'Languages'), done: formData.languages?.length > 0 },
+        { key: 'profession', label: t('dashboard.profile.profession', 'Profession'), done: !!formData.profession?.trim() },
+        { key: 'grade', label: t('dashboard.profile.grade', 'Grade'), done: !!formData.grade }
+    ], [formData, t]);
+
+    const allFieldsDone = completionFields.every(f => f.done);
+
+    useEffect(() => {
+        if (!allFieldsDone) {
+            setWasIncomplete(true);
+            setShowCompletionSuccess(false);
+            if (formData.nextWeekStatus !== 'Passive') {
+                const newData = { ...formData, nextWeekStatus: 'Passive' };
+                setFormData(newData);
+                autoSaveProfile(newData, 'nextWeekStatus');
+            }
+        } else if (allFieldsDone && wasIncomplete) {
+            setShowCompletionSuccess(true);
+            if (formData.nextWeekStatus !== 'Active') {
+                const newData = { ...formData, nextWeekStatus: 'Active' };
+                setFormData(newData);
+                autoSaveProfile(newData, 'nextWeekStatus');
+            }
+            const timer = setTimeout(() => {
+                setShowCompletionSuccess(false);
+                setWasIncomplete(false);
+            }, 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [allFieldsDone, wasIncomplete, formData.nextWeekStatus, formData]);
+
+    const showCompletionBlock = !allFieldsDone || showCompletionSuccess;
+
     const [currentMatch, setCurrentMatch] = useState(null);
 
     useEffect(() => {
@@ -192,7 +250,16 @@ const Dashboard = () => {
                         ...data.profile
                     };
                     setFormData(profileData);
+                    setFormData(profileData);
                     setInitialFormData(profileData);
+
+                    // Force edit mode if profile is incomplete
+                    if (!isProfileComplete(profileData)) {
+                        setIsEditMode(true);
+                        // Optional: show a message explaining why
+                        // setMessage({ type: 'info', text: t('dashboard.profile.please_complete', 'Please complete your profile to continue.') });
+                    }
+
                     if (data.currentMatch) {
                         setCurrentMatch(data.currentMatch);
                     }
@@ -462,7 +529,7 @@ const Dashboard = () => {
     }
 
     return (
-        <main className="main-content" style={{ paddingTop: '8rem', alignItems: 'flex-start' }}>
+        <main className="main-content" style={{ paddingTop: '8rem', paddingLeft: 0, paddingRight: 0, alignItems: 'flex-start' }}>
             <div className="dashboard-container">
                 {/* Left Side: Profile */}
                 <div className="profile-section glass-card">
@@ -470,7 +537,20 @@ const Dashboard = () => {
                         <h2 className="section-title" style={{ marginBottom: 0 }}>{t('dashboard.profile.title', 'Your Profile')}</h2>
                         <button
                             className="add-language-btn"
-                            onClick={() => setIsEditMode(!isEditMode)}
+                            onClick={() => {
+                                if (isEditMode) {
+                                    if (isProfileComplete(formData)) {
+                                        setIsEditMode(false);
+                                        setMessage({ type: '', text: '' });
+                                    } else {
+                                        setMessage({ type: 'error', text: t('dashboard.profile.error_incomplete', 'Please fill in all mandatory fields before switching to view mode.') });
+                                        // Scroll to top to see error
+                                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                                    }
+                                } else {
+                                    setIsEditMode(true);
+                                }
+                            }}
                             style={{ padding: '0.5rem 1rem' }}
                         >
                             {isEditMode ? 'View Mode' : 'Edit Mode'}
@@ -570,51 +650,49 @@ const Dashboard = () => {
                                                         <path d="M1.5 8.5L1 11L3.5 10.5L9.75 4.25L7.75 2.25L1.5 8.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                                                         <path d="M9.75 4.25L7.75 2.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                                                     </svg>
-                                                    {t('dashboard.profile.change_country', 'Change')}
+                                                    {formData.country ? t('dashboard.profile.change_country', 'Change') : t('common.select', 'Select')}
                                                 </>
                                             )}
                                         </button>
                                     </div>
                                 </div>
-                                <div className="form-group">
-                                    <label>{t('dashboard.profile.city', 'City')}</label>
-                                    <div className="language-chips">
-                                        {formData.city && (
-                                            <div className="chip">
-                                                {formData.city.name}
-                                            </div>
-                                        )}
-                                        <button
-                                            type="button"
-                                            className={`add-language-btn ${savedSections.city ? 'saved' : ''}`}
-                                            onClick={() => {
-                                                if (!formData.country) {
-                                                    alert(t('dashboard.profile.select_country_first', 'Please select a country first'));
-                                                    return;
-                                                }
-                                                setShowCityModal(true);
-                                            }}
-                                            style={savedSections.city ? { backgroundColor: '#dcfce7', color: '#166534', borderColor: '#bbf7d0' } : {}}
-                                        >
-                                            {savedSections.city ? (
-                                                <>
-                                                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                        <path d="M10 3L4.5 8.5L2 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                                    </svg>
-                                                    {t('common.saved', 'Saved')}
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                        <path d="M1.5 8.5L1 11L3.5 10.5L9.75 4.25L7.75 2.25L1.5 8.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                                        <path d="M9.75 4.25L7.75 2.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                                    </svg>
-                                                    {t('dashboard.profile.change_city', 'Change')}
-                                                </>
+                                {formData.country && (
+                                    <div className="form-group">
+                                        <label>{t('dashboard.profile.city', 'City')}</label>
+                                        <div className="language-chips">
+                                            {formData.city && (
+                                                <div className="chip">
+                                                    {formData.city.name}
+                                                </div>
                                             )}
-                                        </button>
+                                            <button
+                                                type="button"
+                                                className={`add-language-btn ${savedSections.city ? 'saved' : ''}`}
+                                                onClick={() => {
+                                                    setShowCityModal(true);
+                                                }}
+                                                style={savedSections.city ? { backgroundColor: '#dcfce7', color: '#166534', borderColor: '#bbf7d0' } : {}}
+                                            >
+                                                {savedSections.city ? (
+                                                    <>
+                                                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                            <path d="M10 3L4.5 8.5L2 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                        </svg>
+                                                        {t('common.saved', 'Saved')}
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                            <path d="M1.5 8.5L1 11L3.5 10.5L9.75 4.25L7.75 2.25L1.5 8.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                            <path d="M9.75 4.25L7.75 2.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                        </svg>
+                                                        {formData.city ? t('dashboard.profile.change_city', 'Change') : t('common.select', 'Select')}
+                                                    </>
+                                                )}
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
+                                )}
                             </div>
 
                             {/* Country Modal */}
@@ -1045,7 +1123,7 @@ const Dashboard = () => {
                                                     <path d="M1.5 8.5L1 11L3.5 10.5L9.75 4.25L7.75 2.25L1.5 8.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                                                     <path d="M9.75 4.25L7.75 2.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                                                 </svg>
-                                                {t('dashboard.profile.change_days', 'Change')}
+                                                {formData.bestMeetingDays.length > 0 ? t('dashboard.profile.change_days', 'Change') : t('common.select', 'Select')}
                                             </>
                                         )}
                                     </button>
@@ -1087,7 +1165,7 @@ const Dashboard = () => {
                                                     <path d="M1.5 8.5L1 11L3.5 10.5L9.75 4.25L7.75 2.25L1.5 8.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                                                     <path d="M9.75 4.25L7.75 2.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                                                 </svg>
-                                                {t('dashboard.profile.change_languages', 'Change')}
+                                                {formData.languages.length > 0 ? t('dashboard.profile.change_languages', 'Change') : t('common.select', 'Select')}
                                             </>
                                         )}
                                     </button>
@@ -1393,35 +1471,7 @@ const Dashboard = () => {
                                 </div>
                             </div>
 
-                            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '2rem' }}>
-                                {showSuccess ? (
-                                    <button
-                                        type="button"
-                                        className="save-btn"
-                                        style={{ marginTop: 0, background: '#10b981', cursor: 'default' }}
-                                    >
-                                        {t('dashboard.profile.saved_success', 'All changes are saved')}
-                                    </button>
-                                ) : (
-                                    (hasChanges || isSaving) && (
-                                        <button
-                                            type="submit"
-                                            className="save-btn"
-                                            disabled={isSaving}
-                                            style={{ marginTop: 0 }}
-                                        >
-                                            {isSaving ? (
-                                                <>
-                                                    <span className="spinner-small"></span>
-                                                    {t('dashboard.profile.saving', 'Saving...')}
-                                                </>
-                                            ) : (
-                                                t('dashboard.profile.save', 'Save Changes')
-                                            )}
-                                        </button>
-                                    )
-                                )}
-                            </div>
+
                         </form>
                     ) : (
                         <div className="profile-view">
@@ -1656,7 +1706,47 @@ const Dashboard = () => {
                         </div>
                     )}
 
-                    <div className="glass-card" style={{ padding: '1.5rem' }}>
+                    {/* Profile Completion Block */}
+                    {showCompletionBlock && (
+                        <div className="glass-card" style={{ padding: '1.5rem', marginBottom: '1.5rem', animation: 'fadeIn 0.5s ease-out' }}>
+                            {showCompletionSuccess ? (
+                                <div style={{ textAlign: 'center', padding: '1rem 0' }}>
+                                    <h3 style={{ color: '#10b981', fontSize: '1.25rem', marginBottom: '0.5rem' }}>{t('dashboard.profile.ready', 'Yes! Your profile is ready!')}</h3>
+                                    <div style={{ fontSize: '3rem' }}>🎉</div>
+                                </div>
+                            ) : (
+                                <>
+                                    <h2 className="section-title" style={{ marginBottom: '1rem', fontSize: '1.25rem' }}>
+                                        {t('dashboard.profile.complete_profile', 'Complete the profile')}
+                                    </h2>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                        {completionFields.map(field => (
+                                            <div key={field.key} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.95rem' }}>
+                                                {field.done ? (
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                                    </svg>
+                                                ) : (
+                                                    <div style={{ width: '20px', height: '20px', border: '2px solid #e5e7eb', borderRadius: '4px', flexShrink: 0 }}></div>
+                                                )}
+                                                <span style={{ color: field.done ? '#1f2937' : '#6b7280', textDecoration: field.done ? 'none' : 'none' }}>
+                                                    {field.label}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    )}
+
+                    <div className="glass-card" style={{
+                        padding: '1.5rem',
+                        opacity: allFieldsDone ? 1 : 0.6,
+                        filter: allFieldsDone ? 'none' : 'blur(4px)',
+                        pointerEvents: allFieldsDone ? 'auto' : 'none',
+                        transition: 'all 0.3s ease'
+                    }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                             <h2 className="section-title" style={{ marginBottom: 0 }}>{t('dashboard.matching.title', 'Matching Settings')}</h2>
                         </div>
@@ -1819,7 +1909,7 @@ const Dashboard = () => {
                     </div>
                 </div>
             </div>
-        </main>
+        </main >
     );
 };
 

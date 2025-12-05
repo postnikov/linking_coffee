@@ -89,6 +89,8 @@ bot.start((ctx) => {
   otpStore.set(cleanUsername, {
     code: otp,
     telegramId: ctx.from.id, // Store ID to update later
+    firstName: ctx.from.first_name,
+    lastName: ctx.from.last_name,
     expiresAt: Date.now() + 10 * 60 * 1000 // 10 minutes
   });
 
@@ -264,6 +266,8 @@ app.post('/api/verify', async (req, res) => {
 
   // Verify OTP
   let telegramId = 0; // Default for magic OTP (number, not string)
+  let firstName = '';
+  let lastName = '';
 
   if (cleanOtp === '000000' && process.env.ENABLE_MAGIC_OTP === 'true') {
     // Magic OTP for testing - bypass verification
@@ -293,7 +297,9 @@ app.post('/api/verify', async (req, res) => {
 
     // OTP is valid - get the telegram ID and clean up
     telegramId = parseInt(storedData.telegramId, 10); // Convert to number
-    console.log(`✅ OTP valid! Telegram ID: ${telegramId}`);
+    firstName = storedData.firstName;
+    lastName = storedData.lastName;
+    console.log(`✅ OTP valid! Telegram ID: ${telegramId}, Name: ${firstName} ${lastName}`);
     otpStore.delete(cleanUsername);
   }
 
@@ -316,6 +322,9 @@ app.post('/api/verify', async (req, res) => {
       const updateFields = {
         Tg_ID: telegramId
       };
+
+      if (firstName) updateFields.Name = firstName;
+      if (lastName) updateFields.Family = lastName;
 
       // Try to fetch Telegram Avatar if user has none
       if (telegramId > 0 && (!record.fields.Avatar || record.fields.Avatar.length === 0)) {
@@ -374,7 +383,7 @@ app.post('/api/verify', async (req, res) => {
 
 // Step 3: Update GDPR Consent
 app.post('/api/consent', async (req, res) => {
-  const { username } = req.body;
+  const { username, linkedin } = req.body;
 
   if (!username) {
     return res.status(400).json({ success: false, message: 'Username is required' });
@@ -392,12 +401,17 @@ app.post('/api/consent', async (req, res) => {
 
     if (records.length > 0) {
       const record = records[0];
+      const fieldsToUpdate = {
+        Consent_GDPR: true
+      };
+      if (linkedin) {
+        fieldsToUpdate.Linkedin = linkedin;
+      }
+
       await base(process.env.AIRTABLE_MEMBERS_TABLE).update([
         {
           id: record.id,
-          fields: {
-            Consent_GDPR: true
-          }
+          fields: fieldsToUpdate
         }
       ]);
 

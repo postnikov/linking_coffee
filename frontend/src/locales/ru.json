@@ -1,4 +1,13 @@
 {
+    "common": {
+        "select": "Выбрать",
+        "saved": "Сохранено",
+        "change": "Изменить",
+        "add": "Добавить",
+        "done": "Готово",
+        "cancel": "Отмена",
+        "selected": "Выбрано"
+    },
     "hero": {
         "title": "Linked.Coffee",
         "tagline": "Расширьте свой нетворк за 30 минут. Онлайн. <br />С чашкой Linking-Coffee.",
@@ -52,7 +61,9 @@
             "select_personal_interests": "Выберите личные интересы",
             "other_professional_interests_placeholder": "Другие профессиональные интересы...",
             "other_personal_interests_placeholder": "Другие личные интересы...",
-            "change_interests": "Изменить"
+            "change_interests": "Изменить",
+            "ready": "Да! Ваш профиль готов!",
+            "complete_profile": "Заполните профиль"
         },
         "matching": {
             "title": "Настройки мэтчинга",
@@ -158,6 +169,7 @@
             }
         },
         "rules": {
+            "title": "Правила",
             "basics": {
                 "title": "Основное",
                 "items": [
@@ -188,11 +200,5 @@
         "Friday": "Пятница",
         "Saturday": "Суббота",
         "Sunday": "Воскресенье"
-    },
-    "header": {
-        "about": "О проекте",
-        "rules": "Правила",
-        "prices": "Цены",
-        "logout": "Выйти"
     }
 }

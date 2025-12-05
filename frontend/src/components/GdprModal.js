@@ -7,6 +7,8 @@ const GdprModal = ({ onAccept, onClose }) => {
         messages: false
     });
 
+    const [linkedinUrl, setLinkedinUrl] = useState('');
+
     const allAccepted = agreements.terms && agreements.age && agreements.messages;
 
     const toggleAgreement = (key) => {
@@ -44,13 +46,49 @@ const GdprModal = ({ onAccept, onClose }) => {
                 <p style={{
                     fontSize: '1.1rem',
                     color: '#6b7280',
-                    marginBottom: '2.5rem',
+                    marginBottom: '2rem',
                     textAlign: 'left'
                 }}>
                     Please accept our terms of service to continue
                 </p>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginBottom: '2.5rem' }}>
+
+                    {/* LinkedIn Input */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        <label style={{ fontSize: '1rem', fontWeight: '600', color: '#374151', textAlign: 'left' }}>
+                            LinkedIn Profile URL <span style={{ color: '#9ca3af', fontWeight: '400', fontSize: '0.9rem' }}>(Optional)</span>
+                        </label>
+                        <input
+                            type="url"
+                            placeholder="https://www.linkedin.com/in/..."
+                            value={linkedinUrl}
+                            onChange={(e) => setLinkedinUrl(e.target.value)}
+                            style={{
+                                padding: '0.75rem',
+                                borderRadius: '12px',
+                                border: '2px solid #e5e7eb',
+                                fontSize: '1rem',
+                                width: '100%',
+                                outline: 'none',
+                                transition: 'all 0.2s',
+                                color: '#374151',
+                                background: '#f9fafb'
+                            }}
+                            onFocus={(e) => {
+                                e.target.style.borderColor = '#7c3aed';
+                                e.target.style.background = '#fff';
+                                e.target.style.boxShadow = '0 0 0 4px rgba(124, 58, 237, 0.1)';
+                            }}
+                            onBlur={(e) => {
+                                e.target.style.borderColor = '#e5e7eb';
+                                e.target.style.background = '#f9fafb';
+                                e.target.style.boxShadow = 'none';
+                            }}
+                        />
+                    </div>
+
+                    <div style={{ height: '1px', background: '#e5e7eb', margin: '0.5rem 0' }}></div>
 
                     {/* Item 1: Terms & Privacy */}
                     <div
@@ -94,20 +132,21 @@ const GdprModal = ({ onAccept, onClose }) => {
                 </div>
 
                 <button
-                    onClick={onAccept}
+                    onClick={() => onAccept({ linkedin: linkedinUrl })}
                     disabled={!allAccepted}
                     style={{
                         width: '100%',
                         padding: '1rem',
-                        borderRadius: '8px',
+                        borderRadius: '12px',
                         background: allAccepted ? 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)' : '#e5e7eb',
                         color: allAccepted ? '#fff' : '#9ca3af',
                         border: 'none',
-                        fontSize: '1rem',
+                        fontSize: '1.1rem',
                         fontWeight: '600',
                         cursor: allAccepted ? 'pointer' : 'not-allowed',
                         transition: 'all 0.2s',
-                        boxShadow: allAccepted ? '0 4px 6px -1px rgba(124, 58, 237, 0.3), 0 2px 4px -1px rgba(124, 58, 237, 0.1)' : 'none'
+                        boxShadow: allAccepted ? '0 4px 6px -1px rgba(124, 58, 237, 0.3), 0 2px 4px -1px rgba(124, 58, 237, 0.1)' : 'none',
+                        marginTop: 'auto'
                     }}
                 >
                     Create an account
