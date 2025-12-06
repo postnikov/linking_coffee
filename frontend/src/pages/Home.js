@@ -188,16 +188,7 @@ const Home = ({ onLogin }) => {
                                 {step === 1 ? (
                                     <Trans i18nKey="form.subtitle" />
                                 ) : (
-                                    hasTelegramId ? (
-                                        t('form.verify_existing')
-                                    ) : (
-                                        <Trans
-                                            i18nKey="form.verify_new"
-                                            components={{
-                                                1: <a href="https://t.me/Linked_Coffee_Bot" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline', fontWeight: 'bold' }} />
-                                            }}
-                                        />
-                                    )
+                                    hasTelegramId && t('form.verify_existing')
                                 )}
                             </p>
                         </div>
@@ -252,6 +243,16 @@ const Home = ({ onLogin }) => {
                                         />
                                     </div>
                                 </div>
+                                {!hasTelegramId && (
+                                    <div style={{ margin: '1rem 0', textAlign: 'center', fontSize: '0.9rem', color: '#4b5563', lineHeight: '1.5' }}>
+                                        <Trans
+                                            i18nKey="form.verify_new"
+                                            components={{
+                                                1: <a href="https://t.me/Linked_Coffee_Bot" target="_blank" rel="noopener noreferrer" style={{ color: '#7c3aed', textDecoration: 'underline', fontWeight: 'bold' }} />
+                                            }}
+                                        />
+                                    </div>
+                                )}
 
                                 <button type="submit" className="submit-btn" disabled={isLoading}>
                                     <div className="button-content">
