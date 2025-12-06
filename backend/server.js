@@ -3,6 +3,18 @@ const express = require('express');
 const cors = require('cors');
 const Airtable = require('airtable');
 const { Telegraf } = require('telegraf');
+const fs = require('fs');
+const path = require('path');
+
+const logFile = path.join(__dirname, 'debug.log');
+function logDebug(msg) {
+  const time = new Date().toISOString();
+  try {
+    fs.appendFileSync(logFile, `[${time}] ${msg}\n`);
+  } catch (e) {
+    console.error('Logging error:', e);
+  }
+}
 
 const app = express();
 
@@ -28,8 +40,7 @@ const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY }).base(
 
 // Configure Multer for file uploads
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
+
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -367,7 +378,9 @@ app.post('/api/verify', async (req, res) => {
         user: {
           username: cleanUsername,
           status: record.fields.Status,
-          consentGdpr: record.fields.Consent_GDPR
+          consentGdpr: record.fields.Consent_GDPR,
+          firstName: firstName || record.fields.Name,
+          lastName: lastName || record.fields.Family
         }
       });
     } else {
@@ -383,7 +396,7 @@ app.post('/api/verify', async (req, res) => {
 
 // Step 3: Update GDPR Consent
 app.post('/api/consent', async (req, res) => {
-  const { username, linkedin } = req.body;
+  const { username, linkedin, name, family } = req.body;
 
   if (!username) {
     return res.status(400).json({ success: false, message: 'Username is required' });
@@ -406,6 +419,12 @@ app.post('/api/consent', async (req, res) => {
       };
       if (linkedin) {
         fieldsToUpdate.Linkedin = linkedin;
+      }
+      if (name) {
+        fieldsToUpdate.Name = name;
+      }
+      if (family) {
+        fieldsToUpdate.Family = family;
       }
 
       await base(process.env.AIRTABLE_MEMBERS_TABLE).update([
@@ -537,6 +556,7 @@ app.get('/api/interests', (req, res) => {
 // Step 4: Get User Profile
 app.get('/api/profile', async (req, res) => {
   const { username, requester } = req.query;
+  logDebug(`GET /api/profile request for username: ${username}`);
 
   if (!username) {
     return res.status(400).json({ success: false, message: 'Username is required' });
@@ -704,6 +724,7 @@ app.get('/api/profile', async (req, res) => {
 // Step 5: Update User Profile
 app.put('/api/profile', async (req, res) => {
   const { username, profile } = req.body;
+  logDebug(`PUT /api/profile request for ${username}. Data: Name=${profile?.name}, Family=${profile?.family}`);
 
   if (!username) {
     return res.status(400).json({ success: false, message: 'Username is required' });

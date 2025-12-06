@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const GdprModal = ({ onAccept, onClose }) => {
+const GdprModal = ({ onAccept, onClose, initialName, initialFamily }) => {
     const [agreements, setAgreements] = useState({
         terms: false,
         age: false,
@@ -8,11 +8,37 @@ const GdprModal = ({ onAccept, onClose }) => {
     });
 
     const [linkedinUrl, setLinkedinUrl] = useState('');
+    const [name, setName] = useState(initialName || '');
+    const [family, setFamily] = useState(initialFamily || '');
 
     const allAccepted = agreements.terms && agreements.age && agreements.messages;
 
     const toggleAgreement = (key) => {
         setAgreements(prev => ({ ...prev, [key]: !prev[key] }));
+    };
+
+    const inputStyle = {
+        padding: '0.75rem',
+        borderRadius: '12px',
+        border: '2px solid #e5e7eb',
+        fontSize: '1rem',
+        width: '100%',
+        outline: 'none',
+        transition: 'all 0.2s',
+        color: '#374151',
+        background: '#f9fafb'
+    };
+
+    const handleFocus = (e) => {
+        e.target.style.borderColor = '#7c3aed';
+        e.target.style.background = '#fff';
+        e.target.style.boxShadow = '0 0 0 4px rgba(124, 58, 237, 0.1)';
+    };
+
+    const handleBlur = (e) => {
+        e.target.style.borderColor = '#e5e7eb';
+        e.target.style.background = '#f9fafb';
+        e.target.style.boxShadow = 'none';
     };
 
     return (
@@ -30,12 +56,14 @@ const GdprModal = ({ onAccept, onClose }) => {
                 borderRadius: '24px',
                 boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
                 display: 'flex', flexDirection: 'column',
-                position: 'relative'
+                position: 'relative',
+                maxHeight: '90vh',
+                overflowY: 'auto'
             }}>
                 <h1 style={{
                     fontSize: '2.5rem',
                     fontWeight: '700',
-                    marginBottom: '1rem',
+                    marginBottom: '2rem',
                     color: '#111827',
                     lineHeight: 1.2,
                     textAlign: 'left'
@@ -43,16 +71,39 @@ const GdprModal = ({ onAccept, onClose }) => {
                     Get started
                 </h1>
 
-                <p style={{
-                    fontSize: '1.1rem',
-                    color: '#6b7280',
-                    marginBottom: '2rem',
-                    textAlign: 'left'
-                }}>
-                    Please accept our terms of service to continue
-                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginBottom: '1.5rem' }}>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginBottom: '2.5rem' }}>
+                    {/* Name & Family Row */}
+                    <div style={{ display: 'flex', gap: '1rem' }}>
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            <label style={{ fontSize: '1rem', fontWeight: '600', color: '#374151', textAlign: 'left' }}>
+                                Name
+                            </label>
+                            <input
+                                type="text"
+                                placeholder="Name"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                style={inputStyle}
+                                onFocus={handleFocus}
+                                onBlur={handleBlur}
+                            />
+                        </div>
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            <label style={{ fontSize: '1rem', fontWeight: '600', color: '#374151', textAlign: 'left' }}>
+                                Last Name
+                            </label>
+                            <input
+                                type="text"
+                                placeholder="Last Name"
+                                value={family}
+                                onChange={(e) => setFamily(e.target.value)}
+                                style={inputStyle}
+                                onFocus={handleFocus}
+                                onBlur={handleBlur}
+                            />
+                        </div>
+                    </div>
 
                     {/* LinkedIn Input */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
@@ -64,32 +115,25 @@ const GdprModal = ({ onAccept, onClose }) => {
                             placeholder="https://www.linkedin.com/in/..."
                             value={linkedinUrl}
                             onChange={(e) => setLinkedinUrl(e.target.value)}
-                            style={{
-                                padding: '0.75rem',
-                                borderRadius: '12px',
-                                border: '2px solid #e5e7eb',
-                                fontSize: '1rem',
-                                width: '100%',
-                                outline: 'none',
-                                transition: 'all 0.2s',
-                                color: '#374151',
-                                background: '#f9fafb'
-                            }}
-                            onFocus={(e) => {
-                                e.target.style.borderColor = '#7c3aed';
-                                e.target.style.background = '#fff';
-                                e.target.style.boxShadow = '0 0 0 4px rgba(124, 58, 237, 0.1)';
-                            }}
-                            onBlur={(e) => {
-                                e.target.style.borderColor = '#e5e7eb';
-                                e.target.style.background = '#f9fafb';
-                                e.target.style.boxShadow = 'none';
-                            }}
+                            style={inputStyle}
+                            onFocus={handleFocus}
+                            onBlur={handleBlur}
                         />
                     </div>
+                </div>
 
-                    <div style={{ height: '1px', background: '#e5e7eb', margin: '0.5rem 0' }}></div>
+                <p style={{
+                    fontSize: '1.1rem',
+                    color: '#6b7280',
+                    marginBottom: '1.5rem',
+                    textAlign: 'left'
+                }}>
+                    Please accept our terms of service to continue
+                </p>
 
+                <div style={{ height: '1px', background: '#e5e7eb', margin: '0 0 1.5rem 0' }}></div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginBottom: '2.5rem' }}>
                     {/* Item 1: Terms & Privacy */}
                     <div
                         style={{ display: 'flex', gap: '1rem', cursor: 'pointer', alignItems: 'flex-start' }}
@@ -128,11 +172,10 @@ const GdprModal = ({ onAccept, onClose }) => {
                             I agree to receive Telegram messages from or on behalf of Linked.Coffee
                         </span>
                     </div>
-
                 </div>
 
                 <button
-                    onClick={() => onAccept({ linkedin: linkedinUrl })}
+                    onClick={() => onAccept({ name, family, linkedin: linkedinUrl })}
                     disabled={!allAccepted}
                     style={{
                         width: '100%',

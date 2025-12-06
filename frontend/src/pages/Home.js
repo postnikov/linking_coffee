@@ -111,7 +111,9 @@ const Home = ({ onLogin }) => {
             console.log(`Sending consent for ${pendingUser.username} to ${API_URL}/api/consent`);
             const payload = {
                 username: pendingUser.username,
-                linkedin: modalData?.linkedin || ''
+                linkedin: modalData?.linkedin || '',
+                name: modalData?.name || '',
+                family: modalData?.family || ''
             };
 
             const response = await fetch(`${API_URL}/api/consent`, {
@@ -145,7 +147,7 @@ const Home = ({ onLogin }) => {
 
     return (
         <main className="main-content">
-            {showGdprModal && <GdprModal onAccept={handleGdprAccept} onClose={handleGdprClose} />}
+            {showGdprModal && <GdprModal onAccept={handleGdprAccept} onClose={handleGdprClose} initialName={pendingUser?.firstName} initialFamily={pendingUser?.lastName} />}
             <div className="content-wrapper">
                 {/* Left side - Hero */}
                 <div className="hero-section">

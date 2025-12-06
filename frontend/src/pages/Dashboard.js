@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import ReactDOM from 'react-dom';
 import { useTranslation } from 'react-i18next';
@@ -287,6 +287,16 @@ const Dashboard = () => {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
+    // Keep ref in sync with formData to avoid stale closures in onBlur
+    const formDataRef = useRef(formData);
+    useEffect(() => {
+        formDataRef.current = formData;
+    }, [formData]);
+
+    const handleInputBlur = (section) => {
+        autoSaveProfile(formDataRef.current, section);
+    };
+
     const handleMultiSelectChange = (name, value) => {
         const current = formData[name] || [];
         let newValues;
@@ -447,6 +457,11 @@ const Dashboard = () => {
     };
 
     const autoSaveProfile = async (updatedData, section) => {
+        // Prevent saving if mandatory fields were somehow cleared (e.g. valid data loss bug)
+        if (!updatedData || !updatedData.name || !updatedData.family) {
+            return;
+        }
+
         const storedUser = localStorage.getItem('user');
         if (!storedUser) return;
         const user = JSON.parse(storedUser);
@@ -603,6 +618,7 @@ const Dashboard = () => {
                                             className="form-control"
                                             value={formData.name}
                                             onChange={handleChange}
+                                            onBlur={() => handleInputBlur('name')}
                                         />
                                     </div>
                                     <div className="form-group">
@@ -613,6 +629,7 @@ const Dashboard = () => {
                                             className="form-control"
                                             value={formData.family}
                                             onChange={handleChange}
+                                            onBlur={() => handleInputBlur('family')}
                                         />
                                     </div>
                                 </div>
@@ -1226,7 +1243,7 @@ const Dashboard = () => {
                                         className="form-control"
                                         value={formData.profession}
                                         onChange={handleChange}
-                                        onBlur={() => autoSaveProfile(formData, 'profession')}
+                                        onBlur={() => handleInputBlur('profession')}
                                     />
                                 </div>
                                 <div className="form-group">
@@ -1272,7 +1289,7 @@ const Dashboard = () => {
                                     placeholder="https://linkedin.com/in/..."
                                     value={formData.linkedin || ''}
                                     onChange={handleChange}
-                                    onBlur={() => autoSaveProfile(formData, 'linkedin')}
+                                    onBlur={() => handleInputBlur('linkedin')}
                                 />
                             </div>
 
@@ -1291,7 +1308,7 @@ const Dashboard = () => {
                                     className="form-control"
                                     value={formData.professionalDesc}
                                     onChange={handleChange}
-                                    onBlur={() => autoSaveProfile(formData, 'professionalDesc')}
+                                    onBlur={() => handleInputBlur('professionalDesc')}
                                 />
                             </div>
                             <div className="form-group">
@@ -1308,7 +1325,7 @@ const Dashboard = () => {
                                     className="form-control"
                                     value={formData.personalDesc}
                                     onChange={handleChange}
-                                    onBlur={() => autoSaveProfile(formData, 'personalDesc')}
+                                    onBlur={() => handleInputBlur('personalDesc')}
                                 />
                             </div>
 
@@ -1371,7 +1388,7 @@ const Dashboard = () => {
                                     placeholder={t('dashboard.profile.other_professional_interests_placeholder', 'Other professional interests...')}
                                     value={formData.otherProfessionalInterests}
                                     onChange={handleChange}
-                                    onBlur={() => autoSaveProfile(formData, 'otherProfessionalInterests')}
+                                    onBlur={() => handleInputBlur('otherProfessionalInterests')}
                                 />
                                 {savedSections.otherProfessionalInterests && (
                                     <div style={{ color: '#166534', fontSize: '0.75rem', marginTop: '0.25rem', textAlign: 'right' }}>
@@ -1438,7 +1455,7 @@ const Dashboard = () => {
                                     placeholder={t('dashboard.profile.other_personal_interests_placeholder', 'Other personal interests...')}
                                     value={formData.otherPersonalInterests}
                                     onChange={handleChange}
-                                    onBlur={() => autoSaveProfile(formData, 'otherPersonalInterests')}
+                                    onBlur={() => handleInputBlur('otherPersonalInterests')}
                                 />
                                 {savedSections.otherPersonalInterests && (
                                     <div style={{ color: '#166534', fontSize: '0.75rem', marginTop: '0.25rem', textAlign: 'right' }}>
@@ -1753,17 +1770,18 @@ const Dashboard = () => {
 
                         {/* Next Week Status Switch */}
                         <div className="input-group" style={{ marginBottom: '1.5rem', paddingBottom: '1.5rem', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                                <label className="form-label" style={{ textAlign: 'left', margin: 0 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', minHeight: '27px' }}>
+                                <label className="form-label" style={{ textAlign: 'left', margin: 0, display: 'flex', alignItems: 'center' }}>
                                     {t('dashboard.matching.next_week_status', 'Next week')}
-                                    <span style={{ fontWeight: 'normal', fontSize: '0.9em', color: '#666', marginLeft: '0.5rem' }}>{getNextWeekDateRange()}</span>
+                                    {savedSections['nextWeekStatus'] ? (
+                                        <span style={{ color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.9em', marginLeft: '0.5rem', fontWeight: 'normal' }}>
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                            {t('dashboard.profile.saved', 'Saved')}
+                                        </span>
+                                    ) : (
+                                        <span style={{ fontWeight: 'normal', fontSize: '0.9em', color: '#666', marginLeft: '0.5rem' }}>{getNextWeekDateRange()}</span>
+                                    )}
                                 </label>
-                                {savedSections['nextWeekStatus'] && (
-                                    <span style={{ color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.8rem' }}>
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                        {t('dashboard.profile.saved', 'Saved')}
-                                    </span>
-                                )}
                             </div>
 
                             <div
