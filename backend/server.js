@@ -540,7 +540,7 @@ app.post('/api/cities', async (req, res) => {
 // Step 3.5: Get Interests
 app.get('/api/interests', (req, res) => {
   try {
-    const interestsPath = path.join(__dirname, '../docs/interests.json');
+    const interestsPath = path.join(__dirname, 'interests.json');
     if (fs.existsSync(interestsPath)) {
       const interests = JSON.parse(fs.readFileSync(interestsPath, 'utf8'));
       res.json({ success: true, interests });
