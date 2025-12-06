@@ -6,13 +6,33 @@ const { Telegraf } = require('telegraf');
 const fs = require('fs');
 const path = require('path');
 
-const logFile = path.join(__dirname, 'debug.log');
+const logDir = path.join(__dirname, 'logs');
+if (!fs.existsSync(logDir)) {
+  try {
+    fs.mkdirSync(logDir);
+  } catch (e) {
+    console.error('Failed to create logs directory:', e);
+  }
+}
+const debugLogFile = path.join(logDir, 'debug.log');
+const authLogFile = path.join(logDir, 'auth.log');
+
 function logDebug(msg) {
   const time = new Date().toISOString();
   try {
-    fs.appendFileSync(logFile, `[${time}] ${msg}\n`);
+    fs.appendFileSync(debugLogFile, `[${time}] ${msg}\n`);
   } catch (e) {
     console.error('Logging error:', e);
+  }
+}
+
+function logAuth(msg) {
+  const time = new Date().toISOString();
+  try {
+    fs.appendFileSync(authLogFile, `[${time}] ${msg}\n`);
+    console.log(`[AUTH] ${msg}`);
+  } catch (e) {
+    console.error('Auth Logging error:', e);
   }
 }
 
@@ -85,6 +105,7 @@ const bot = new Telegraf(botToken);
 
 bot.start((ctx) => {
   const username = ctx.from.username;
+  logAuth(`Bot /start received from: ${username} (ID: ${ctx.from.id})`);
 
   if (!username) {
     return ctx.reply('Please set a username in your Telegram settings to use this bot.');
@@ -106,6 +127,7 @@ bot.start((ctx) => {
   });
 
   console.log(`✅ Generated OTP for ${cleanUsername}: ${otp}`);
+  logAuth(`Generated OTP for ${cleanUsername}: ${otp}`);
   ctx.reply(`☕️☕️☕️\nYour verification code for Linked.Coffee is:\n\n\`${otp}\`\n\nPlease enter this code on the website.`, { parse_mode: 'Markdown' });
 });
 
@@ -171,6 +193,7 @@ app.get('/api/health', (req, res) => {
 app.post('/api/register', async (req, res) => {
   const { telegramUsername } = req.body;
   console.log(`📥 /api/register called with: ${telegramUsername}`);
+  logAuth(`API Register request for: ${telegramUsername}`);
 
   if (!telegramUsername) {
     return res.status(400).json({ success: false, message: 'Username is required' });
@@ -207,8 +230,10 @@ app.post('/api/register', async (req, res) => {
         try {
           await bot.telegram.sendMessage(tgId, `☕️☕️☕️\nYour verification code for Linked.Coffee is:\n\n\`${otp}\`\n\nPlease enter this code on the website.`, { parse_mode: 'Markdown' });
           console.log(`📤 Proactive OTP sent to ${cleanUsername} (${tgId})`);
+          logAuth(`Proactive OTP successfully sent to ${cleanUsername} (${tgId})`);
         } catch (botError) {
           console.error('❌ Failed to send proactive OTP:', botError);
+          logAuth(`Failed to send proactive OTP to ${cleanUsername}: ${botError.message}`);
           // Fallback: If bot blocked or failed, treat as if no ID (ask to start bot)
           return res.json({
             success: true,
@@ -265,6 +290,7 @@ app.post('/api/register', async (req, res) => {
 app.post('/api/verify', async (req, res) => {
   const { telegramUsername, otp } = req.body;
   console.log(`📥 /api/verify called with username: ${telegramUsername}, otp: ${otp}`);
+  logAuth(`API Verify attempt: User=${telegramUsername}, OTP=${otp}`);
 
   if (!telegramUsername || !otp) {
     console.log('❌ Missing username or OTP');
@@ -296,6 +322,7 @@ app.post('/api/verify', async (req, res) => {
     console.log(`✅ Found stored OTP. Checking expiry...`);
     if (Date.now() > storedData.expiresAt) {
       console.log(`⏰ OTP expired for: ${cleanUsername}`);
+      logAuth(`OTP Expired for ${cleanUsername}`);
       otpStore.delete(cleanUsername);
       return res.status(400).json({ success: false, message: 'Verification code expired.' });
     }
@@ -303,6 +330,7 @@ app.post('/api/verify', async (req, res) => {
     console.log(`🔐 Verifying OTP code...`);
     if (storedData.code !== cleanOtp) {
       console.log(`❌ OTP mismatch. Expected: ${storedData.code}, Got: ${cleanOtp}`);
+      logAuth(`OTP Mismatch for ${cleanUsername}. Got: ${cleanOtp}`);
       return res.status(400).json({ success: false, message: 'Invalid verification code.' });
     }
 
@@ -311,6 +339,7 @@ app.post('/api/verify', async (req, res) => {
     firstName = storedData.firstName;
     lastName = storedData.lastName;
     console.log(`✅ OTP valid! Telegram ID: ${telegramId}, Name: ${firstName} ${lastName}`);
+    logAuth(`Verify Success for ${cleanUsername}. OTP matches.`);
     otpStore.delete(cleanUsername);
   }
 
