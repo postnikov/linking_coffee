@@ -7,15 +7,26 @@ const fs = require('fs');
 const path = require('path');
 
 const logDir = path.join(__dirname, 'logs');
+console.log('📂 Log Directory:', logDir);
+
 if (!fs.existsSync(logDir)) {
   try {
-    fs.mkdirSync(logDir);
+    fs.mkdirSync(logDir, { recursive: true });
+    console.log('✅ Created logs directory');
   } catch (e) {
-    console.error('Failed to create logs directory:', e);
+    console.error('❌ Failed to create logs directory:', e);
   }
 }
 const debugLogFile = path.join(logDir, 'debug.log');
 const authLogFile = path.join(logDir, 'auth.log');
+
+// Test write access on startup
+try {
+  fs.appendFileSync(authLogFile, `[${new Date().toISOString()}] Server Initialized\n`);
+  console.log('✅ Auth log file writable');
+} catch (e) {
+  console.error('❌ Failed to write to auth log:', e);
+}
 
 function logDebug(msg) {
   const time = new Date().toISOString();
