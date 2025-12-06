@@ -3,288 +3,665 @@
         "professional": [
             {
                 "id": "dev",
-                "name_en": "Development",
-                "name_ru": "Разработка"
-            },
-            {
-                "id": "design",
-                "name_en": "Design",
-                "name_ru": "Дизайн"
+                "name_en": "Engineering & Tech",
+                "name_ru": "Engineering & Tech"
             },
             {
                 "id": "product",
-                "name_en": "Product & Management",
-                "name_ru": "Продукт и Менеджмент"
+                "name_en": "Product & Startup",
+                "name_ru": "Product & Startup"
+            },
+            {
+                "id": "career",
+                "name_en": "Career & Growth",
+                "name_ru": "Career & Growth"
             },
             {
                 "id": "marketing",
-                "name_en": "Marketing & Sales",
-                "name_ru": "Маркетинг и Продажи"
+                "name_en": "Content & DevRel",
+                "name_ru": "Content & DevRel"
             },
             {
-                "id": "business",
-                "name_en": "Business & Startups",
-                "name_ru": "Бизнес и Стартапы"
+                "id": "industry",
+                "name_en": "Industries",
+                "name_ru": "Industries"
             }
         ],
         "personal": [
             {
                 "id": "sports",
-                "name_en": "Sports",
-                "name_ru": "Спорт"
+                "name_en": "Sports & Activity",
+                "name_ru": "Sports & Activity"
             },
             {
                 "id": "culture",
                 "name_en": "Culture & Arts",
-                "name_ru": "Культура и Искусство"
+                "name_ru": "Culture & Arts"
             },
             {
                 "id": "lifestyle",
-                "name_en": "Lifestyle",
-                "name_ru": "Образ жизни"
+                "name_en": "Lifestyle & Wellness",
+                "name_ru": "Lifestyle & Wellness"
             },
             {
                 "id": "tech",
-                "name_en": "Technology & Science",
-                "name_ru": "Технологии и Наука"
+                "name_en": "Tech & Science",
+                "name_ru": "Tech & Science"
             },
             {
                 "id": "entertainment",
-                "name_en": "Entertainment",
-                "name_ru": "Развлечения"
+                "name_en": "Entertainment & Games",
+                "name_ru": "Entertainment & Games"
+            },
+            {
+                "id": "invest",
+                "name_en": "Finance & Investment",
+                "name_ru": "Finance & Investment"
             }
         ]
     },
     "professional": [
         {
-            "id": "dev1",
+            "id": "p1",
             "category": "dev",
-            "name_en": "JavaScript",
-            "name_ru": "JavaScript"
+            "name_en": "AI Automation",
+            "name_ru": "AI Automation"
         },
         {
-            "id": "dev2",
+            "id": "p2",
             "category": "dev",
-            "name_en": "Python",
-            "name_ru": "Python"
+            "name_en": "AI Coding Tools",
+            "name_ru": "AI Coding Tools"
         },
         {
-            "id": "dev3",
+            "id": "p3",
             "category": "dev",
-            "name_en": "Go",
-            "name_ru": "Go"
+            "name_en": "AI/ML Engineering",
+            "name_ru": "AI/ML Engineering"
         },
         {
-            "id": "dev4",
+            "id": "p4",
             "category": "dev",
-            "name_en": "Backend",
-            "name_ru": "Backend"
+            "name_en": "AR/VR Development",
+            "name_ru": "AR/VR Development"
         },
         {
-            "id": "dev5",
+            "id": "p5",
             "category": "dev",
-            "name_en": "Frontend",
-            "name_ru": "Frontend"
+            "name_en": "Backend Development",
+            "name_ru": "Backend Development"
         },
         {
-            "id": "dev6",
+            "id": "p6",
             "category": "dev",
-            "name_en": "Mobile Dev",
-            "name_ru": "Mobile Dev"
+            "name_en": "Cloud Architecture",
+            "name_ru": "Cloud Architecture"
         },
         {
-            "id": "dev7",
+            "id": "p7",
             "category": "dev",
-            "name_en": "DevOps",
-            "name_ru": "DevOps"
+            "name_en": "Cybersecurity",
+            "name_ru": "Cybersecurity"
         },
         {
-            "id": "dev8",
+            "id": "p8",
             "category": "dev",
-            "name_en": "AI/ML",
-            "name_ru": "AI/ML"
+            "name_en": "Data Science & Analytics",
+            "name_ru": "Data Science & Analytics"
         },
         {
-            "id": "des1",
-            "category": "design",
-            "name_en": "UI/UX",
-            "name_ru": "UI/UX"
+            "id": "p9",
+            "category": "dev",
+            "name_en": "Databases & Data Engineering",
+            "name_ru": "Databases & Data Engineering"
         },
         {
-            "id": "des2",
-            "category": "design",
-            "name_en": "Graphic Design",
-            "name_ru": "Графический дизайн"
+            "id": "p10",
+            "category": "dev",
+            "name_en": "DevOps & SRE",
+            "name_ru": "DevOps & SRE"
         },
         {
-            "id": "des3",
-            "category": "design",
-            "name_en": "Product Design",
-            "name_ru": "Дизайн продукта"
+            "id": "p11",
+            "category": "dev",
+            "name_en": "Embedded & IoT",
+            "name_ru": "Embedded & IoT"
         },
         {
-            "id": "prod1",
+            "id": "p12",
+            "category": "dev",
+            "name_en": "Frontend Development",
+            "name_ru": "Frontend Development"
+        },
+        {
+            "id": "p13",
+            "category": "dev",
+            "name_en": "Game Development",
+            "name_ru": "Game Development"
+        },
+        {
+            "id": "p14",
+            "category": "dev",
+            "name_en": "Mobile Development",
+            "name_ru": "Mobile Development"
+        },
+        {
+            "id": "p15",
+            "category": "dev",
+            "name_en": "No-code/Low-code Products",
+            "name_ru": "No-code/Low-code Products"
+        },
+        {
+            "id": "p16",
+            "category": "dev",
+            "name_en": "Open Source",
+            "name_ru": "Open Source"
+        },
+        {
+            "id": "p17",
+            "category": "dev",
+            "name_en": "Prompt Engineering",
+            "name_ru": "Prompt Engineering"
+        },
+        {
+            "id": "p18",
+            "category": "dev",
+            "name_en": "QA & Test Automation",
+            "name_ru": "QA & Test Automation"
+        },
+        {
+            "id": "p19",
+            "category": "dev",
+            "name_en": "System Design",
+            "name_ru": "System Design"
+        },
+        {
+            "id": "p20",
+            "category": "dev",
+            "name_en": "Web3 & Blockchain",
+            "name_ru": "Web3 & Blockchain"
+        },
+        {
+            "id": "p21",
             "category": "product",
-            "name_en": "Product Management",
-            "name_ru": "Product Management"
+            "name_en": "Dev to Product Transition",
+            "name_ru": "Dev to Product Transition"
         },
         {
-            "id": "prod2",
+            "id": "p22",
             "category": "product",
-            "name_en": "Project Management",
-            "name_ru": "Project Management"
+            "name_en": "Indie Hacking & Micro-SaaS",
+            "name_ru": "Indie Hacking & Micro-SaaS"
         },
         {
-            "id": "prod3",
+            "id": "p23",
             "category": "product",
-            "name_en": "Agile/Scrum",
-            "name_ru": "Agile/Scrum"
+            "name_en": "Monetizing Side Projects",
+            "name_ru": "Monetizing Side Projects"
         },
         {
-            "id": "mkt1",
+            "id": "p24",
+            "category": "product",
+            "name_en": "Starting a Startup",
+            "name_ru": "Starting a Startup"
+        },
+        {
+            "id": "p25",
+            "category": "product",
+            "name_en": "Startup Career",
+            "name_ru": "Startup Career"
+        },
+        {
+            "id": "p26",
+            "category": "career",
+            "name_en": "AI Career Impact",
+            "name_ru": "AI Career Impact"
+        },
+        {
+            "id": "p27",
+            "category": "career",
+            "name_en": "BigTech Career",
+            "name_ru": "BigTech Career"
+        },
+        {
+            "id": "p28",
+            "category": "career",
+            "name_en": "Burnout Prevention",
+            "name_ru": "Burnout Prevention"
+        },
+        {
+            "id": "p29",
+            "category": "career",
+            "name_en": "Freelance & Consulting",
+            "name_ru": "Freelance & Consulting"
+        },
+        {
+            "id": "p30",
+            "category": "career",
+            "name_en": "Path to Management",
+            "name_ru": "Path to Management"
+        },
+        {
+            "id": "p31",
+            "category": "career",
+            "name_en": "Path to Tech Lead/Architect",
+            "name_ru": "Path to Tech Lead/Architect"
+        },
+        {
+            "id": "p32",
+            "category": "career",
+            "name_en": "Relocation & Visas",
+            "name_ru": "Relocation & Visas"
+        },
+        {
+            "id": "p33",
+            "category": "career",
+            "name_en": "Remote-first Career",
+            "name_ru": "Remote-first Career"
+        },
+        {
+            "id": "p34",
+            "category": "career",
+            "name_en": "Salary Negotiation",
+            "name_ru": "Salary Negotiation"
+        },
+        {
+            "id": "p35",
+            "category": "career",
+            "name_en": "Team Building & Hiring",
+            "name_ru": "Team Building & Hiring"
+        },
+        {
+            "id": "p36",
+            "category": "career",
+            "name_en": "Technical Interviews",
+            "name_ru": "Technical Interviews"
+        },
+        {
+            "id": "p37",
+            "category": "career",
+            "name_en": "Technical Mentoring",
+            "name_ru": "Technical Mentoring"
+        },
+        {
+            "id": "p38",
+            "category": "career",
+            "name_en": "Work-life Balance",
+            "name_ru": "Work-life Balance"
+        },
+        {
+            "id": "p39",
             "category": "marketing",
-            "name_en": "Digital Marketing",
-            "name_ru": "Digital Marketing"
+            "name_en": "Developer Relations",
+            "name_ru": "Developer Relations"
         },
         {
-            "id": "mkt2",
+            "id": "p40",
             "category": "marketing",
-            "name_en": "SEO/ASO",
-            "name_ru": "SEO/ASO"
+            "name_en": "Public Speaking",
+            "name_ru": "Public Speaking"
         },
         {
-            "id": "mkt3",
+            "id": "p41",
             "category": "marketing",
-            "name_en": "B2B Sales",
-            "name_ru": "B2B Продажи"
+            "name_en": "Technical Writing",
+            "name_ru": "Technical Writing"
         },
         {
-            "id": "biz1",
-            "category": "business",
-            "name_en": "Entrepreneurship",
-            "name_ru": "Предпринимательство"
+            "id": "p42",
+            "category": "marketing",
+            "name_en": "Tech Blogging",
+            "name_ru": "Tech Blogging"
         },
         {
-            "id": "biz2",
-            "category": "business",
-            "name_en": "Investment",
-            "name_ru": "Инвестиции"
+            "id": "p43",
+            "category": "marketing",
+            "name_en": "Tech YouTube/Podcast",
+            "name_ru": "Tech YouTube/Podcast"
         },
         {
-            "id": "biz3",
-            "category": "business",
-            "name_en": "Consulting",
-            "name_ru": "Консалтинг"
+            "id": "p44",
+            "category": "industry",
+            "name_en": "E-commerce",
+            "name_ru": "E-commerce"
+        },
+        {
+            "id": "p45",
+            "category": "industry",
+            "name_en": "Edtech",
+            "name_ru": "Edtech"
+        },
+        {
+            "id": "p46",
+            "category": "industry",
+            "name_en": "Fintech",
+            "name_ru": "Fintech"
+        },
+        {
+            "id": "p47",
+            "category": "industry",
+            "name_en": "Gaming Industry",
+            "name_ru": "Gaming Industry"
+        },
+        {
+            "id": "p48",
+            "category": "industry",
+            "name_en": "Greentech & Climate",
+            "name_ru": "Greentech & Climate"
+        },
+        {
+            "id": "p49",
+            "category": "industry",
+            "name_en": "Healthtech",
+            "name_ru": "Healthtech"
+        },
+        {
+            "id": "p50",
+            "category": "industry",
+            "name_en": "Media & Entertainment",
+            "name_ru": "Media & Entertainment"
         }
     ],
     "personal": [
         {
-            "id": "spt1",
+            "id": "l1",
             "category": "sports",
-            "name_en": "Running",
-            "name_ru": "Бег"
+            "name_en": "CrossFit",
+            "name_ru": "CrossFit"
         },
         {
-            "id": "spt2",
-            "category": "sports",
-            "name_en": "Gym",
-            "name_ru": "Тренажерный зал"
-        },
-        {
-            "id": "spt3",
-            "category": "sports",
-            "name_en": "Yoga",
-            "name_ru": "Йога"
-        },
-        {
-            "id": "spt4",
+            "id": "l2",
             "category": "sports",
             "name_en": "Cycling",
-            "name_ru": "Велоспорт"
+            "name_ru": "Cycling"
         },
         {
-            "id": "spt5",
+            "id": "l3",
             "category": "sports",
-            "name_en": "Football",
-            "name_ru": "Футбол"
+            "name_en": "Hiking & Trekking",
+            "name_ru": "Hiking & Trekking"
         },
         {
-            "id": "cult1",
+            "id": "l4",
+            "category": "sports",
+            "name_en": "Martial Arts",
+            "name_ru": "Martial Arts"
+        },
+        {
+            "id": "l5",
+            "category": "sports",
+            "name_en": "Padel/Tennis",
+            "name_ru": "Padel/Tennis"
+        },
+        {
+            "id": "l6",
+            "category": "sports",
+            "name_en": "Rock Climbing",
+            "name_ru": "Rock Climbing"
+        },
+        {
+            "id": "l7",
+            "category": "sports",
+            "name_en": "Running",
+            "name_ru": "Running"
+        },
+        {
+            "id": "l8",
+            "category": "sports",
+            "name_en": "Skiing/Snowboarding",
+            "name_ru": "Skiing/Snowboarding"
+        },
+        {
+            "id": "l9",
+            "category": "sports",
+            "name_en": "Swimming",
+            "name_ru": "Swimming"
+        },
+        {
+            "id": "l10",
+            "category": "sports",
+            "name_en": "Yoga",
+            "name_ru": "Yoga"
+        },
+        {
+            "id": "l11",
+            "category": "sports",
+            "name_en": "Dancing",
+            "name_ru": "Dancing"
+        },
+        {
+            "id": "l12",
             "category": "culture",
-            "name_en": "Reading",
-            "name_ru": "Чтение"
+            "name_en": "3D/Generative Art",
+            "name_ru": "3D/Generative Art"
         },
         {
-            "id": "cult2",
+            "id": "l13",
             "category": "culture",
-            "name_en": "Museums",
-            "name_ru": "Музеи"
+            "name_en": "Drawing/Illustration",
+            "name_ru": "Drawing/Illustration"
         },
         {
-            "id": "cult3",
+            "id": "l14",
             "category": "culture",
-            "name_en": "Theater",
-            "name_ru": "Театр"
+            "name_en": "History",
+            "name_ru": "History"
         },
         {
-            "id": "cult4",
+            "id": "l15",
             "category": "culture",
-            "name_en": "Cinema",
-            "name_ru": "Кино"
+            "name_en": "Languages",
+            "name_ru": "Languages"
         },
         {
-            "id": "life1",
+            "id": "l16",
+            "category": "culture",
+            "name_en": "Music (listening)",
+            "name_ru": "Music (listening)"
+        },
+        {
+            "id": "l17",
+            "category": "culture",
+            "name_en": "Non-fiction & Business Books",
+            "name_ru": "Non-fiction & Business Books"
+        },
+        {
+            "id": "l18",
+            "category": "culture",
+            "name_en": "Philosophy",
+            "name_ru": "Philosophy"
+        },
+        {
+            "id": "l19",
+            "category": "culture",
+            "name_en": "Photography",
+            "name_ru": "Photography"
+        },
+        {
+            "id": "l20",
+            "category": "culture",
+            "name_en": "Playing Music",
+            "name_ru": "Playing Music"
+        },
+        {
+            "id": "l21",
+            "category": "culture",
+            "name_en": "Theater & Stand-up",
+            "name_ru": "Theater & Stand-up"
+        },
+        {
+            "id": "l22",
+            "category": "culture",
+            "name_en": "Writing & Storytelling",
+            "name_ru": "Writing & Storytelling"
+        },
+        {
+            "id": "l23",
             "category": "lifestyle",
-            "name_en": "Travel",
-            "name_ru": "Путешествия"
+            "name_en": "Biohacking",
+            "name_ru": "Biohacking"
         },
         {
-            "id": "life2",
+            "id": "l24",
             "category": "lifestyle",
             "name_en": "Cooking",
-            "name_ru": "Кулинария"
+            "name_ru": "Cooking"
         },
         {
-            "id": "life3",
+            "id": "l25",
             "category": "lifestyle",
-            "name_en": "Meditation",
-            "name_ru": "Медитация"
+            "name_en": "DIY & Making",
+            "name_ru": "DIY & Making"
         },
         {
-            "id": "life4",
+            "id": "l26",
             "category": "lifestyle",
-            "name_en": "Volunteering",
-            "name_ru": "Волонтерство"
+            "name_en": "Gardening",
+            "name_ru": "Gardening"
         },
         {
-            "id": "tech1",
+            "id": "l27",
+            "category": "lifestyle",
+            "name_en": "Meditation & Mindfulness",
+            "name_ru": "Meditation & Mindfulness"
+        },
+        {
+            "id": "l28",
+            "category": "lifestyle",
+            "name_en": "Minimalism",
+            "name_ru": "Minimalism"
+        },
+        {
+            "id": "l29",
+            "category": "lifestyle",
+            "name_en": "Parenting",
+            "name_ru": "Parenting"
+        },
+        {
+            "id": "l30",
+            "category": "lifestyle",
+            "name_en": "Pets",
+            "name_ru": "Pets"
+        },
+        {
+            "id": "l31",
+            "category": "lifestyle",
+            "name_en": "Psychology & Self-improvement",
+            "name_ru": "Psychology & Self-improvement"
+        },
+        {
+            "id": "l32",
+            "category": "lifestyle",
+            "name_en": "Specialty Coffee",
+            "name_ru": "Specialty Coffee"
+        },
+        {
+            "id": "l33",
+            "category": "lifestyle",
+            "name_en": "Travel",
+            "name_ru": "Travel"
+        },
+        {
+            "id": "l34",
+            "category": "lifestyle",
+            "name_en": "Wine/Craft Beer",
+            "name_ru": "Wine/Craft Beer"
+        },
+        {
+            "id": "l35",
             "category": "tech",
-            "name_en": "Gadgets",
-            "name_ru": "Гаджеты"
+            "name_en": "Astronomy",
+            "name_ru": "Astronomy"
         },
         {
-            "id": "tech2",
+            "id": "l36",
             "category": "tech",
-            "name_en": "Space",
-            "name_ru": "Космос"
+            "name_en": "Crypto",
+            "name_ru": "Crypto"
         },
         {
-            "id": "ent1",
+            "id": "l37",
+            "category": "tech",
+            "name_en": "Popular Science",
+            "name_ru": "Popular Science"
+        },
+        {
+            "id": "l38",
+            "category": "tech",
+            "name_en": "Smart Home",
+            "name_ru": "Smart Home"
+        },
+        {
+            "id": "l39",
             "category": "entertainment",
-            "name_en": "Gaming",
-            "name_ru": "Игры"
+            "name_en": "Anime & Manga",
+            "name_ru": "Anime & Manga"
         },
         {
-            "id": "ent2",
+            "id": "l40",
             "category": "entertainment",
             "name_en": "Board Games",
-            "name_ru": "Настольные игры"
+            "name_ru": "Board Games"
         },
         {
-            "id": "ent3",
+            "id": "l41",
             "category": "entertainment",
-            "name_en": "Music",
-            "name_ru": "Музыка"
+            "name_en": "Chess",
+            "name_ru": "Chess"
+        },
+        {
+            "id": "l42",
+            "category": "entertainment",
+            "name_en": "Esports",
+            "name_ru": "Esports"
+        },
+        {
+            "id": "l43",
+            "category": "entertainment",
+            "name_en": "Movies & TV Shows",
+            "name_ru": "Movies & TV Shows"
+        },
+        {
+            "id": "l44",
+            "category": "entertainment",
+            "name_en": "Podcasts",
+            "name_ru": "Podcasts"
+        },
+        {
+            "id": "l45",
+            "category": "entertainment",
+            "name_en": "Poker",
+            "name_ru": "Poker"
+        },
+        {
+            "id": "l46",
+            "category": "entertainment",
+            "name_en": "Sci-fi & Fantasy",
+            "name_ru": "Sci-fi & Fantasy"
+        },
+        {
+            "id": "l47",
+            "category": "entertainment",
+            "name_en": "Video Games",
+            "name_ru": "Video Games"
+        },
+        {
+            "id": "l48",
+            "category": "invest",
+            "name_en": "Investing",
+            "name_ru": "Investing"
+        },
+        {
+            "id": "l49",
+            "category": "invest",
+            "name_en": "Personal Finance",
+            "name_ru": "Personal Finance"
+        },
+        {
+            "id": "l50",
+            "category": "invest",
+            "name_en": "Real Estate",
+            "name_ru": "Real Estate"
         }
     ]
 }
