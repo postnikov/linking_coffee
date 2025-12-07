@@ -143,9 +143,11 @@ bot.start((ctx) => {
 });
 
 // Handle "I'm in" callback from weekly check-in
-bot.action('participate_next_week', async (ctx) => {
+// Handle "Yes! I'm in!"
+bot.action('participate_yes', async (ctx) => {
   const telegramId = ctx.from.id.toString();
-  console.log(`🤖 Received participation callback from Tg_ID: ${telegramId}`);
+  console.log(`🤖 Received participate_yes from Tg_ID: ${telegramId}`);
+  logAuth(`User ${telegramId} clicked YES for next week`);
 
   try {
     // Find user by Tg_ID
@@ -169,18 +171,35 @@ bot.action('participate_next_week', async (ctx) => {
         }
       ]);
 
-      // Answer the callback query
-      await ctx.answerCbQuery('You are in for next week! ☕️');
-
-      // Edit the message to show confirmation
-      await ctx.editMessageText('✅ Great! You are marked as **Active** for next week. Expect a match on Monday!', { parse_mode: 'Markdown' });
-
+      await ctx.answerCbQuery('You are in!');
+      await ctx.editMessageText(
+        "Yes, you’re in!\n" +
+        "On Monday you’ll get your Linked.Coffee match.\n" +
+        "You can always change it on the dashboard at https://linked.coffee"
+      );
     } else {
-      await ctx.answerCbQuery('User not found. Please register first.');
+      await ctx.answerCbQuery('User not found.');
     }
   } catch (error) {
-    console.error('Error handling participation callback:', error);
-    await ctx.answerCbQuery('An error occurred. Please try again.');
+    console.error('Error handling participate_yes:', error);
+    await ctx.answerCbQuery('Error updating status.');
+  }
+});
+
+// Handle "No, I'll skip this week"
+bot.action('participate_no', async (ctx) => {
+  const telegramId = ctx.from.id.toString();
+  console.log(`🤖 Received participate_no from Tg_ID: ${telegramId}`);
+  logAuth(`User ${telegramId} clicked NO for next week`);
+
+  try {
+    await ctx.answerCbQuery('Skipped.');
+    await ctx.editMessageText(
+      "Alright. Got it.\n" +
+      "I'll come back next weekend to ask you again ;)"
+    );
+  } catch (error) {
+    console.error('Error handling participate_no:', error);
   }
 });
 

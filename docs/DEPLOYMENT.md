@@ -229,3 +229,17 @@ git checkout <commit-hash>
 docker-compose down
 docker-compose up -d --build
 ```
+
+## Accessing Authentication Logs
+
+To view real-time authentication logs (Register, Verify, OTP, Logic):
+
+```bash
+# Filtered Auth Logs (Recommended)
+ssh root@91.98.235.147 "docker logs -f linking-coffee-backend 2>&1 | grep '\[AUTH\]'"
+```
+
+**Using the log file directly (If persisted):**
+```bash
+tail -f /opt/linking-coffee/logs/auth.log
+```

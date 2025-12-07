@@ -1,9 +1,16 @@
-How to access:
+# How to access Authentication Logs
 
-SSH into server: ssh root@91.98.235.147
-Navigate: cd /opt/linking-coffee/logs
-View logs: tail -f auth.log
-Or one-liner: ssh root@91.98.235.147 "tail -f /opt/linking-coffee/logs/auth.log"
+The most reliable way to view the logs (bypasssing file permission issues) is directly through Docker:
 
-I will summarize this clearly.
+```bash
+# SSH into server
+ssh root@91.98.235.147
 
+# View real-time Auth logs (Filtered)
+docker logs -f linking-coffee-backend 2>&1 | grep "\[AUTH\]"
+```
+
+## Alternative (Raw logs)
+```bash
+docker logs -f linking-coffee-backend
+```
