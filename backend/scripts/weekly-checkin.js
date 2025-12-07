@@ -34,8 +34,9 @@ async function run() {
 
     try {
         console.log('📡 Fetching passive users from Airtable...');
+        // Filter: Has Tg_ID, Passive Status, AND No_Spam is NOT checked
         const records = await base(TABLE_NAME).select({
-            filterByFormula: "AND({Tg_ID} != '', {Next_Week_Status} = 'Passive')",
+            filterByFormula: "AND({Tg_ID} != '', {Next_Week_Status} = 'Passive', NOT({No_Spam}))",
             view: "Grid view"
         }).all();
 
