@@ -12,7 +12,8 @@ const { Telegram } = require('telegraf');
 const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
 const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
 const TABLE_NAME = process.env.AIRTABLE_MEMBERS_TABLE;
-const BOT_TOKEN = process.env.NODE_ENV === 'production' ? process.env.BOT_TOKEN : process.env.ADMIN_BOT_TOKEN;
+// Always use the regular bot token, regardless of environment
+const BOT_TOKEN = process.env.BOT_TOKEN;
 
 if (!AIRTABLE_API_KEY || !AIRTABLE_BASE_ID || !BOT_TOKEN) {
     console.error('❌ Missing environment variables. Check .env file.');
