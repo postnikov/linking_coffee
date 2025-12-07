@@ -1,5 +1,10 @@
 const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '../.env') });
+// Try loading .env from project root (two levels up from backend/scripts)
+require('dotenv').config({ path: path.join(__dirname, '../../.env') });
+// If not found or variables missing, try backend/.env
+if (!process.env.AIRTABLE_API_KEY) {
+    require('dotenv').config({ path: path.join(__dirname, '../.env') });
+}
 const Airtable = require('airtable');
 const { Telegram } = require('telegraf');
 
