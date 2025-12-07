@@ -66,18 +66,23 @@ async function run() {
 
             try {
                 // Send Message
-                await telegram.sendMessage(userTgId, "👋 Hey! Do you want to participate in Linked.Coffee next week?", {
-                    reply_markup: {
-                        inline_keyboard: [
-                            [
-                                { text: "Yes! I’m in! ☕️", callback_data: "participate_yes" },
-                            ],
-                            [
-                                { text: "No, I’ll skip this week.", callback_data: "participate_no" }
+                await telegram.sendMessage(userTgId,
+                    "👋 Hey!\n" +
+                    "Up for a new Linked Coffee conversation next week?\n\n" +
+                    "If yes — just press the button below this message.\n" +
+                    "I'll send you a new partner on Monday 😉",
+                    {
+                        reply_markup: {
+                            inline_keyboard: [
+                                [
+                                    { text: "Yes! I’m in! ☕️", callback_data: "participate_yes" },
+                                ],
+                                [
+                                    { text: "No, I’ll skip this week.", callback_data: "participate_no" }
+                                ]
                             ]
-                        ]
-                    }
-                });
+                        }
+                    });
                 console.log(`   ✅ Message sent to ${userTgId}`);
                 sentCount++;
             } catch (err) {
