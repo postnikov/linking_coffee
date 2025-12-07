@@ -173,9 +173,10 @@ bot.action('participate_yes', async (ctx) => {
 
       await ctx.answerCbQuery('You are in!');
       await ctx.editMessageText(
-        "Yes, you’re in!\n" +
-        "On Monday you’ll get your Linked.Coffee match.\n" +
-        "You can always change it on the dashboard at https://linked.coffee"
+        "🎉 Yes, you’re in! ❤️\n" +
+        "On Monday you’ll get your Linked Coffee match.\n\n" +
+        "You can always change matching settings on the dashboard\n" +
+        "at https://linked.coffee"
       );
     } else {
       await ctx.answerCbQuery('User not found.');
