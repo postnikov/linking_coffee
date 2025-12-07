@@ -50,7 +50,7 @@ async function run() {
             const userTgId = record.get('Tg_ID');
 
             // Test Mode Filter
-            if (isTest && userTgId !== TEST_ID) {
+            if (isTest && String(userTgId) !== TEST_ID) {
                 // Skip non-test users in test mode
                 continue;
             }
