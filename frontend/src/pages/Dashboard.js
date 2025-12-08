@@ -122,6 +122,8 @@ const Dashboard = () => {
     const allFieldsDone = completionFields.every(f => f.done);
 
     useEffect(() => {
+        if (!initialFormData) return;
+
         if (!allFieldsDone) {
             setWasIncomplete(true);
             setShowCompletionSuccess(false);
@@ -143,7 +145,7 @@ const Dashboard = () => {
             }, 5000);
             return () => clearTimeout(timer);
         }
-    }, [allFieldsDone, wasIncomplete, formData.nextWeekStatus, formData]);
+    }, [allFieldsDone, wasIncomplete, formData.nextWeekStatus, formData, initialFormData]);
 
     const showCompletionBlock = !allFieldsDone || showCompletionSuccess;
 

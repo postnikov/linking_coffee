@@ -68,9 +68,9 @@ async function run() {
                 // Send Message
                 await telegram.sendMessage(userTgId,
                     "👋 Hey!\n" +
-                    "Up for a new Linked Coffee conversation next week?\n\n" +
+                    "Up for a new Linked Coffee conversation this week?\n\n" +
                     "If yes — just press the button below this message.\n" +
-                    "I'll send you a new partner on Monday 😉",
+                    "I'll send you a new partner later today 😉",
                     {
                         reply_markup: {
                             inline_keyboard: [

@@ -4,3 +4,18 @@
 [2025-12-08T07:04:37.904Z] GET /api/profile request for username: max_postnikov
 [2025-12-08T07:04:38.754Z] GET /api/profile request for username: max_postnikov
 [2025-12-08T07:04:48.809Z] PUT /api/profile request for max_postnikov. Data: Name=Maxim, Family=Postnikov
+[2025-12-08T08:10:42.390Z] GET /api/profile request for username: max_postnikov
+[2025-12-08T08:10:43.718Z] GET /api/profile request for username: max_postnikov
+[2025-12-08T08:10:44.492Z] GET /api/profile request for username: max_postnikov
+[2025-12-08T10:56:29.308Z] GET /api/profile request for username: max_postnikov
+[2025-12-08T10:56:30.768Z] GET /api/profile request for username: max_postnikov
+[2025-12-08T10:56:31.692Z] GET /api/profile request for username: max_postnikov
+[2025-12-08T10:56:33.748Z] GET /api/profile request for username: pointofno
+[2025-12-08T10:56:34.548Z] GET /api/profile request for username: pointofno
+[2025-12-08T11:06:35.584Z] GET /api/profile request for username: pointofno
+[2025-12-08T11:08:42.790Z] GET /api/profile request for username: pointofno
+[2025-12-08T11:08:42.795Z] GET /api/profile request for username: max_postnikov
+[2025-12-08T11:08:44.147Z] GET /api/profile request for username: pointofno
+[2025-12-08T11:09:56.439Z] GET /api/profile request for username: pointofno
+[2025-12-08T11:09:56.454Z] GET /api/profile request for username: max_postnikov
+[2025-12-08T11:09:57.778Z] GET /api/profile request for username: pointofno
