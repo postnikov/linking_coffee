@@ -1,10 +1,10 @@
-require('dotenv').config({ path: '../.env' });
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const express = require('express');
 const cors = require('cors');
 const Airtable = require('airtable');
 const { Telegraf } = require('telegraf');
 const fs = require('fs');
-const path = require('path');
 
 const logDir = path.join(__dirname, 'logs');
 console.log('📂 Log Directory:', logDir);
@@ -65,6 +65,11 @@ app.use(cors());
 app.use(express.json());
 
 // Configure Airtable
+console.log('🔹 Airtable Configuration:');
+console.log('   Base ID:', process.env.AIRTABLE_BASE_ID);
+console.log('   Members Table:', process.env.AIRTABLE_MEMBERS_TABLE);
+console.log('   Cities Table:', process.env.AIRTABLE_CITIES_TABLE);
+
 const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY }).base(
   process.env.AIRTABLE_BASE_ID
 );

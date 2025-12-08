@@ -1,0 +1,6 @@
+[2025-12-08T07:04:34.542Z] GET /api/profile request for username: max_postnikov
+[2025-12-08T07:04:36.037Z] GET /api/profile request for username: max_postnikov
+[2025-12-08T07:04:36.772Z] GET /api/profile request for username: max_postnikov
+[2025-12-08T07:04:37.904Z] GET /api/profile request for username: max_postnikov
+[2025-12-08T07:04:38.754Z] GET /api/profile request for username: max_postnikov
+[2025-12-08T07:04:48.809Z] PUT /api/profile request for max_postnikov. Data: Name=Maxim, Family=Postnikov
