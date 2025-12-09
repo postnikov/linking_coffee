@@ -25,6 +25,7 @@
         "profile": {
             "title": "Your Profile",
             "upload_avatar": "Upload Photo",
+            "avatar_too_big": "The photo is too large. Max size is 5MB.",
             "name": "Name",
             "family": "Family Name",
             "country": "Country",

@@ -1,4 +1,5 @@
-require('dotenv').config({ path: '../.env' });
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '../../.env') });
 const Airtable = require('airtable');
 const { Telegraf } = require('telegraf');
 
@@ -8,7 +9,7 @@ const MEMBERS_TABLE = process.env.AIRTABLE_MEMBERS_TABLE;
 const BOT_TOKEN = process.env.BOT_TOKEN; // Always use production bot
 const TEST_TG_ID = 379053; // Test ID
 const DRY_RUN = process.argv.includes('--dry-run');
-const IS_TEST_MODE = true; // Hardcoded test mode instruction "only to Tg_ID 379053"
+const IS_TEST_MODE = process.argv.includes('--test');
 
 if (!process.env.AIRTABLE_API_KEY || !process.env.AIRTABLE_BASE_ID || !BOT_TOKEN) {
     console.error('❌ Missing configuration in .env');
@@ -23,8 +24,13 @@ async function notifyMember(member, partner) {
     const partnerName = partner.fields.Name || 'a partner';
     const partnerUsername = partner.fields.Tg_Username ? `@${partner.fields.Tg_Username}` : '(no username)';
 
-    // For test mode, we always send to the TEST_TG_ID but address the real user in text to verify content
-    const recipientId = IS_TEST_MODE ? TEST_TG_ID : member.fields.Tg_ID;
+    const recipientId = member.fields.Tg_ID;
+
+    // In test mode, we strictly ONLY send to the test user.
+    // We do NOT redirect other people's messages to the test user anymore.
+    if (IS_TEST_MODE && recipientId != TEST_TG_ID) {
+        return;
+    }
 
     if (!recipientId) {
         console.log(`⚠️  Skipping ${memberName} (no Telegram ID)`);
@@ -85,37 +91,71 @@ async function main() {
         // If the field doesn't exist, the script effectively won't find anything if I try to filter by it.
         // I will implement the script assuming the field MIGHT exist or ignore it if not found, 
         // BUT the best approach is to filter by Status='Matched'.
-
         // Let's look at the schema again (Step 121).
         // Matches table fields: Week_Start, Member1, Member2, Status, Feedback...
         // No "Notifications" field.
         // I will write the script to fetch Status='Matched'.
 
-        console.log(`🔍 Fetching matches with Status = 'Matched'...`);
+        console.log(`🔍 Fetching matches with Notifications = 'Pending'...`);
         const matches = await base(MATCHES_TABLE).select({
-            filterByFormula: `{Status} = 'Matched'`
+            filterByFormula: `{Notifications} = 'Pending'`
         }).all();
 
-        console.log(`✅ Found ${matches.length} matches.`);
+        console.log(`✅ Found ${matches.length} pending matches.`);
 
         for (const match of matches) {
             // Get Member Details
-            // Member1 and Member2 are arrays of IDs
             if (!match.fields.Member1 || !match.fields.Member2) continue;
 
             try {
                 const member1 = await base(MEMBERS_TABLE).find(match.fields.Member1[0]);
                 const member2 = await base(MEMBERS_TABLE).find(match.fields.Member2[0]);
 
-                // Notify Member 1 about Member 2
-                await notifyMember(member1, member2);
+                let sent1 = false;
+                let sent2 = false;
 
-                // Notify Member 2 about Member 1
-                await notifyMember(member2, member1);
+                // Notify Member 1
+                try {
+                    await notifyMember(member1, member2);
+                    sent1 = true;
+                } catch (e) {
+                    console.error(`Failed to notify member 1: ${e.message}`);
+                }
 
-                // Update Match record? 
-                // The prompt didn't ask to update a "Notification Sent" status, so I won't.
-                // But in a real scenario, we'd want to avoid spamming.
+                // Notify Member 2
+                try {
+                    await notifyMember(member2, member1);
+                    sent2 = true;
+                } catch (e) {
+                    console.error(`Failed to notify member 2: ${e.message}`);
+                }
+
+                // Update Match record if ANY message was sent (or attempted in live mode)
+                // In DRY_RUN we don't update.
+                // In TEST_MODE we might update if we want to simulate full flow, but usually better not to update real status during test?
+                // The user request: "After successful sending... change to Sent"
+                // If it's a dry run, we skip update.
+
+                if (!DRY_RUN && !IS_TEST_MODE) {
+                    if (sent1 || sent2) {
+                        await base(MATCHES_TABLE).update([{
+                            id: match.id,
+                            fields: {
+                                'Notifications': 'Sent'
+                            }
+                        }]);
+                        console.log(`📝 Updated match ${match.id} status to 'Sent'`);
+                    }
+                } else if (!DRY_RUN && IS_TEST_MODE) {
+                    // In test mode, we might want to update ONLY if we really targeted that user?
+                    // Or just log that we WOULD update. 
+                    // Let's protect the data in test mode and NOT update status unless explicitly asked.
+                    // The user asked "After successful sending... change to Sent". 
+                    // If I send to myself in test mode, I shouldn't mark the REAL match as sent to the REAL user.
+                    console.log(`[TEST] Would update match ${match.id} status to 'Sent' (Skipped in test mode)`);
+                } else {
+                    console.log(`[DRY RUN] Would update match ${match.id} status to 'Sent'`);
+                }
 
             } catch (err) {
                 console.error(`❌ Error processing match ${match.id}:`, err);

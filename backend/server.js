@@ -926,6 +926,22 @@ app.post('/api/upload-avatar', upload.single('avatar'), async (req, res) => {
   }
 });
 
+// Global Error Handler
+app.use((err, req, res, next) => {
+  console.error('Unhandled Error:', err);
+
+  // Handle Multer Errors
+  if (err instanceof multer.MulterError) {
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ success: false, message: 'File is too large. Max size is 5MB.' });
+    }
+    return res.status(400).json({ success: false, message: err.message });
+  }
+
+  // Handle other errors
+  res.status(500).json({ success: false, message: 'Internal Server Error' });
+});
+
 // Start server
 app.listen(PORT, () => {
   console.log(`🚀 Linked.Coffee API server running on port ${PORT}`);

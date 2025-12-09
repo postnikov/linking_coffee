@@ -429,6 +429,11 @@ const Dashboard = () => {
         formDataUpload.append('avatar', file);
         formDataUpload.append('username', user.username);
 
+        if (file.size > 5 * 1024 * 1024) {
+            setMessage({ type: 'error', text: t('dashboard.profile.avatar_too_big', 'The photo is too large. Max size is 5MB.') });
+            return;
+        }
+
         try {
             // Don't set global loading, just maybe local? 
             // Actually existing logic used global isLoading, let's keep it simple or use a specific one.
