@@ -6,7 +6,16 @@
  * This script fetches the current schema from Airtable and generates
  * a markdown documentation file with all tables and their fields.
  * 
- * Usage: node scripts/update-schema-docs.js
+ * Usage:
+ *   node scripts/update-schema-docs.js
+ * 
+ * Configuration:
+ *   - Ensure .env file contains:
+ *     - AIRTABLE_API_KEY
+ *     - AIRTABLE_BASE_ID
+ * 
+ * Output:
+ *   - Updates docs/DATABASE_SCHEMA.md
  */
 
 require('dotenv').config({ path: require('path').join(__dirname, '../.env') });

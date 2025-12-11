@@ -3,7 +3,7 @@ require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const express = require('express');
 const cors = require('cors');
 const Airtable = require('airtable');
-const { Telegraf } = require('telegraf');
+const { Telegraf, Markup } = require('telegraf');
 const fs = require('fs');
 
 const logDir = path.join(__dirname, 'logs');
@@ -206,6 +206,79 @@ bot.action('participate_no', async (ctx) => {
     );
   } catch (error) {
     console.error('Error handling participate_no:', error);
+  }
+});
+
+// Handle Midweek Feedback Status
+bot.action(/^fb_stat:(.+):(\d+):(.+)$/, async (ctx) => {
+  const matchId = ctx.match[1];
+  const role = parseInt(ctx.match[2]);
+  const status = ctx.match[3];
+
+  console.log(`🤖 Received fb_stat: Match=${matchId}, Role=${role}, Status=${status}`);
+  const fieldName = role === 1 ? 'We_Met_1' : 'We_Met_2';
+
+  try {
+    await base('tblx2OEN5sSR1xFI2').update([{
+      id: matchId,
+      fields: {
+        [fieldName]: status
+      }
+    }]);
+
+    await ctx.answerCbQuery('Status updated!');
+
+    // Append "Thank you!" to the original message
+    const originalText = ctx.callbackQuery.message.text;
+    await ctx.editMessageText(originalText + "\n\nThank you! 🙏");
+
+    // If 'Met', send follow-up rating message
+    if (status === 'Met') {
+      const ratingMessage = "❤️ Wow! Awesome! ❤️\nSo how was your Linked Coffee experience?\nDid it go well?";
+      const ratingKeyboard = Markup.inlineKeyboard([
+        [
+          Markup.button.callback('😡 awful', `fb_rate:${matchId}:${role}:1`),
+          Markup.button.callback('😐 boring', `fb_rate:${matchId}:${role}:2`)
+        ],
+        [
+          Markup.button.callback('🙂 ok', `fb_rate:${matchId}:${role}:3`),
+          Markup.button.callback('😃 wonderful', `fb_rate:${matchId}:${role}:4`)
+        ]
+      ]);
+      await ctx.reply(ratingMessage, ratingKeyboard);
+    }
+
+  } catch (error) {
+    console.error('Error handling fb_stat:', error);
+    await ctx.answerCbQuery('Error updating status.');
+  }
+});
+
+// Handle Midweek Feedback Rating
+bot.action(/^fb_rate:(.+):(\d+):(\d+)$/, async (ctx) => {
+  const matchId = ctx.match[1];
+  const role = parseInt(ctx.match[2]);
+  const rating = parseInt(ctx.match[3]);
+
+  console.log(`🤖 Received fb_rate: Match=${matchId}, Role=${role}, Rating=${rating}`);
+  const fieldName = role === 1 ? 'Feedback1' : 'Feedback2';
+
+  try {
+    await base('tblx2OEN5sSR1xFI2').update([{
+      id: matchId,
+      fields: {
+        [fieldName]: rating
+      }
+    }]);
+
+    await ctx.answerCbQuery('Feedback received!');
+
+    const originalText = ctx.callbackQuery.message.text;
+    await ctx.editMessageText(originalText + "\n\nThank you! 🙏");
+
+  } catch (error) {
+    console.error('Error handling fb_rate:', error);
+    await ctx.answerCbQuery('Error saving feedback.');
   }
 });
 
@@ -601,6 +674,105 @@ app.post('/api/cities', async (req, res) => {
     res.status(500).json({ success: false, message: 'Failed to add city: ' + error.message });
   }
 });
+// NEW: Admin Dashboard Data Endpoint
+app.get('/api/admin/data', async (req, res) => {
+  const { requester } = req.query;
+
+  if (!requester) {
+    return res.status(400).json({ success: false, message: 'Requester is required' });
+  }
+
+  const cleanRequester = requester.replace('@', '').trim().toLowerCase();
+
+  try {
+    // 1. Verify Admin Status
+    const requesterRecord = await base(process.env.AIRTABLE_MEMBERS_TABLE)
+      .select({
+        filterByFormula: `{Tg_Username} = '${cleanRequester}'`,
+        maxRecords: 1
+      })
+      .firstPage();
+
+    const isRequesterAdmin = requesterRecord.length > 0 && requesterRecord[0].fields.Status === 'Admin';
+
+    if (!isRequesterAdmin) {
+      return res.status(403).json({ success: false, message: 'Access denied. Admin only.' });
+    }
+
+    // 2. Fetch Users with Consent_GDPR
+    const usersRecords = await base(process.env.AIRTABLE_MEMBERS_TABLE)
+      .select({
+        filterByFormula: '{Consent_GDPR}',
+        sort: [{ field: 'Created_At', direction: 'desc' }]
+      })
+      .all();
+
+    const users = usersRecords.map(r => ({
+      id: r.id,
+      name: r.fields.Name,
+      family: r.fields.Family,
+      username: r.fields.Tg_Username
+    }));
+
+    // 3. Fetch Matches for Current Week
+    const getMonday = (d) => {
+      d = new Date(d);
+      var day = d.getDay(),
+        diff = d.getDate() - day + (day == 0 ? -6 : 1);
+      const monday = new Date(d.setDate(diff));
+      monday.setHours(0, 0, 0, 0);
+      return monday;
+    }
+    const mondayDate = getMonday(new Date());
+    const weekStartStr = mondayDate.toISOString().split('T')[0];
+
+    // Note: Airtable dates are string YYYY-MM-DD
+    const matchesRecords = await base('tblx2OEN5sSR1xFI2')
+      .select({
+        filterByFormula: `IS_SAME({Week_Start}, "${weekStartStr}", 'day')`
+      })
+      .all();
+
+    const matches = await Promise.all(matchesRecords.map(async (m) => {
+      // Resolve member names if possible, but keep it light for now
+      // Actually frontend might need names. 
+      // Airtable lookups might already provide arrays of names/usernames if configured.
+      // Checking Schema... Step 121: 
+      // Matches table has Member1 and Member2 as Linked Records.
+      // Usually linked records come with just IDs unless lookup fields exist.
+      // Let's rely on frontend to display IDs or simpler: fetches.
+      // BUT for performance, let's just return what we have. 
+      // Or better: map using the 'users' list we just fetched!
+
+      const m1Id = m.fields.Member1 ? m.fields.Member1[0] : null;
+      const m2Id = m.fields.Member2 ? m.fields.Member2[0] : null;
+
+      // Helper to find user in our fetched list
+      const findUser = (id) => usersRecords.find(u => u.id === id);
+      const u1 = findUser(m1Id);
+      const u2 = findUser(m2Id);
+
+      return {
+        id: m.id,
+        member1: {
+          name: u1 ? u1.fields.Name : 'Unknown',
+          username: u1 ? u1.fields.Tg_Username : ''
+        },
+        member2: {
+          name: u2 ? u2.fields.Name : 'Unknown',
+          username: u2 ? u2.fields.Tg_Username : ''
+        },
+        status: m.fields.Status
+      };
+    }));
+
+    res.json({ success: true, users, matches });
+
+  } catch (error) {
+    console.error('Admin data error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch admin data' });
+  }
+});
 
 // Step 3.5: Get Interests
 app.get('/api/interests', (req, res) => {
@@ -636,33 +808,41 @@ app.get('/api/profile', async (req, res) => {
 
   // Access Control Logic
   if (cleanUsername !== cleanRequester) {
-    // Check if they are matched
     try {
-      const matchesTableId = 'tblx2OEN5sSR1xFI2';
-      // Formula to check if a match exists between requester and username
-      // Note: Tg_Username lookups return arrays of strings. FIND returns 0 if not found (falsey in Airtable formula logic? No, FIND returns 0 if not found is NOT true in JS, but in Airtable FIND returns 0 if not found? 
-      // Airtable FIND(stringToFind, whereToSearch, startFromPosition) returns the position (1-based) or 0 if not found.
-      // So FIND(...) > 0 is true.
-      // However, in Airtable formula, 0 is false-ish.
-
-      const matchRecords = await base(matchesTableId)
+      // Check if requester is Admin
+      const requesterRecord = await base(process.env.AIRTABLE_MEMBERS_TABLE)
         .select({
-          filterByFormula: `OR(
-                      AND(FIND('${cleanRequester}', ARRAYJOIN({Tg_Username (from Member1)})), FIND('${cleanUsername}', ARRAYJOIN({Tg_Username (from Member2)}))),
-                      AND(FIND('${cleanUsername}', ARRAYJOIN({Tg_Username (from Member1)})), FIND('${cleanRequester}', ARRAYJOIN({Tg_Username (from Member2)})))
-                  )`,
+          filterByFormula: `{Tg_Username} = '${cleanRequester}'`,
           maxRecords: 1
         })
         .firstPage();
 
-      if (matchRecords.length === 0) {
-        return res.status(403).json({ success: false, message: 'Access denied. You can only view profiles of your matches.' });
+      const isRequesterAdmin = requesterRecord.length > 0 && requesterRecord[0].fields.Status === 'Admin';
+
+      if (!isRequesterAdmin) {
+        // If not Admin, check if they are matched
+        const matchesTableId = 'tblx2OEN5sSR1xFI2';
+        const matchRecords = await base(matchesTableId)
+          .select({
+            filterByFormula: `OR(
+                        AND(FIND('${cleanRequester}', ARRAYJOIN({Tg_Username (from Member1)})), FIND('${cleanUsername}', ARRAYJOIN({Tg_Username (from Member2)}))),
+                        AND(FIND('${cleanUsername}', ARRAYJOIN({Tg_Username (from Member1)})), FIND('${cleanRequester}', ARRAYJOIN({Tg_Username (from Member2)})))
+                    )`,
+            maxRecords: 1
+          })
+          .firstPage();
+
+        if (matchRecords.length === 0) {
+          return res.status(403).json({ success: false, message: 'Access denied. You can only view profiles of your matches.' });
+        }
       }
+      // If Admin, bypass match check
     } catch (error) {
-      console.error('Error checking match permission:', error);
+      console.error('Error checking permissions:', error);
       return res.status(500).json({ success: false, message: 'Error verifying permissions' });
     }
   }
+
 
   try {
     const records = await base(process.env.AIRTABLE_MEMBERS_TABLE)
@@ -732,7 +912,8 @@ app.get('/api/profile', async (req, res) => {
         serendipity: fields.Serendipity || 5,
         proximity: fields.Proximity || 5,
         nextWeekStatus: fields.Next_Week_Status || 'Active',
-        avatar: fields.Avatar && fields.Avatar.length > 0 ? fields.Avatar[0].url : ''
+        avatar: fields.Avatar && fields.Avatar.length > 0 ? fields.Avatar[0].url : '',
+        tg_username: fields.Tg_Username || ''
       };
 
       // Fetch current match if exists

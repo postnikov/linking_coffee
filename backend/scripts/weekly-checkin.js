@@ -1,3 +1,23 @@
+/**
+ * Weekly Check-in Script
+ * 
+ * This script identifies passive users (status="Passive") who have NOT opted out of spam (No_Spam unchecked)
+ * and sends them a Telegram message asking if they want to participate in this week's networking.
+ * 
+ * Usage:
+ *   node backend/scripts/weekly-checkin.js [flags]
+ * 
+ * Flags:
+ *   --dry-run   : Run the script without sending real messages. Logs who would be messaged.
+ *   --test      : Run in test mode (only processes users with Status='Admin').
+ * 
+ * Environment Variables (.env):
+ *   - AIRTABLE_API_KEY
+ *   - AIRTABLE_BASE_ID
+ *   - AIRTABLE_MEMBERS_TABLE
+ *   - BOT_TOKEN
+ */
+
 const path = require('path');
 // Try loading .env from project root (two levels up from backend/scripts)
 require('dotenv').config({ path: path.join(__dirname, '../../.env') });
@@ -26,18 +46,17 @@ const telegram = new Telegram(BOT_TOKEN);
 // CLI Arguments
 const isDryRun = process.argv.includes('--dry-run');
 const isTest = process.argv.includes('--test');
-const TEST_ID = '379053';
 
 async function run() {
     console.log(`🚀 Starting Weekly Check-in Script`);
     console.log(`   Mode: ${isDryRun ? 'DRY RUN' : 'LIVE'}`);
-    console.log(`   Test Mode: ${isTest ? `ON (Target: ${TEST_ID})` : 'OFF'}`);
+    console.log(`   Test Mode: ${isTest ? 'ON (Target: Admins only)' : 'OFF'}`);
 
     try {
         console.log('📡 Fetching passive users from Airtable...');
         // Filter: Has Tg_ID, Passive Status, AND No_Spam is NOT checked
         const records = await base(TABLE_NAME).select({
-            filterByFormula: "AND({Tg_ID} != '', {Next_Week_Status} = 'Passive', NOT({No_Spam}))",
+            filterByFormula: "AND({Tg_ID} != '', {Next_Week_Status} = 'Passive', NOT({No_Spam}), {Consent_GDPR})",
             view: "Grid view"
         }).all();
 
@@ -49,10 +68,11 @@ async function run() {
         for (const record of records) {
             const name = record.get('Name');
             const userTgId = record.get('Tg_ID');
+            const status = record.get('Status');
 
             // Test Mode Filter
-            if (isTest && String(userTgId) !== TEST_ID) {
-                // Skip non-test users in test mode
+            if (isTest && status !== 'Admin') {
+                // Skip non-admin users in test mode
                 continue;
             }
 

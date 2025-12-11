@@ -37,3 +37,65 @@
 [2025-12-08T11:22:34.513Z] Server Initialized
 [2025-12-08T11:28:20.479Z] Server Initialized
 [2025-12-08T11:28:20.478Z] Server Initialized
+[2025-12-11T12:40:41.753Z] Server Initialized
+[2025-12-11T12:41:00.139Z] API Register request for: max_postnikov
+[2025-12-11T12:41:00.916Z] Proactive OTP successfully sent to max_postnikov (379053)
+[2025-12-11T12:41:07.897Z] API Verify attempt: User=max_postnikov, OTP=860496
+[2025-12-11T12:41:07.899Z] Verify Success for max_postnikov. OTP matches.
+[2025-12-11T12:53:09.562Z] API Register request for: kisodrakon
+[2025-12-11T12:53:10.257Z] Proactive OTP successfully sent to kisodrakon (7769456432)
+[2025-12-11T12:53:15.765Z] API Verify attempt: User=kisodrakon, OTP=153184
+[2025-12-11T12:53:15.766Z] Verify Success for kisodrakon. OTP matches.
+[2025-12-11T13:05:30.903Z] Server Initialized
+[2025-12-11T13:05:32.617Z] Server Initialized
+[2025-12-11T13:05:46.832Z] Server Initialized
+[2025-12-11T13:05:49.571Z] Server Initialized
+[2025-12-11T13:05:51.416Z] Server Initialized
+[2025-12-11T13:10:23.608Z] Server Initialized
+[2025-12-11T13:10:45.652Z] Server Initialized
+[2025-12-11T13:10:47.446Z] Server Initialized
+[2025-12-11T13:13:46.657Z] Server Initialized
+[2025-12-11T13:13:48.703Z] Server Initialized
+[2025-12-11T13:13:50.566Z] Server Initialized
+[2025-12-11T13:14:00.836Z] Server Initialized
+[2025-12-11T13:15:28.655Z] Server Initialized
+[2025-12-11T13:15:29.915Z] Server Initialized
+[2025-12-11T13:15:32.786Z] Server Initialized
+[2025-12-11T13:15:34.449Z] Server Initialized
+[2025-12-11T13:20:03.446Z] Server Initialized
+[2025-12-11T13:22:04.381Z] Server Initialized
+[2025-12-11T13:22:06.660Z] Server Initialized
+[2025-12-11T13:22:08.876Z] Server Initialized
+[2025-12-11T13:22:12.871Z] Server Initialized
+[2025-12-11T13:22:16.475Z] Server Initialized
+[2025-12-11T13:22:20.797Z] Server Initialized
+[2025-12-11T13:22:22.186Z] Server Initialized
+[2025-12-11T13:22:52.642Z] Server Initialized
+[2025-12-11T13:26:28.409Z] Server Initialized
+[2025-12-11T13:33:43.569Z] Server Initialized
+[2025-12-11T13:38:03.770Z] Server Initialized
+[2025-12-11T13:38:13.104Z] Server Initialized
+[2025-12-11T13:38:25.285Z] Server Initialized
+[2025-12-11T13:38:28.559Z] Server Initialized
+[2025-12-11T13:38:29.876Z] Server Initialized
+[2025-12-11T13:38:34.515Z] Server Initialized
+[2025-12-11T13:38:36.002Z] Server Initialized
+[2025-12-11T13:38:39.263Z] Server Initialized
+[2025-12-11T13:38:48.191Z] Server Initialized
+[2025-12-11T13:38:56.527Z] Server Initialized
+[2025-12-11T13:39:03.182Z] Server Initialized
+[2025-12-11T13:39:04.897Z] Server Initialized
+[2025-12-11T13:39:10.435Z] Server Initialized
+[2025-12-11T13:39:16.409Z] Server Initialized
+[2025-12-11T13:47:22.334Z] Server Initialized
+[2025-12-11T13:51:02.031Z] Server Initialized
+[2025-12-11T13:54:51.935Z] Server Initialized
+[2025-12-11T13:56:21.887Z] Server Initialized
+[2025-12-11T14:28:55.173Z] Server Initialized
+[2025-12-11T14:29:35.317Z] Server Initialized
+[2025-12-11T14:30:27.105Z] Server Initialized
+[2025-12-11T14:32:53.594Z] Server Initialized
+[2025-12-11T14:48:50.667Z] Server Initialized
+[2025-12-11T14:49:15.714Z] Server Initialized
+[2025-12-11T14:49:27.930Z] Server Initialized
+[2025-12-11T14:52:52.573Z] Server Initialized

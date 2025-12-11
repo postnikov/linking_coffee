@@ -106,7 +106,7 @@
         "verify_new": "Пожалуйста, запустите наш телеграм бот <1>@Linked_Coffee_Bot</1>, нажмите start и получите код подтверждения"
     },
     "header": {
-        "about": "Что такое Linked.Coffee",
+        "about": "О проекте",
         "rules": "Правила",
         "prices": "Цены",
         "logout": "Выход",

@@ -1,3 +1,25 @@
+/**
+ * Notify Matches Script
+ * 
+ * This script fetches pending matches from the 'Matches' table (where Notifications="Pending")
+ * and sends a notification message to both matched members via Telegram.
+ * 
+ * Usage:
+ *   node backend/scripts/notify-matches.js [flags]
+ *   node backend/scripts/notify-matches.js --dry-run
+ *   node backend/scripts/notify-matches.js --test
+ * 
+ * Flags:
+ *   --dry-run   : Run the script without sending messages or updating Airtable. Logs proposed actions.
+ *   --test      : Run in test mode (only sends to users with Status='Admin').
+ * 
+ * Environment Variables (.env):
+ *   - AIRTABLE_API_KEY
+ *   - AIRTABLE_BASE_ID
+ *   - AIRTABLE_MEMBERS_TABLE
+ *   - BOT_TOKEN
+ */
+
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../../.env') });
 const Airtable = require('airtable');
@@ -7,7 +29,6 @@ const { Telegraf } = require('telegraf');
 const MATCHES_TABLE = 'tblx2OEN5sSR1xFI2'; // From SCHEMA
 const MEMBERS_TABLE = process.env.AIRTABLE_MEMBERS_TABLE;
 const BOT_TOKEN = process.env.BOT_TOKEN; // Always use production bot
-const TEST_TG_ID = 379053; // Test ID
 const DRY_RUN = process.argv.includes('--dry-run');
 const IS_TEST_MODE = process.argv.includes('--test');
 
@@ -25,10 +46,11 @@ async function notifyMember(member, partner) {
     const partnerUsername = partner.fields.Tg_Username ? `@${partner.fields.Tg_Username}` : '(no username)';
 
     const recipientId = member.fields.Tg_ID;
+    const memberStatus = member.fields.Status;
 
     // In test mode, we strictly ONLY send to the test user.
     // We do NOT redirect other people's messages to the test user anymore.
-    if (IS_TEST_MODE && recipientId != TEST_TG_ID) {
+    if (IS_TEST_MODE && memberStatus !== 'Admin') {
         return;
     }
 
@@ -37,12 +59,21 @@ async function notifyMember(member, partner) {
         return;
     }
 
+    // Check GDPR Consent
+    if (!member.fields.Consent_GDPR) {
+        console.log(`⚠️  Skipping ${memberName} (No GDPR Consent)`);
+        return;
+    }
+
+    const partnerRawUsername = partner.fields.Tg_Username || '';
+
     const message = `
 Hey, ${memberName}!
 
 🎉 You've got a Linked Coffee partner for this week!
 
 Your partner: ${partnerName} ${partnerUsername}
+${partnerRawUsername ? `Link: http://linked.coffee/profile/${partnerRawUsername}` : ''}
 
 Set up a meeting and drink some Zoom or Google-Meet coffee together.
 On the dashboard (https://linked.coffee) you can find some details about your partner.
@@ -66,7 +97,7 @@ Good Luck!
 async function main() {
     console.log(`🚀 Starting Notification Script`);
     console.log(`   Mode: ${DRY_RUN ? 'DRY RUN' : 'LIVE'}`);
-    console.log(`   Target: ${IS_TEST_MODE ? 'TEST (Only to ' + TEST_TG_ID + ')' : 'PRODUCTION'}`);
+    console.log(`   Target: ${IS_TEST_MODE ? 'TEST (Admins only)' : 'PRODUCTION'}`);
 
     try {
         // 1. Fetch Pending Matches

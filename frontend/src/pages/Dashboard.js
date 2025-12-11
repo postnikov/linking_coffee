@@ -119,6 +119,16 @@ const Dashboard = () => {
         { key: 'grade', label: t('dashboard.profile.grade', 'Grade'), done: !!formData.grade }
     ], [formData, t]);
 
+    const improvementFields = useMemo(() => [
+        { key: 'professionalDesc', label: t('dashboard.profile.professional_desc', 'Professional Description'), done: !!formData.professionalDesc?.trim() },
+        { key: 'personalDesc', label: t('dashboard.profile.personal_desc', 'Personal Description'), done: !!formData.personalDesc?.trim() },
+        { key: 'professionalInterests', label: t('dashboard.profile.professional_interests', 'Professional Interests'), done: formData.professionalInterests?.length > 0 || !!formData.otherProfessionalInterests?.trim() },
+        { key: 'personalInterests', label: t('dashboard.profile.personal_interests', 'Personal Interests'), done: formData.personalInterests?.length > 0 || !!formData.otherPersonalInterests?.trim() },
+        { key: 'coffeeGoals', label: t('dashboard.profile.coffee_goals', 'Your coffee goals'), done: formData.coffeeGoals?.length > 0 }
+    ], [formData, t]);
+
+    const allImprovementsDone = improvementFields.every(f => f.done);
+
     const allFieldsDone = completionFields.every(f => f.done);
 
     useEffect(() => {
@@ -551,7 +561,7 @@ const Dashboard = () => {
     }
 
     return (
-        <main className="main-content" style={{ paddingTop: '8rem', paddingLeft: 0, paddingRight: 0, alignItems: 'flex-start' }}>
+        <main className="main-content" style={{ paddingTop: '120px', display: 'block', minHeight: '100vh', paddingLeft: 0, paddingRight: 0 }}>
             <div className="dashboard-container">
                 {/* Left Side: Profile */}
                 <div className="profile-section glass-card">
@@ -1761,6 +1771,41 @@ const Dashboard = () => {
                                     </div>
                                 </>
                             )}
+                        </div>
+                    )}
+
+                    {/* Improvement Block (Only show if mandatory fields are done but improvements are not) */}
+                    {allFieldsDone && !allImprovementsDone && (
+                        <div className="glass-card" style={{ padding: '1.5rem', marginBottom: '1.5rem', animation: 'fadeIn 0.5s ease-out' }}>
+                            <h2 className="section-title" style={{ marginBottom: '1rem', fontSize: '1.25rem' }}>
+                                {t('dashboard.profile.improve_profile', 'Improve your profile')}
+                            </h2>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                {improvementFields.map(field => (
+                                    <div
+                                        key={field.key}
+                                        style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.95rem', cursor: 'pointer' }}
+                                        onClick={() => {
+                                            // Scroll to relevant section if in edit mode, or switch to edit mode
+                                            if (!isEditMode) setIsEditMode(true);
+                                            // We can't easily scroll to specific fields without refs, but entering edit mode is a good start.
+                                            // If we wanted to be fancy we could add IDs to fields and scroll.
+                                            // keeping it simple for now as requested.
+                                        }}
+                                    >
+                                        {field.done ? (
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <polyline points="20 6 9 17 4 12"></polyline>
+                                            </svg>
+                                        ) : (
+                                            <div style={{ width: '20px', height: '20px', border: '2px solid #e5e7eb', borderRadius: '4px', flexShrink: 0 }}></div>
+                                        )}
+                                        <span style={{ color: field.done ? '#1f2937' : '#6b7280' }}>
+                                            {field.label}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     )}
 

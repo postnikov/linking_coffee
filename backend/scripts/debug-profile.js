@@ -1,3 +1,21 @@
+/**
+ * Debug Profile (Duplicate Check) Script
+ * 
+ * This script scans the first 100 members in the Airtable Members table to identify 
+ * duplicate users based on their Telegram Username (Tg_Username).
+ * 
+ * Usage:
+ *   node backend/scripts/debug-profile.js
+ * 
+ * Details:
+ *   - Normalizes usernames (lowercase, no '@') to find duplicates.
+ *   - Outputs warnings if duplicates are found.
+ * 
+ * Environment Variables (.env):
+ *   - AIRTABLE_API_KEY
+ *   - AIRTABLE_BASE_ID
+ *   - AIRTABLE_MEMBERS_TABLE
+ */
 
 require('dotenv').config();
 const Airtable = require('airtable');

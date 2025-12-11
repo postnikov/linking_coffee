@@ -1,10 +1,28 @@
+/**
+ * Send Weekly Check-in Script
+ * 
+ * This script sends a "coffee chat" invitation to all eligible members (Consent_GDPR=true + Tg_ID exists).
+ * 
+ * Usage:
+ *   node backend/scripts/send-weekly-checkin.js [flags]
+ * 
+ * Flags:
+ *   --dry-run   : Run the script without sending real messages. Logs actions to console.
+ *   --test      : Run in test mode (only sends to users with Status='Admin').
+ * 
+ * Environment Variables (.env):
+ *   - AIRTABLE_API_KEY
+ *   - AIRTABLE_BASE_ID
+ *   - AIRTABLE_MEMBERS_TABLE
+ *   - BOT_TOKEN (or ADMIN_BOT_TOKEN in dev)
+ */
+
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../../.env') });
 const Airtable = require('airtable');
 const { Telegraf, Markup } = require('telegraf');
 
 // Configuration
-const TEST_TG_ID = '379053';
 const BATCH_SIZE = 20; // Telegram has limits, good to batch
 const DELAY_BETWEEN_BATCHES = 1000; // ms
 
@@ -15,7 +33,7 @@ const isTestMode = args.includes('--test');
 
 console.log('--- Weekly Check-in Script ---');
 console.log(`Mode: ${isDryRun ? 'DRY RUN' : 'LIVE'}`);
-console.log(`Target: ${isTestMode ? `TEST USER ONLY (${TEST_TG_ID})` : 'ALL USERS'}`);
+console.log(`Target: ${isTestMode ? 'TEST (Admins only)' : 'ALL USERS'}`);
 
 if (!process.env.AIRTABLE_API_KEY || !process.env.AIRTABLE_BASE_ID || !process.env.BOT_TOKEN) {
     console.error('❌ Missing environment variables. Please check .env file.');
@@ -52,8 +70,8 @@ async function run() {
         // Filter for test mode if needed
         let targets = allMembers;
         if (isTestMode) {
-            targets = allMembers.filter(r => String(r.fields.Tg_ID) === TEST_TG_ID);
-            console.log(`Filtered down to ${targets.length} test user(s).`);
+            targets = allMembers.filter(r => r.fields.Status === 'Admin');
+            console.log(`Filtered down to ${targets.length} test user(s) (Admins).`);
         }
 
         let successCount = 0;

@@ -8,6 +8,7 @@ import Rules from './pages/Rules';
 import Prices from './pages/Prices';
 import Dashboard from './pages/Dashboard';
 import PublicProfile from './pages/PublicProfile';
+import AdminPage from './pages/AdminPage';
 
 
 import './App.css';
@@ -48,6 +49,7 @@ function App() {
                         <Route path="/rules" element={<Rules />} />
                         <Route path="/prices" element={<Prices user={user} />} />
                         <Route path="/profile/:username" element={<PublicProfile />} />
+                        <Route path="/admin" element={<AdminPage />} />
                     </Routes>
                 </main>
 

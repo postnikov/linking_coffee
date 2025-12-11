@@ -111,161 +111,199 @@ const PublicProfile = () => {
 
     return (
 
-        <div className="dashboard-container" style={{ maxWidth: '800px', margin: '0 auto', display: 'block' }}>
-            <div className="profile-section" style={{ width: '100%' }}>
-                <div className="glass-card profile-view" style={{ padding: '2rem' }}>
-                    <div className="avatar-name-container">
-                        <div className="view-mode-avatar">
-                            {formData.avatar ? (
-                                <img
-                                    src={getAvatarUrl(formData.avatar)}
-                                    alt="Profile"
-                                />
-                            ) : (
-                                <div className="avatar-placeholder">
-                                    {formData.name ? formData.name.charAt(0).toUpperCase() : '?'}
-                                </div>
-                            )}
+        <main className="main-content" style={{ paddingTop: '120px', display: 'block', minHeight: '100vh' }}>
+            <div className="dashboard-container">
+                <div className="profile-section">
+                    <div className="glass-card profile-view" style={{ padding: '2rem' }}>
+                        <div className="profile-view-header">
+                            <div className="avatar-preview view-mode-avatar">
+                                {formData.avatar ? (
+                                    <img
+                                        src={getAvatarUrl(formData.avatar)}
+                                        alt="Profile"
+                                    />
+                                ) : (
+                                    <div className="avatar-placeholder">
+                                        {formData.name ? formData.name.charAt(0).toUpperCase() : '?'}
+                                    </div>
+                                )}
+                            </div>
+                            <div className="profile-view-info">
+                                <h3>{formData.name} {formData.family}</h3>
+                                <p className="profile-subtitle" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                    {formData.profession && <span>{formData.profession}</span>}
+
+                                    {formData.grade && (
+                                        <>
+                                            {formData.profession && <span style={{ opacity: 0.7 }}> • </span>}
+                                            <span>{formData.grade}</span>
+                                        </>
+                                    )}
+
+                                    {formData.linkedin && (
+                                        <>
+                                            {(formData.profession || formData.grade) && <span style={{ opacity: 0.7 }}> • </span>}
+                                            <a
+                                                href={formData.linkedin}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                style={{ color: '#0077b5', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" /></svg>
+                                                LinkedIn
+                                            </a>
+                                        </>
+                                    )}
+                                </p>
+                                {formData.country && (
+                                    <div className="profile-location">
+                                        <span style={{ fontSize: '1.2rem' }}>{formData.country.flag}</span>
+                                        <span>{formData.country.name}</span>
+                                        {formData.city && <span>• {formData.city.name}</span>}
+                                        {formData.timezone && <span>• {formData.timezone}</span>}
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
-                        <div className="profile-view-info">
-                            <h3>
-                                {formData.name} {formData.family}
-                            </h3>
-                            <div className="profile-location" style={{ marginTop: '0.5rem' }}>
-                                {formData.country && (
-                                    <>
-                                        <span style={{ fontSize: '1.2rem' }}>{formData.country.flag}</span>
-                                        <span>{formData.city ? formData.city.name : formData.country.name}</span>
-                                        <span>•</span>
-                                    </>
+                        <div className="profile-content-grid">
+                            {formData.professionalDesc && (
+                                <div className="profile-section-block">
+                                    <h4>{t('dashboard.profile.professional_desc')}</h4>
+                                    <p>{formData.professionalDesc}</p>
+                                </div>
+                            )}
+
+                            {formData.personalDesc && (
+                                <div className="profile-section-block">
+                                    <h4>{t('dashboard.profile.personal_desc')}</h4>
+                                    <p>{formData.personalDesc}</p>
+                                </div>
+                            )}
+
+                            {(formData.professionalInterests?.length > 0 || formData.otherProfessionalInterests || formData.personalInterests?.length > 0 || formData.otherPersonalInterests) && (
+                                <div className="profile-interests-grid">
+                                    {(formData.professionalInterests?.length > 0 || formData.otherProfessionalInterests) && (
+                                        <div>
+                                            <h4>{t('dashboard.profile.professional_interests')}</h4>
+                                            <div className="language-chips" style={{ flexWrap: 'wrap' }}>
+                                                {formData.professionalInterests?.map(item => (
+                                                    <span key={item} className="chip" style={{ backgroundColor: getInterestColor(item) }}>
+                                                        {getLocalizedInterest(item, 'professional')}
+                                                    </span>
+                                                ))}
+                                                {formData.otherProfessionalInterests && formData.otherProfessionalInterests.split(/[,\.;]+/).map(item => item.trim()).filter(item => item).map((item, index) => (
+                                                    <span key={`other-prof-${index}`} className="chip" style={{ backgroundColor: getInterestColor(item) }}>
+                                                        {item}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                    {(formData.personalInterests?.length > 0 || formData.otherPersonalInterests) && (
+                                        <div>
+                                            <h4>{t('dashboard.profile.personal_interests')}</h4>
+                                            <div className="language-chips" style={{ flexWrap: 'wrap' }}>
+                                                {formData.personalInterests?.map(item => (
+                                                    <span key={item} className="chip" style={{ backgroundColor: getInterestColor(item) }}>
+                                                        {getLocalizedInterest(item, 'personal')}
+                                                    </span>
+                                                ))}
+                                                {formData.otherPersonalInterests && formData.otherPersonalInterests.split(/[,\.;]+/).map(item => item.trim()).filter(item => item).map((item, index) => (
+                                                    <span key={`other-pers-${index}`} className="chip" style={{ backgroundColor: getInterestColor(item) }}>
+                                                        {item}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {formData.coffeeGoals?.length > 0 && (
+                                <div className="profile-section-block">
+                                    <h4>{t('dashboard.profile.coffee_goals')}</h4>
+                                    <p>{Array.isArray(formData.coffeeGoals) ? formData.coffeeGoals.join(', ') : formData.coffeeGoals}</p>
+                                </div>
+                            )}
+
+                            <div className="profile-interests-grid">
+                                {formData.languages?.length > 0 && (
+                                    <div>
+                                        <h4>{t('dashboard.profile.languages')}</h4>
+                                        <div className="language-chips" style={{ flexWrap: 'wrap' }}>
+                                            {formData.languages.map(lang => (
+                                                <span key={lang} className="chip">{lang}</span>
+                                            ))}
+                                        </div>
+                                    </div>
                                 )}
-                                <span>
-                                    {formData.timezone.split(' ')[0]}
-                                </span>
-                                {formData.linkedin && (
-                                    <>
-                                        <span>•</span>
-                                        <a
-                                            href={formData.linkedin}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            style={{ color: '#0077b5', textDecoration: 'none', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '4px' }}
-                                        >
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" /></svg>
-                                            LinkedIn
-                                        </a>
-                                    </>
+
+                                {formData.bestMeetingDays?.length > 0 && (
+                                    <div>
+                                        <h4>{t('dashboard.profile.best_days')}</h4>
+                                        <div className="language-chips" style={{ flexWrap: 'wrap' }}>
+                                            {formData.bestMeetingDays.map(day => (
+                                                <span
+                                                    key={day}
+                                                    className="chip"
+                                                    style={{ backgroundColor: DAY_COLORS[day] || '#f3f4f6' }}
+                                                >
+                                                    {t(`dashboard.days.${day.toLowerCase()}`, day)}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
                                 )}
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <div className="profile-view-content">
-                        {formData.profession && (
-                            <div className="profile-section-block">
-                                <h4>{t('dashboard.profile.profession')}</h4>
-                                <p className="profession-text">
-                                    {formData.profession}
-                                    {formData.grade && formData.grade !== 'Prefer not to say' && (
-                                        <span className="grade-badge">{formData.grade}</span>
-                                    )}
-                                </p>
-                            </div>
-                        )}
+                <div className="matching-section">
+                    <div className="glass-card" style={{ padding: '2rem', position: 'sticky', top: '5rem' }}>
+                        <h3 className="section-title" style={{ fontSize: '1.2rem', marginBottom: '1rem', background: 'none', WebkitTextFillColor: 'initial', color: '#1f2937' }}>Match of the Week</h3>
+                        <p style={{ marginBottom: '1.5rem', color: '#4b5563' }}>
+                            This is your match for the week.
+                        </p>
 
-                        {formData.professionalDesc && (
-                            <div className="profile-section-block">
-                                <h4>{t('dashboard.profile.professional_desc')}</h4>
-                                <p>{formData.professionalDesc}</p>
-                            </div>
-                        )}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            <a
+                                href={formData.tg_username ? `https://t.me/${formData.tg_username.replace('@', '')}` : '#'}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="save-btn"
+                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', textDecoration: 'none', width: '100%', boxSizing: 'border-box', marginTop: 0 }}
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 11.944 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.638z" /></svg>
+                                Message
+                            </a>
 
-                        {formData.personalDesc && (
-                            <div className="profile-section-block">
-                                <h4>{t('dashboard.profile.personal_desc')}</h4>
-                                <p>{formData.personalDesc}</p>
-                            </div>
-                        )}
-
-                        <div className="profile-interests-grid">
-                            {formData.professionalInterests?.length > 0 && (
-                                <div>
-                                    <h4>{t('dashboard.profile.professional_interests')}</h4>
-                                    <div className="interest-chips">
-                                        {formData.professionalInterests.map(interest => (
-                                            <span key={interest} className="chip">
-                                                {getLocalizedInterest(interest, 'professional')}
-                                            </span>
-                                        ))}
-                                        {formData.otherProfessionalInterests && formData.otherProfessionalInterests.split(/[,\.;]+/).map(item => item.trim()).filter(item => item).map((item, index) => (
-                                            <span key={`other-prof-${index}`} className="chip" style={{ backgroundColor: getInterestColor(item) }}>
-                                                {item}
-                                            </span>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {formData.personalInterests?.length > 0 && (
-                                <div>
-                                    <h4>{t('dashboard.profile.personal_interests')}</h4>
-                                    <div className="interest-chips">
-                                        {formData.personalInterests.map(interest => (
-                                            <span key={interest} className="chip">
-                                                {getLocalizedInterest(interest, 'personal')}
-                                            </span>
-                                        ))}
-                                        {formData.otherPersonalInterests && formData.otherPersonalInterests.split(/[,\.;]+/).map(item => item.trim()).filter(item => item).map((item, index) => (
-                                            <span key={`other-pers-${index}`} className="chip" style={{ backgroundColor: getInterestColor(item) }}>
-                                                {item}
-                                            </span>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-
-                        {formData.coffeeGoals?.length > 0 && (
-                            <div className="profile-section-block">
-                                <h4>{t('dashboard.profile.coffee_goals')}</h4>
-                                <p>{formData.coffeeGoals.join(', ')}</p>
-                            </div>
-                        )}
-
-                        <div className="profile-interests-grid">
-                            {formData.languages?.length > 0 && (
-                                <div>
-                                    <h4>{t('dashboard.profile.languages')}</h4>
-                                    <div className="language-chips">
-                                        {formData.languages.map(lang => (
-                                            <span key={lang} className="chip">{lang}</span>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {formData.bestMeetingDays?.length > 0 && (
-                                <div>
-                                    <h4>{t('dashboard.profile.best_days')}</h4>
-                                    <div className="days-chips">
-                                        {formData.bestMeetingDays.map(day => (
-                                            <span
-                                                key={day}
-                                                className="chip day-chip"
-                                                style={{ backgroundColor: DAY_COLORS[day] }}
-                                            >
-                                                {t(`dashboard.days.${day.toLowerCase()}`, day)}
-                                            </span>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
+                            {/* 
+                            <button
+                                className="save-btn"
+                                style={{
+                                    background: 'transparent',
+                                    border: '2px solid #6366f1',
+                                    color: '#6366f1',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '0.5rem',
+                                    width: '100%',
+                                    marginTop: 0
+                                }}
+                                onClick={() => alert('Scheduling feature coming soon!')}
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                                Propose Meeting
+                            </button>
+                            */}
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </main>
     );
 };
 

@@ -1,4 +1,24 @@
-require('dotenv').config({ path: '../.env' });
+/**
+ * Match Users Script
+ * 
+ * This script identifies active members, pairs them up randomly for the current week,
+ * creates 'Matches' records in Airtable, and updates member statuses to 'Matched'.
+ * 
+ * Usage:
+ *   node backend/scripts/match-users.js [flags]
+ *   node backend/scripts/match-users.js --dry-run
+ * 
+ * Flags:
+ *   --dry-run   : Run the script without creating matches or updating Airtable. Logs proposed pairings.
+ * 
+ * Environment Variables (.env):
+ *   - AIRTABLE_API_KEY
+ *   - AIRTABLE_BASE_ID
+ *   - AIRTABLE_MEMBERS_TABLE
+ */
+
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '../../.env') });
 const Airtable = require('airtable');
 
 // Configuration
@@ -66,7 +86,7 @@ async function main() {
         // 3. Fetch Active Members
         console.log(`🔍 Fetching members with Next_Week_Status = 'Active'...`);
         const activeMembers = await base(MEMBERS_TABLE).select({
-            filterByFormula: `{Next_Week_Status} = 'Active'`
+            filterByFormula: "AND({Next_Week_Status} = 'Active', {Consent_GDPR})"
         }).all();
 
         console.log(`✅ Found ${activeMembers.length} active members.`);

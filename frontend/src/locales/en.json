@@ -107,7 +107,7 @@
         "verify_new": "Please launch our telegram bot <1>@Linked_Coffee_Bot</1>, press start and get your verification code"
     },
     "header": {
-        "about": "What is Linked.Coffee",
+        "about": "About",
         "rules": "Rules",
         "prices": "Prices",
         "logout": "Logout",
