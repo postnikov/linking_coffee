@@ -6,16 +6,7 @@ const Rules = () => {
 
     return (
         <main className="main-content">
-            <div style={{
-                width: '100%',
-                maxWidth: '1200px',
-                margin: '0 auto',
-                padding: '2rem',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '2rem',
-                alignItems: 'center'
-            }}>
+            <div className="content-page-container" style={{ gap: '2rem' }}>
                 <h1 style={{
                     fontSize: '2.5rem',
                     marginBottom: '1rem',

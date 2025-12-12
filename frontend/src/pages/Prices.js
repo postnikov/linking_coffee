@@ -13,15 +13,7 @@ const Prices = ({ user }) => {
 
     return (
         <main className="main-content">
-            <div style={{
-                width: '100%',
-                maxWidth: '1200px',
-                margin: '0 auto',
-                padding: '2rem',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center'
-            }}>
+            <div className="content-page-container">
                 <h1 style={{
                     fontSize: '2.5rem',
                     marginBottom: '3rem',

@@ -833,7 +833,7 @@ app.get('/api/profile', async (req, res) => {
           .firstPage();
 
         if (matchRecords.length === 0) {
-          return res.status(403).json({ success: false, message: 'Access denied. You can only view profiles of your matches.' });
+          return res.status(403).json({ success: false, message: 'Access denied. You can only view profiles of your matches.', error_code: 'access_denied_match_only' });
         }
       }
       // If Admin, bypass match check

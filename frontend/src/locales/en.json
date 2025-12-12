@@ -104,7 +104,10 @@
         "otp_sent_proactive": "Code sent to your Telegram!",
         "check_bot": "Check <1>@linked_coffee_bot</1>",
         "verify_existing": "Please enter the verification code sent to your Telegram.",
-        "verify_new": "Please launch our telegram bot <1>@Linked_Coffee_Bot</1>, press start and get your verification code"
+        "verify_new": "Please launch our telegram bot <1>@Linked_Coffee_Bot</1>, press start and get your verification code",
+        "welcome_back": "Welcome back to Linked Coffee",
+        "get_code": "Get Code",
+        "open_bot": "Open LC Bot"
     },
     "header": {
         "about": "About",
@@ -200,5 +203,8 @@
         "Friday": "Friday",
         "Saturday": "Saturday",
         "Sunday": "Sunday"
+    },
+    "errors": {
+        "access_denied_match_only": "Access denied. You can only view profiles of your matches."
     }
 }

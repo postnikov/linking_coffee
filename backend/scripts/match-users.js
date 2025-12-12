@@ -138,7 +138,8 @@ async function main() {
                     'Week_Start': weekStartStr,
                     'Member1': [pair[0].id],
                     'Member2': [pair[1].id],
-                    'Status': 'Matched'
+                    'Status': 'Matched',
+                    'Notifications': 'Pending'
                 }
             }));
 

@@ -530,7 +530,7 @@ html {
 
 @media (max-width: 640px) {
     .main-content {
-        padding: 180px var(--spacing-md) var(--spacing-xl);
+        padding: 100px var(--spacing-md) var(--spacing-xl);
     }
 
     .hero-title {
@@ -549,5 +549,28 @@ html {
     .logo {
         width: 80px;
         height: 80px;
+    }
+}
+
+/* Shared Container for Content Pages (Rules, Prices, etc.) */
+.content-page-container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+@media (max-width: 640px) {
+    .content-page-container {
+        padding: 1rem 0;
+    }
+
+    .content-page-container .glass-card {
+        padding: 1rem !important;
+        margin: 0 4px !important;
+        border-radius: 12px;
     }
 }

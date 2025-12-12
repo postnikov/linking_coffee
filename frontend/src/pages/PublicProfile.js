@@ -62,7 +62,11 @@ const PublicProfile = () => {
                 if (data.success) {
                     setFormData(data.profile);
                 } else {
-                    setError(data.message || 'User not found');
+                    if (data.error_code) {
+                        setError(t(`errors.${data.error_code}`));
+                    } else {
+                        setError(data.message || 'User not found');
+                    }
                 }
             } catch (error) {
                 console.error('Failed to fetch profile:', error);

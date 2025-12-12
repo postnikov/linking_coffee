@@ -67,12 +67,12 @@ async function sendFeedbackRequests() {
     console.log(`Targeting matches for week starting: ${weekStartStr}`);
 
     try {
-        // Fetch matches for the current week
+        // Fetch matches for the current week that haven't been checked in yet
         const matches = await base('tblx2OEN5sSR1xFI2').select({
-            filterByFormula: `IS_SAME({Week_Start}, "${weekStartStr}", 'day')`
+            filterByFormula: `AND(IS_SAME({Week_Start}, "${weekStartStr}", 'day'), NOT({Midweek_Checkin}))`
         }).all();
 
-        console.log(`Found ${matches.length} matches.`);
+        console.log(`Found ${matches.length} matches to process.`);
 
         for (const match of matches) {
             const matchId = match.id;
@@ -94,6 +94,21 @@ async function sendFeedbackRequests() {
 
             // Send to Member 2
             await sendToMember(matchId, 2, m2TgId, m1Username);
+
+            // Update match record to mark as checked in
+            if (!IS_DRY_RUN) {
+                try {
+                    await base('tblx2OEN5sSR1xFI2').update([{
+                        id: matchId,
+                        fields: {
+                            'Midweek_Checkin': true
+                        }
+                    }]);
+                    console.log(`Marked match ${matchId} as checked in.`);
+                } catch (err) {
+                    console.error(`Failed to mark match ${matchId} as checked in:`, err);
+                }
+            }
         }
 
         console.log('Finished processing all matches.');
