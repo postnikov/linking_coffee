@@ -73,7 +73,7 @@ Hey, ${memberName}!
 🎉 You've got a Linked Coffee partner for this week!
 
 Your partner: ${partnerName} ${partnerUsername}
-${partnerRawUsername ? `Link: http://linked.coffee/profile/${partnerRawUsername}` : ''}
+${partnerRawUsername ? `Link: https://linked.coffee/profile/${partnerRawUsername}` : ''}
 
 Set up a meeting and drink some Zoom or Google-Meet coffee together.
 On the dashboard (https://linked.coffee) you can find some details about your partner.
