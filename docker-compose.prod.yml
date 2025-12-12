@@ -48,6 +48,12 @@ services:
       - "traefik.http.middlewares.redirect-to-new-domain.redirectregex.replacement=https://linked.coffee/$${2}"
       - "traefik.http.middlewares.redirect-to-new-domain.redirectregex.permanent=true"
       - "traefik.http.routers.linking-coffee.middlewares=redirect-to-new-domain"
+      # Global HTTP -> HTTPS redirect
+      - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.https-redirect.redirectscheme.permanent=true"
+      - "traefik.http.routers.linking-coffee-http.rule=Host(`linked.coffee`) || Host(`www.linked.coffee`) || Host(`linkingcoffee.com`) || Host(`www.linkingcoffee.com`)"
+      - "traefik.http.routers.linking-coffee-http.entrypoints=web"
+      - "traefik.http.routers.linking-coffee-http.middlewares=https-redirect"
     networks:
       - traefik-public
       - linking-coffee-internal
