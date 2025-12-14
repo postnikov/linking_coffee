@@ -22,6 +22,17 @@ if (!fs.existsSync(logDir)) {
 const debugLogFile = path.join(logDir, 'debug.log');
 const authLogFile = path.join(logDir, 'auth.log');
 
+// Ensure backups directory exists
+const backupDir = process.env.BACKUP_DIR || path.join(__dirname, 'backups');
+if (!fs.existsSync(backupDir)) {
+  try {
+    fs.mkdirSync(backupDir, { recursive: true });
+    console.log(`✅ Created backups directory: ${backupDir}`);
+  } catch (e) {
+    console.error('❌ Failed to create backups directory:', e);
+  }
+}
+
 // Test write access on startup
 try {
   fs.appendFileSync(authLogFile, `[${new Date().toISOString()}] Server Initialized\n`);
@@ -775,22 +786,13 @@ app.get('/api/admin/data', async (req, res) => {
       username: r.fields.Tg_Username
     }));
 
-    // 3. Fetch Matches for Current Week
-    const getMonday = (d) => {
-      d = new Date(d);
-      var day = d.getDay(),
-        diff = d.getDate() - day + (day == 0 ? -6 : 1);
-      const monday = new Date(d.setDate(diff));
-      monday.setHours(0, 0, 0, 0);
-      return monday;
-    }
-    const mondayDate = getMonday(new Date());
-    const weekStartStr = mondayDate.toISOString().split('T')[0];
-
-    // Note: Airtable dates are string YYYY-MM-DD
+    // 3. Fetch Recent Matches (Last 50)
+    // Instead of strict "current week" filtering which is timezone-fragile, we fetch the latest matches.
+    // The frontend can display the 'Week_Start' to clarify which week it is.
     const matchesRecords = await base('tblx2OEN5sSR1xFI2')
       .select({
-        filterByFormula: `IS_SAME({Week_Start}, "${weekStartStr}", 'day')`
+        sort: [{ field: 'Week_Start', direction: 'desc' }],
+        maxRecords: 50
       })
       .all();
 
@@ -895,19 +897,25 @@ app.get('/api/admin/logs/view', checkAdmin, (req, res) => {
 
 // Backups
 app.get('/api/admin/backups', checkAdmin, (req, res) => {
-  const backupDir = process.env.BACKUP_DIR || '/backups/airtable';
+  // Use the same logic as initialization
+  const dir = process.env.BACKUP_DIR || path.join(__dirname, 'backups');
   
-  if (fs.existsSync(backupDir)) {
-    const files = fs.readdirSync(backupDir).map(f => {
-      const stats = fs.statSync(path.join(backupDir, f));
-      return {
-        name: f,
-        size: stats.size,
-        created: stats.birthtime,
-        mtime: stats.mtime
-      };
-    }).sort((a,b) => b.mtime - a.mtime); // Newest first
-    res.json({ success: true, files });
+  if (fs.existsSync(dir)) {
+    try {
+      const files = fs.readdirSync(dir).map(f => {
+        const stats = fs.statSync(path.join(dir, f));
+        return {
+          name: f,
+          size: stats.size,
+          created: stats.birthtime,
+          mtime: stats.mtime
+        };
+      }).sort((a,b) => b.mtime - a.mtime); // Newest first
+      res.json({ success: true, files });
+    } catch (e) {
+      console.error('Backup listing error:', e);
+      res.status(500).json({ success: false, message: 'Failed to list backups' });
+    }
   } else {
     res.json({ success: true, files: [], message: 'Backup directory not found' });
   }
