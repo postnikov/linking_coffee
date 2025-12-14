@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import './Dashboard.css'; // Reusing dashboard styles for now
+import './AdminPage.css'; // Admin specific overrides
+import AdminHealth from './AdminHealth';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
@@ -65,11 +67,30 @@ const AdminPage = () => {
     }
 
     return (
-        <main className="main-content" style={{ paddingTop: '120px', display: 'block', minHeight: '100vh' }}>
-            <div className="dashboard-container" style={{ display: 'block', maxWidth: '1200px', margin: '0 auto' }}>
-                <h1 className="hero-title" style={{ fontSize: '2.5rem', marginBottom: '2rem' }}>
-                    Admin Dashboard
-                </h1>
+        <main className="main-content" style={{ paddingTop: '20px', display: 'block', minHeight: '100vh', background: '#f9fafb' }}>
+            <div className="dashboard-container admin-dashboard-container" style={{ display: 'block' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                    <h1 className="hero-title" style={{ fontSize: '2.5rem', marginBottom: 0, color: '#1f2937' }}>
+                        Admin Dashboard
+                    </h1>
+                    <div style={{ display: 'flex', gap: '1rem' }}>
+                        <button 
+                            onClick={() => navigate('/')}
+                            style={{ padding: '0.5rem 1rem', border: '1px solid #d1d5db', background: 'white', borderRadius: '0.375rem', cursor: 'pointer' }}
+                        >
+                            Back to App
+                        </button>
+                        <button 
+                            onClick={() => {
+                                localStorage.removeItem('user');
+                                navigate('/');
+                            }}
+                            style={{ padding: '0.5rem 1rem', border: 'none', background: '#ef4444', color: 'white', borderRadius: '0.375rem', cursor: 'pointer' }}
+                        >
+                            Logout
+                        </button>
+                    </div>
+                </div>
 
                 <div className="glass-card" style={{ padding: '2rem' }}>
                     <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', borderBottom: '1px solid #e5e7eb', paddingBottom: '1rem' }}>
@@ -100,6 +121,20 @@ const AdminPage = () => {
                             }}
                         >
                             Current Matches ({data.matches.length})
+                        </button>
+                        <button
+                             onClick={() => setActiveTab('health')}
+                             style={{
+                                 background: 'none',
+                                 border: 'none',
+                                 fontSize: '1.1rem',
+                                 fontWeight: activeTab === 'health' ? 'bold' : 'normal',
+                                 color: activeTab === 'health' ? '#6366f1' : '#4b5563',
+                                 cursor: 'pointer',
+                                 padding: '0.5rem 1rem'
+                             }}
+                        >
+                            System Health
                         </button>
                     </div>
 
@@ -187,6 +222,16 @@ const AdminPage = () => {
                             </table>
                         </div>
                     )}
+
+                    {activeTab === 'health' && (() => {
+                        const stored = localStorage.getItem('user');
+                        const user = stored ? JSON.parse(stored) : null;
+                        if (!user) return null;
+                        // Determine tg_username: locally it seems user.username is used in fetchAdminData, 
+                        // so we assume user.username is the telegram username.
+                        const adminUser = { ...user, tg_username: user.username };
+                        return <AdminHealth user={adminUser} isAdmin={true} />;
+                    })()}
                 </div>
             </div>
         </main>

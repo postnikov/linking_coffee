@@ -50,6 +50,11 @@ const Header = ({ user, onLogout }) => {
                         <Link to="/prices" className={`nav-link ${location.pathname === '/prices' ? 'active' : ''}`}>
                             {t('header.prices')}
                         </Link>
+                        {user && user.status === 'Admin' && (
+                             <Link to="/admin" className={`nav-link ${location.pathname === '/admin' ? 'active' : ''}`}>
+                                Admin Dashboard
+                             </Link>
+                        )}
                     </nav>
                 </div>
 

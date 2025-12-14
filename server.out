@@ -1,0 +1,14 @@
+
+> linking-coffee-backend@1.0.0 start
+> node server.js
+
+📂 Log Directory: /Users/admin/P2025/Linking_Coffee/backend/logs
+✅ Auth log file writable
+🔹 Airtable Configuration:
+   Base ID: appA0Vaq5r5436SGp
+   Members Table: tblCrnbDupkzWUx9P
+   Cities Table: tbllGzaGTz3PsxxWT
+📅 Scheduler loaded 2 jobs from config.
+🤖 Initializing Bot in development mode
+🔑 Using Bot Token starting with: 76663...
+🚀 Linked.Coffee API server running on port 3001

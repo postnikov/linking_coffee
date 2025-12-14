@@ -1,0 +1,10 @@
+.admin-dashboard-container {
+    max-width: none !important;
+    width: 98% !important;
+    margin: 0 auto;
+}
+
+.admin-full-width {
+    width: 100% !important;
+    max-width: none !important;
+}

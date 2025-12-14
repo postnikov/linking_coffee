@@ -116,3 +116,10 @@
 [2025-12-12T10:09:16.261Z] Proactive OTP successfully sent to max_postnikov (379053)
 [2025-12-12T10:11:06.431Z] API Verify attempt: User=max_postnikov, OTP=492209
 [2025-12-12T10:11:06.433Z] Verify Success for max_postnikov. OTP matches.
+[2025-12-14T19:17:13.561Z] Server Initialized
+[2025-12-14T19:18:55.289Z] Server Initialized
+[2025-12-14T19:20:06.011Z] Server Initialized
+[2025-12-14T19:33:07.372Z] API Register request for: kisodrakon
+[2025-12-14T19:33:08.247Z] Proactive OTP successfully sent to kisodrakon (7769456432)
+[2025-12-14T19:33:24.108Z] API Verify attempt: User=kisodrakon, OTP=157693
+[2025-12-14T19:33:24.123Z] Verify Success for kisodrakon. OTP matches.

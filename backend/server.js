@@ -2,6 +2,8 @@ const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const express = require('express');
 const cors = require('cors');
+const cron = require('node-cron');
+const Scheduler = require('./scheduler');
 const Airtable = require('airtable');
 const { Telegraf, Markup } = require('telegraf');
 const fs = require('fs');
@@ -112,6 +114,11 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // In-memory OTP store: Map<username_lowercase, { code, expiresAt }>
 const otpStore = new Map();
+
+// Initialize Scheduler
+const scheduler = new Scheduler(path.join(__dirname, 'scheduler.json'));
+scheduler.init();
+
 
 // Initialize Telegram Bot
 const botToken = process.env.NODE_ENV === 'production' ? process.env.BOT_TOKEN : process.env.ADMIN_BOT_TOKEN;
@@ -788,20 +795,9 @@ app.get('/api/admin/data', async (req, res) => {
       .all();
 
     const matches = await Promise.all(matchesRecords.map(async (m) => {
-      // Resolve member names if possible, but keep it light for now
-      // Actually frontend might need names. 
-      // Airtable lookups might already provide arrays of names/usernames if configured.
-      // Checking Schema... Step 121: 
-      // Matches table has Member1 and Member2 as Linked Records.
-      // Usually linked records come with just IDs unless lookup fields exist.
-      // Let's rely on frontend to display IDs or simpler: fetches.
-      // BUT for performance, let's just return what we have. 
-      // Or better: map using the 'users' list we just fetched!
-
       const m1Id = m.fields.Member1 ? m.fields.Member1[0] : null;
       const m2Id = m.fields.Member2 ? m.fields.Member2[0] : null;
 
-      // Helper to find user in our fetched list
       const findUser = (id) => usersRecords.find(u => u.id === id);
       const u1 = findUser(m1Id);
       const u2 = findUser(m2Id);
@@ -827,6 +823,138 @@ app.get('/api/admin/data', async (req, res) => {
     res.status(500).json({ success: false, message: 'Failed to fetch admin data' });
   }
 });
+
+// Admin Health Endpoints
+
+// Helper to check Admin
+const checkAdmin = async (req, res, next) => {
+  const requester = req.headers['x-admin-user'] || req.query.requester;
+  if (!requester) return res.status(403).json({ success: false, message: 'No admin user specified' });
+  
+  const cleanRequester = requester.replace('@', '').trim().toLowerCase();
+  
+  try {
+    const records = await base(process.env.AIRTABLE_MEMBERS_TABLE).select({
+      filterByFormula: `{Tg_Username} = '${cleanRequester}'`,
+      maxRecords: 1
+    }).firstPage();
+
+    if (records.length > 0 && records[0].fields.Status === 'Admin') {
+      req.adminUser = cleanRequester;
+      next();
+    } else {
+      res.status(403).json({ success: false, message: 'Not an admin' });
+    }
+  } catch (e) {
+    console.error('Admin check error:', e);
+    res.status(500).json({ success: false, message: 'Auth error' });
+  }
+};
+
+// Logs
+app.get('/api/admin/logs', checkAdmin, (req, res) => {
+  const logsDir = path.join(__dirname, 'logs');
+  const files = [];
+
+  // Root logs
+  if (fs.existsSync(debugLogFile)) files.push({ name: 'debug.log', path: 'debug.log', size: fs.statSync(debugLogFile).size });
+  if (fs.existsSync(authLogFile)) files.push({ name: 'auth.log', path: 'logs/auth.log', size: fs.statSync(authLogFile).size });
+
+  // Recursive or just simplified logs dir? The structure is backend/logs/auth.log and backend/debug.log.
+  // Actually authLogFile is defined as path.join(__dirname, 'logs/auth.log').
+  
+  res.json({ success: true, files });
+});
+
+app.get('/api/admin/logs/view', checkAdmin, (req, res) => {
+  const { file } = req.query; // 'debug.log' or 'logs/auth.log'
+  if (!file) return res.status(400).json({ message: 'File required' });
+
+  // Basic security: prevent directory traversal
+  if (file.includes('..')) return res.status(400).json({ message: 'Invalid file path' });
+
+  const filePath = path.join(__dirname, file);
+  
+  if (fs.existsSync(filePath)) {
+    // Read last 1000 lines? Or just read file (careful with size)
+    // Let's us 'tail' via child_process for efficiency on large files or just read last N bytes.
+    // For simplicity, read whole file but limit size? Or use stream?
+    // User asked "see logs", typically tail.
+    
+    // Simple implementation: read file, take last 2000 lines.
+    fs.readFile(filePath, 'utf8', (err, data) => {
+      if (err) return res.status(500).json({ message: 'Read error' });
+      const lines = data.split('\n');
+      const tail = lines.slice(-2000).join('\n');
+      res.json({ success: true, content: tail });
+    });
+  } else {
+    res.status(404).json({ message: 'File not found' });
+  }
+});
+
+// Backups
+app.get('/api/admin/backups', checkAdmin, (req, res) => {
+  const backupDir = process.env.BACKUP_DIR || '/backups/airtable';
+  
+  if (fs.existsSync(backupDir)) {
+    const files = fs.readdirSync(backupDir).map(f => {
+      const stats = fs.statSync(path.join(backupDir, f));
+      return {
+        name: f,
+        size: stats.size,
+        created: stats.birthtime,
+        mtime: stats.mtime
+      };
+    }).sort((a,b) => b.mtime - a.mtime); // Newest first
+    res.json({ success: true, files });
+  } else {
+    res.json({ success: true, files: [], message: 'Backup directory not found' });
+  }
+});
+
+// Scheduler
+app.get('/api/admin/scheduler', checkAdmin, (req, res) => {
+  res.json({ success: true, jobs: scheduler.getJobs() });
+});
+
+app.post('/api/admin/scheduler', checkAdmin, (req, res) => {
+  const { action, job } = req.body; // action: add, update, delete, start-now
+  
+  try {
+    if (action === 'add') {
+      scheduler.addJob(job);
+    } else if (action === 'update') {
+      scheduler.updateJob(job.name, job); // Assuming name is key
+    } else if (action === 'delete') {
+      scheduler.deleteJob(job.name);
+    }
+    res.json({ success: true, jobs: scheduler.getJobs() });
+  } catch (e) {
+    res.status(500).json({ success: false, message: e.message });
+  }
+});
+
+app.post('/api/admin/scheduler/run', checkAdmin, (req, res) => {
+  const { name } = req.body;
+  if (scheduler.runJobNow(name)) {
+    res.json({ success: true, message: 'Job started' });
+  } else {
+    res.status(404).json({ success: false, message: 'Job not found' });
+  }
+});
+
+// Available scripts
+app.get('/api/admin/scripts', checkAdmin, (req, res) => {
+  const scriptsDir = path.join(__dirname, 'scripts');
+  if (fs.existsSync(scriptsDir)) {
+    const files = fs.readdirSync(scriptsDir).filter(f => f.endsWith('.js'));
+    res.json({ success: true, scripts: files });
+  } else {
+    res.json({ success: true, scripts: [] });
+  }
+});
+
 
 // Step 3.5: Get Interests
 app.get('/api/interests', (req, res) => {

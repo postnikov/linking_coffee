@@ -1,0 +1,14 @@
+[
+  {
+    "name": "Weekly Checkin",
+    "script": "weekly-checkin.js",
+    "cron": "0 10 * * 1",
+    "enabled": false
+  },
+  {
+    "name": "Midweek Checkin",
+    "script": "midweek-checkin.js",
+    "cron": "0 10 * * 3",
+    "enabled": false
+  }
+]
