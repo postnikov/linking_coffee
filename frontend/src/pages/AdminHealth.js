@@ -264,6 +264,13 @@ const AdminHealth = ({ user, isAdmin }) => {
     if (data) setBackupFiles(data.files);
   };
 
+  const handleTestBot = async () => {
+    const data = await apiFetch('/api/admin/bot/test', { method: 'POST' });
+    if (data) {
+      alert(`${data.message}\nBot Name: @${data.bot?.username}`);
+    }
+  };
+
   if (!isAdmin) return <div className="p-4">Access Denied</div>;
 
   return (
@@ -272,6 +279,7 @@ const AdminHealth = ({ user, isAdmin }) => {
         <button className={activeTab === 'logs' ? 'active' : ''} onClick={() => setActiveTab('logs')}>Logs</button>
         <button className={activeTab === 'cron' ? 'active' : ''} onClick={() => setActiveTab('cron')}>Cron Scheduler</button>
         <button className={activeTab === 'backups' ? 'active' : ''} onClick={() => setActiveTab('backups')}>Backups</button>
+        <button className="btn-secondary" style={{marginLeft: 'auto'}} onClick={handleTestBot}>Check Bot Health 🤖</button>
       </div>
 
       <div className="tab-content">

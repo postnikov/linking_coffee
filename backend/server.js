@@ -73,6 +73,10 @@ app.use((req, res, next) => {
 });
 const PORT = process.env.PORT || 3001;
 
+
+
+
+
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -852,6 +856,31 @@ const checkAdmin = async (req, res, next) => {
     res.status(500).json({ success: false, message: 'Auth error' });
   }
 };
+
+// Bot Health Check
+app.post('/api/admin/bot/test', checkAdmin, async (req, res) => {
+  try {
+    const me = await bot.telegram.getMe();
+    
+    // Optional: Send a test message to the admin if chat ID is available
+    if (process.env.ADMIN_CHAT_ID) {
+      await bot.telegram.sendMessage(process.env.ADMIN_CHAT_ID, `🤖 Bot Health Check: Online as @${me.username}`);
+    }
+
+    res.json({ 
+      success: true, 
+      bot: {
+        id: me.id,
+        username: me.username,
+        firstName: me.first_name
+      },
+      message: 'Bot is online and responding.' 
+    });
+  } catch (error) {
+    console.error('Bot Health Check Failed:', error);
+    res.status(500).json({ success: false, message: `Bot check failed: ${error.message}` });
+  }
+});
 
 // Logs
 app.get('/api/admin/logs', checkAdmin, (req, res) => {
