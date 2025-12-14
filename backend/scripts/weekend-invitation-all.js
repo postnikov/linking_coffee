@@ -42,10 +42,10 @@ async function run() {
 
     try {
         console.log('📡 Fetching users from Airtable...');
-        // Filter: Has Tg_ID, NOT({No_Spam}), {Consent_GDPR}
+        // Filter: Has Tg_ID, NOT({No_Spam}), {Consent_GDPR}, NOT({Weekend_Notification_Sent})
         // Note: We do NOT filter by status here, as we target ALL.
         const records = await base(process.env.AIRTABLE_MEMBERS_TABLE).select({
-            filterByFormula: "AND({Tg_ID} != '', NOT({No_Spam}), {Consent_GDPR})",
+            filterByFormula: "AND({Tg_ID} != '', NOT({No_Spam}), {Consent_GDPR}, NOT({Weekend_Notification_Sent}))",
             view: "Grid view"
         }).all();
 
@@ -72,7 +72,7 @@ async function run() {
 Hello, ${name} 
 New week is starting!
 
-Tomorrow you will get your new match from Linked Coffee.
+🟢 Tomorrow you will get your new match from Linked Coffee.
 If you want to skip the week — just press the button below.
 
 See you 💜`;
@@ -83,8 +83,9 @@ Hello, ${name}
 New week is starting!
 
 Do you want to participate in the Linked Coffee this week?
-Just press the button below.
+Your current status: ❌ I'll skip the week.
 
+Just press the button below.
 See you 💜`;
             }
 
@@ -108,6 +109,22 @@ See you 💜`;
             try {
                 await bot.telegram.sendMessage(userTgId, message, keyboard);
                 console.log(`   ✅ Sent to ${name} (${userTgId})`);
+                
+                // Mark as sent
+                if (!IS_DRY_RUN) {
+                    try {
+                        await base(process.env.AIRTABLE_MEMBERS_TABLE).update([{
+                            id: record.id,
+                            fields: {
+                                'Weekend_Notification_Sent': true
+                            }
+                        }]);
+                        console.log(`      marked as sent`);
+                    } catch (updateErr) {
+                        console.error(`      ❌ Failed to mark as sent:`, updateErr.message);
+                    }
+                }
+                
                 sentCount++;
             } catch (err) {
                 console.error(`   ❌ Failed to send to ${name} (${userTgId}):`, err.message);
