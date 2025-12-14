@@ -34,7 +34,7 @@ const stat = util.promisify(fs.stat);
 const CONFIG = {
     apiKey: process.env.AIRTABLE_API_KEY,
     baseId: process.env.AIRTABLE_BASE_ID,
-    backupDir: process.env.BACKUP_DIR || '/backups/airtable',
+    backupDir: process.env.BACKUP_DIR || path.join(__dirname, '../../backups'),
     retentionDays: parseInt(process.env.BACKUP_RETENTION_DAYS || '7', 10),
     tables: [
         { name: 'Members', id: 'tblCrnbDupkzWUx9P' },

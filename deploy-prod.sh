@@ -14,20 +14,24 @@ if [[ -n $(git status -s) ]]; then
   echo "⚠️  You have uncommitted changes:"
   git status -s
   echo ""
-  read -p "Do you want to commit and push these changes? (y/n) " -n 1 -r
-  echo
-  if [[ $REPLY =~ ^[Yy]$ ]]; then
-    read -p "Enter commit message: " COMMIT_MSG
-    if [ -z "$COMMIT_MSG" ]; then
-      echo "❌ Commit message cannot be empty."
-      exit 1
-    fi
-    git add .
-    git commit -m "$COMMIT_MSG"
+  echo "🤖 Auto-committing changes..."
+  
+  # Stage all changes
+  git add .
+  
+  # Generate message based on staged files
+  CHANGED_FILES=$(git diff --cached --name-only | head -n 3 | paste -sd ", " -)
+  TOTAL_FILES=$(git diff --cached --name-only | wc -l | tr -d ' ')
+  
+  if [ "$TOTAL_FILES" -gt "3" ]; then
+      MORE=$((TOTAL_FILES - 3))
+      COMMIT_MSG="Auto-deploy: $CHANGED_FILES (and $MORE others)"
   else
-    echo "❌ Deployment aborted. Please commit or stash your changes first."
-    exit 1
+      COMMIT_MSG="Auto-deploy: $CHANGED_FILES"
   fi
+  
+  echo "📝 Generated Message: $COMMIT_MSG"
+  git commit -m "$COMMIT_MSG"
 fi
 
 # 2. Push to remote

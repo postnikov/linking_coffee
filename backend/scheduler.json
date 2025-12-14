@@ -10,5 +10,11 @@
     "script": "midweek-checkin.js",
     "cron": "0 10 * * 3",
     "enabled": false
+  },
+  {
+    "name": "Daily Backup",
+    "script": "backup-airtable.js",
+    "cron": "0 2 * * *",
+    "enabled": true
   }
 ]

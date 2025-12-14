@@ -18,7 +18,7 @@ if [ -f "$ENV_FILE" ]; then
 fi
 
 # Configuration with defaults
-BACKUP_DIR="${BACKUP_DIR:-/backups/airtable}"
+BACKUP_DIR="${BACKUP_DIR:-$ROOT_DIR/backups}"
 GDRIVE_RETENTION_DAYS="${GDRIVE_RETENTION_DAYS:-30}"
 GDRIVE_REMOTE="${GDRIVE_REMOTE:-gdrive:Backups/LinkedCoffee}"
 LOG_FILE="/var/log/airtable-backup.log"

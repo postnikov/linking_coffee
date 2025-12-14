@@ -13,6 +13,7 @@ const AdminHealth = ({ user, isAdmin }) => {
   
   const [cronJobs, setCronJobs] = useState([]);
   const [availableScripts, setAvailableScripts] = useState([]);
+  const [showJobForm, setShowJobForm] = useState(false);
   const [isEditingJob, setIsEditingJob] = useState(false);
   const [jobForm, setJobForm] = useState({ name: '', script: '', cron: '', enabled: true });
   
@@ -103,6 +104,7 @@ const AdminHealth = ({ user, isAdmin }) => {
     });
     if (data) {
       setCronJobs(data.jobs);
+      setShowJobForm(false);
       setIsEditingJob(false);
       setJobForm({ name: '', script: '', cron: '', enabled: true });
     }
@@ -178,13 +180,13 @@ const AdminHealth = ({ user, isAdmin }) => {
           <div className="cron-view">
             <div className="cron-header">
               <h3>Scheduled Jobs</h3>
-              <button className="btn-primary" onClick={() => { setIsEditingJob(false); setJobForm({ name: '', script: availableScripts[0] || '', cron: '* * * * *', enabled: true }) }}>
+              <button className="btn-primary" onClick={() => { setIsEditingJob(false); setShowJobForm(true); setJobForm({ name: '', script: availableScripts[0] || '', cron: '* * * * *', enabled: true }) }}>
                 + Add Job
               </button>
             </div>
             
             {/* Job Form */}
-            {(isEditingJob || jobForm.name) && (
+            {showJobForm && (
                <div className="job-form">
                  <input placeholder="Job Name" value={jobForm.name} onChange={e => setJobForm({...jobForm, name: e.target.value})} disabled={isEditingJob} />
                  <select value={jobForm.script} onChange={e => setJobForm({...jobForm, script: e.target.value})}>
@@ -196,7 +198,7 @@ const AdminHealth = ({ user, isAdmin }) => {
                    <input type="checkbox" checked={jobForm.enabled} onChange={e => setJobForm({...jobForm, enabled: e.target.checked})} /> Enabled
                  </label>
                  <button onClick={handleSaveJob}>Save</button>
-                 <button onClick={() => setJobForm({ name: '', script: '', cron: '', enabled: true })}>Cancel</button>
+                 <button onClick={() => { setShowJobForm(false); setJobForm({ name: '', script: '', cron: '', enabled: true }); }}>Cancel</button>
                </div>
             )}
 
@@ -226,7 +228,7 @@ const AdminHealth = ({ user, isAdmin }) => {
                     <td className="actions">
                       <button onClick={() => handleToggleJob(job)}>{job.enabled ? 'Disable' : 'Enable'}</button>
                       <button onClick={() => handleRunJob(job.name)}>Run Now</button>
-                      <button onClick={() => { setIsEditingJob(true); setJobForm(job); }}>Edit</button>
+                      <button onClick={() => { setIsEditingJob(true); setShowJobForm(true); setJobForm(job); }}>Edit</button>
                       <button className="btn-danger" onClick={() => handleDeleteJob(job.name)}>Delete</button>
                     </td>
                   </tr>
