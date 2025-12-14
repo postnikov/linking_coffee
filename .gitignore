@@ -46,3 +46,4 @@ Thumbs.db
 # Logs Directory
 logs/*
 !logs/.gitkeep
+docs/client_secret_*.json
