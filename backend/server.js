@@ -166,6 +166,21 @@ bot.action('participate_yes', async (ctx) => {
     if (records.length > 0) {
       const record = records[0];
 
+      // Conditional Logging: If previously Passive -> Activated
+      if (record.fields.Next_Week_Status === 'Passive') {
+          try {
+              await base(process.env.AIRTABLE_LOGS_TABLE || 'tbln4rLHEgXUkL9Jh').create([{
+                  fields: {
+                      'Event': 'Activated',
+                      'Member': [record.id]
+                  }
+              }]);
+              console.log(`📝 Logged Activated event for ${record.id}`);
+          } catch (logErr) {
+              console.error('❌ Failed to log activation:', logErr);
+          }
+      }
+
       // Update Next_Week_Status to 'Active'
       await base(process.env.AIRTABLE_MEMBERS_TABLE).update([
         {
@@ -178,10 +193,9 @@ bot.action('participate_yes', async (ctx) => {
 
       await ctx.answerCbQuery('You are in!');
       await ctx.editMessageText(
-        "🎉 Yes, you’re in! ❤️\n" +
-        "On Monday you’ll get your Linked Coffee match.\n\n" +
-        "You can always change matching settings on the dashboard\n" +
-        "at https://linked.coffee"
+        "Awesome 🎉\n" +
+        "On Monday you'll get your new match!\n" +
+        "💜"
       );
     } else {
       await ctx.answerCbQuery('User not found.');
@@ -199,10 +213,50 @@ bot.action('participate_no', async (ctx) => {
   logAuth(`User ${telegramId} clicked NO for next week`);
 
   try {
+      // Find user by Tg_ID to check status first
+      const records = await base(process.env.AIRTABLE_MEMBERS_TABLE)
+        .select({
+          filterByFormula: `{Tg_ID} = '${telegramId}'`,
+          maxRecords: 1
+        })
+        .firstPage();
+
+      if (records.length > 0) {
+          const record = records[0];
+
+          // Conditional Logging: If previously Active -> Deactivated
+          if (record.fields.Next_Week_Status === 'Active') {
+              try {
+                  await base(process.env.AIRTABLE_LOGS_TABLE || 'tbln4rLHEgXUkL9Jh').create([{
+                      fields: {
+                          'Event': 'Deactivated',
+                          'Member': [record.id]
+                      }
+                  }]);
+                  console.log(`📝 Logged Deactivated event for ${record.id}`);
+              } catch (logErr) {
+                  console.error('❌ Failed to log deactivation:', logErr);
+              }
+          }
+
+          // Update Next_Week_Status to 'Passive'
+          await base(process.env.AIRTABLE_MEMBERS_TABLE).update([
+            {
+              id: record.id,
+              fields: {
+                'Next_Week_Status': 'Passive'
+              }
+            }
+          ]);
+      }
+
     await ctx.answerCbQuery('Skipped.');
     await ctx.editMessageText(
-      "Alright. Got it.\n" +
-      "I'll come back next weekend to ask you again ;)"
+      "Got it 👍\n" +
+      "No matches this week.\n" +
+      "Recharge your social battery 🪫↗️🔋\n\n" +
+      "I'll come back to you next weekend\n" +
+      "😉"
     );
   } catch (error) {
     console.error('Error handling participate_no:', error);
