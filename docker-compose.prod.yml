@@ -17,6 +17,10 @@ services:
       - BOT_TOKEN=${BOT_TOKEN}
       - ADMIN_BOT_TOKEN=${ADMIN_BOT_TOKEN}
       - ADMIN_CHAT_ID=${ADMIN_CHAT_ID}
+      - BACKUP_DIR=${BACKUP_DIR}
+      - BACKUP_RETENTION_DAYS=${BACKUP_RETENTION_DAYS}
+      - GDRIVE_RETENTION_DAYS=${GDRIVE_RETENTION_DAYS}
+      - GDRIVE_REMOTE=${GDRIVE_REMOTE}
       - PORT=3001
     networks:
       - linking-coffee-internal
