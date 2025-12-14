@@ -888,7 +888,7 @@ app.get('/api/admin/logs', checkAdmin, (req, res) => {
   const files = [];
 
   // Root logs
-  if (fs.existsSync(debugLogFile)) files.push({ name: 'debug.log', path: 'debug.log', size: fs.statSync(debugLogFile).size });
+  if (fs.existsSync(debugLogFile)) files.push({ name: 'debug.log', path: 'logs/debug.log', size: fs.statSync(debugLogFile).size });
   if (fs.existsSync(authLogFile)) files.push({ name: 'auth.log', path: 'logs/auth.log', size: fs.statSync(authLogFile).size });
 
   // Recursive or just simplified logs dir? The structure is backend/logs/auth.log and backend/debug.log.
@@ -899,6 +899,7 @@ app.get('/api/admin/logs', checkAdmin, (req, res) => {
 
 app.get('/api/admin/logs/view', checkAdmin, (req, res) => {
   const { file } = req.query; // 'debug.log' or 'logs/auth.log'
+
   if (!file) return res.status(400).json({ message: 'File required' });
 
   // Basic security: prevent directory traversal
@@ -1010,109 +1011,169 @@ app.get('/api/interests', (req, res) => {
 });
 
 // Step 4: Get User Profile
+// Step 4: Get User Profile
 app.get('/api/profile', async (req, res) => {
   const { username, requester } = req.query;
-  logDebug(`GET /api/profile request for username: ${username}`);
-
-  if (!username) {
-    return res.status(400).json({ success: false, message: 'Username is required' });
-  }
-
-  if (!requester) {
-    return res.status(400).json({ success: false, message: 'Requester is required' });
+  const requestId = Date.now();
+  console.time(`Profile_Req_${requestId}`);
+  
+  if (!username || !requester) {
+    return res.status(400).json({ success: false, message: 'Username and requester are required' });
   }
 
   const cleanUsername = username.replace('@', '').trim().toLowerCase();
   const cleanRequester = requester.replace('@', '').trim().toLowerCase();
 
-  // Access Control Logic
-  if (cleanUsername !== cleanRequester) {
-    try {
-      // Check if requester is Admin
-      const requesterRecord = await base(process.env.AIRTABLE_MEMBERS_TABLE)
-        .select({
-          filterByFormula: `{Tg_Username} = '${cleanRequester}'`,
-          maxRecords: 1
-        })
-        .firstPage();
-
-      const isRequesterAdmin = requesterRecord.length > 0 && requesterRecord[0].fields.Status === 'Admin';
-
-      if (!isRequesterAdmin) {
-        // If not Admin, check if they are matched
-        const matchesTableId = 'tblx2OEN5sSR1xFI2';
-        const matchRecords = await base(matchesTableId)
-          .select({
-            filterByFormula: `OR(
-                        AND(FIND('${cleanRequester}', ARRAYJOIN({Tg_Username (from Member1)})), FIND('${cleanUsername}', ARRAYJOIN({Tg_Username (from Member2)}))),
-                        AND(FIND('${cleanUsername}', ARRAYJOIN({Tg_Username (from Member1)})), FIND('${cleanRequester}', ARRAYJOIN({Tg_Username (from Member2)})))
-                    )`,
-            maxRecords: 1
-          })
-          .firstPage();
-
-        if (matchRecords.length === 0) {
-          return res.status(403).json({ success: false, message: 'Access denied. You can only view profiles of your matches.', error_code: 'access_denied_match_only' });
-        }
-      }
-      // If Admin, bypass match check
-    } catch (error) {
-      console.error('Error checking permissions:', error);
-      return res.status(500).json({ success: false, message: 'Error verifying permissions' });
-    }
-  }
-
+  logDebug(`GET /api/profile request for ${cleanUsername} by ${cleanRequester}`);
 
   try {
-    const records = await base(process.env.AIRTABLE_MEMBERS_TABLE)
-      .select({
-        filterByFormula: `{Tg_Username} = '${cleanUsername}'`,
-        maxRecords: 1
-      })
+    // --- PHASE 1: Fetch Core Data in Parallel ---
+    console.time(`Phase1_Core_${requestId}`);
+    
+    // 1. Fetch Target User
+    const pTargetUser = base(process.env.AIRTABLE_MEMBERS_TABLE)
+      .select({ filterByFormula: `{Tg_Username} = '${cleanUsername}'`, maxRecords: 1 })
       .firstPage();
 
-    if (records.length > 0) {
-      const record = records[0];
-      const fields = record.fields;
+    // 2. Fetch Requester (if different, for Admin check)
+    let pRequesterUser = Promise.resolve([]);
+    if (cleanUsername !== cleanRequester) {
+      pRequesterUser = base(process.env.AIRTABLE_MEMBERS_TABLE)
+        .select({ filterByFormula: `{Tg_Username} = '${cleanRequester}'`, maxRecords: 1 })
+        .firstPage();
+    }
 
-      // Fetch linked country details if exists
-      let country = null;
-      if (fields.Countries && fields.Countries.length > 0) {
-        try {
-          const countryRecord = await base(process.env.AIRTABLE_COUNTRIES_TABLE || 'Countries').find(fields.Countries[0]);
-          const isoCode = countryRecord.fields.ISO_Code;
-          const flag = isoCode ? isoCode.toUpperCase().replace(/./g, char => String.fromCodePoint(char.charCodeAt(0) + 127397)) : '';
+    // 3. Fetch Access Validation Match (if not self view)
+    // to check if requester and target are matched
+    let pAccessMatch = Promise.resolve([]);
+    if (cleanUsername !== cleanRequester) {
+       pAccessMatch = base('tblx2OEN5sSR1xFI2').select({
+          filterByFormula: `OR(
+              AND(FIND('${cleanRequester}', ARRAYJOIN({Tg_Username (from Member1)})), FIND('${cleanUsername}', ARRAYJOIN({Tg_Username (from Member2)}))),
+              AND(FIND('${cleanUsername}', ARRAYJOIN({Tg_Username (from Member1)})), FIND('${cleanRequester}', ARRAYJOIN({Tg_Username (from Member2)})))
+          )`,
+          maxRecords: 1
+       }).firstPage();
+    }
 
-          country = {
-            id: countryRecord.id,
-            name: countryRecord.fields.Name_en,
-            flag: flag,
-            iso: isoCode
-          };
-        } catch (err) {
-          console.error('Error fetching linked country:', err);
-        }
+    // 4. Fetch Latest Match for Target User (to display "Current Match")
+    // Note: We need this to get the partner's details later
+    const pLatestMatch = base('tblx2OEN5sSR1xFI2').select({
+        filterByFormula: `OR({Tg_Username (from Member1)} = '${cleanUsername}', {Tg_Username (from Member2)} = '${cleanUsername}')`,
+        sort: [{ field: 'Week_Start', direction: 'desc' }],
+        maxRecords: 1
+    }).firstPage();
+
+    const [targetUserRecords, requesterRecords, accessMatchRecords, latestMatchRecords] = 
+      await Promise.all([pTargetUser, pRequesterUser, pAccessMatch, pLatestMatch]);
+    
+    console.timeEnd(`Phase1_Core_${requestId}`);
+
+    // --- PHASE 2: Validation & Core Data Extraction ---
+    
+    // User Existence Check
+    if (targetUserRecords.length === 0) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    const targetRecord = targetUserRecords[0];
+    const fields = targetRecord.fields;
+
+    // Access Control Validation
+    if (cleanUsername !== cleanRequester) {
+      const isRequesterAdmin = requesterRecords.length > 0 && requesterRecords[0].fields.Status === 'Admin';
+      const isMatched = accessMatchRecords.length > 0;
+
+      if (!isRequesterAdmin && !isMatched) {
+        return res.status(403).json({ 
+          success: false, 
+          message: 'Access denied. You can only view profiles of your matches.', 
+          error_code: 'access_denied_match_only' 
+        });
       }
+    }
 
-      // Fetch linked city details if exists
-      let city = null;
-      if (fields.City_Link && fields.City_Link.length > 0) {
-        try {
-          const cityRecord = await base(process.env.AIRTABLE_CITIES_TABLE || 'Cities').find(fields.City_Link[0]);
-          city = {
-            id: cityRecord.id,
-            name: cityRecord.fields.name_en
-          };
-        } catch (err) {
-          console.error('Error fetching linked city:', err);
-        }
+    // --- PHASE 3: Fetch Enrichment Data in Parallel ---
+    console.time(`Phase3_Enrich_${requestId}`);
+    
+    const enrichmentPromises = [];
+    
+    // 1. Country
+    if (fields.Countries && fields.Countries.length > 0) {
+      enrichmentPromises.push(
+        base(process.env.AIRTABLE_COUNTRIES_TABLE || 'Countries').find(fields.Countries[0])
+          .then(r => ({ type: 'country', data: r }))
+          .catch(e => ({ type: 'country', error: e }))
+      );
+    }
+
+    // 2. City
+    if (fields.City_Link && fields.City_Link.length > 0) {
+      enrichmentPromises.push(
+        base(process.env.AIRTABLE_CITIES_TABLE || 'Cities').find(fields.City_Link[0])
+          .then(r => ({ type: 'city', data: r }))
+          .catch(e => ({ type: 'city', error: e }))
+      );
+    }
+
+    // 3. Current Match Partner
+    let matchDataRaw = null;
+    if (latestMatchRecords.length > 0) {
+      const match = latestMatchRecords[0];
+      matchDataRaw = match; // Store for later debugging or usage if needed
+
+      // Identify partner ID to fetch
+      const member1Username = match.fields['Tg_Username (from Member1)'] ? match.fields['Tg_Username (from Member1)'][0] : '';
+      const isMember1 = member1Username === cleanUsername;
+      const otherMemberPrefix = isMember1 ? 'Member2' : 'Member1';
+      const otherMemberLink = match.fields[otherMemberPrefix];
+
+      if (otherMemberLink && otherMemberLink.length > 0) {
+        enrichmentPromises.push(
+          base(process.env.AIRTABLE_MEMBERS_TABLE).find(otherMemberLink[0])
+            .then(r => ({ type: 'partner', data: r }))
+            .catch(e => ({ type: 'partner', error: e }))
+        );
       }
+    }
 
-      // Map Airtable fields to frontend format
-      const profile = {
+    const enrichmentResults = await Promise.all(enrichmentPromises);
+    console.timeEnd(`Phase3_Enrich_${requestId}`);
+
+    // Process Enrichment Results
+    let country = null;
+    let city = null;
+    let currentMatch = null;
+
+    enrichmentResults.forEach(res => {
+      if (res.error) {
+        console.error(`Error fetching ${res.type}:`, res.error);
+        return;
+      }
+      if (res.type === 'country') {
+        const r = res.data;
+        const isoCode = r.fields.ISO_Code;
+        const flag = isoCode ? isoCode.toUpperCase().replace(/./g, char => String.fromCodePoint(char.charCodeAt(0) + 127397)) : '';
+        country = { id: r.id, name: r.fields.Name_en, flag, iso: isoCode };
+      }
+      if (res.type === 'city') {
+        const r = res.data;
+        city = { id: r.id, name: r.fields.name_en };
+      }
+      if (res.type === 'partner') {
+        const r = res.data;
+        currentMatch = {
+          name: r.fields.Name,
+          family: r.fields.Family,
+          username: r.fields.Tg_Username,
+          avatar: r.fields.Avatar && r.fields.Avatar.length > 0 ? r.fields.Avatar[0].url : ''
+        };
+      }
+    });
+
+    // Construct Response
+    const profile = {
         name: fields.Name || '',
         family: fields.Family || '',
-        // Country is now an object { id, name, flag }
         country: country,
         city: city,
         timezone: fields.Time_Zone || 'UTC (UTC+0)',
@@ -1133,55 +1194,13 @@ app.get('/api/profile', async (req, res) => {
         nextWeekStatus: fields.Next_Week_Status || 'Active',
         avatar: fields.Avatar && fields.Avatar.length > 0 ? fields.Avatar[0].url : '',
         tg_username: fields.Tg_Username || ''
-      };
+    };
+    
+    console.timeEnd(`Profile_Req_${requestId}`);
+    res.json({ success: true, profile, currentMatch });
 
-      // Fetch current match if exists
-      let currentMatch = null;
-      try {
-        const matchesTableId = 'tblx2OEN5sSR1xFI2';
-        // Find matches where Member1 OR Member2 is the current user
-        const matchRecords = await base(matchesTableId)
-          .select({
-            filterByFormula: `OR({Tg_Username (from Member1)} = '${cleanUsername}', {Tg_Username (from Member2)} = '${cleanUsername}')`,
-            sort: [{ field: 'Week_Start', direction: 'desc' }],
-            maxRecords: 1
-          })
-          .firstPage();
-
-        if (matchRecords.length > 0) {
-          const match = matchRecords[0];
-          // Check if user is Member1. Note: Lookup values are arrays.
-          const member1Username = match.fields['Tg_Username (from Member1)'] ? match.fields['Tg_Username (from Member1)'][0] : '';
-          const isMember1 = member1Username === cleanUsername;
-
-          // Get the OTHER member's details
-          const otherMemberPrefix = isMember1 ? 'Member2' : 'Member1';
-          const otherMemberLink = match.fields[otherMemberPrefix];
-
-          if (otherMemberLink && otherMemberLink.length > 0) {
-            const otherMemberId = otherMemberLink[0];
-            const otherMemberRecord = await base(process.env.AIRTABLE_MEMBERS_TABLE).find(otherMemberId);
-
-            if (otherMemberRecord) {
-              currentMatch = {
-                name: otherMemberRecord.fields.Name,
-                family: otherMemberRecord.fields.Family,
-                username: otherMemberRecord.fields.Tg_Username,
-                avatar: otherMemberRecord.fields.Avatar && otherMemberRecord.fields.Avatar.length > 0 ? otherMemberRecord.fields.Avatar[0].url : ''
-              };
-            }
-          }
-        }
-      } catch (err) {
-        console.error('Error fetching current match:', err);
-      }
-
-      res.json({ success: true, profile, currentMatch });
-    } else {
-      res.status(404).json({ success: false, message: 'User not found' });
-    }
   } catch (error) {
-    console.error('Get profile error:', error);
+    console.error('Profile API Error:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch profile' });
   }
 });

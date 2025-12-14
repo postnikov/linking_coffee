@@ -171,7 +171,8 @@ const AdminHealth = ({ user, isAdmin }) => {
         'x-admin-user': user.tg_username // Custom header for auth check
       };
       
-      const res = await fetch(`${API_URL}${endpoint}?requester=${user.tg_username}`, {
+      const separator = endpoint.includes('?') ? '&' : '?';
+      const res = await fetch(`${API_URL}${endpoint}${separator}requester=${user.tg_username}`, {
         ...options,
         headers: { ...headers, ...options.headers }
       });
@@ -198,7 +199,12 @@ const AdminHealth = ({ user, isAdmin }) => {
   // LOGS Handlers
   const fetchLogFiles = async () => {
     const data = await apiFetch('/api/admin/logs');
-    if (data) setLogFiles(data.files);
+    if (data) {
+      setLogFiles(data.files);
+      if (data.files.length > 0 && !activeLogFile) {
+        loadLogContent(data.files[0]);
+      }
+    }
   };
 
   const loadLogContent = async (file) => {
