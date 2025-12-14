@@ -9,6 +9,9 @@ COPY package*.json ./
 # Install dependencies
 RUN npm install
 
+# Install rclone for backups
+RUN apk add --no-cache rclone
+
 # Copy application files
 COPY . .
 
