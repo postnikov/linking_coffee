@@ -224,7 +224,7 @@ bot.action(/^fb_stat:(.+):(\d+):(.+)$/, async (ctx) => {
       fields: {
         [fieldName]: status
       }
-    }]);
+    }], { typecast: true });
 
     await ctx.answerCbQuery('Status updated!');
 

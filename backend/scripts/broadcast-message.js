@@ -4,12 +4,13 @@
  * Sends a custom message to a specific group of users.
  * 
  * Usage:
- *   node backend/scripts/broadcast-message.js --target=[all|admins|unmatched] [--dry-run]
+ *   node backend/scripts/broadcast-message.js --target=[all|admins|unmatched|matched] [--dry-run]
  * 
  * Targets:
  *   - all       : All users with Consent_GDPR checked and a Telegram ID.
  *   - admins    : Users with Status='Admin'.
  *   - unmatched : Active users who do NOT have a match for the current week.
+ *   - matched   : Users who HAVE a match for the current week.
  * 
  * Configuration:
  *   - Message content is defined in the MESSAGE_TEXT constant below.
@@ -24,11 +25,14 @@ const { Telegraf } = require('telegraf');
 // --- CONFIGURATION ---
 const MESSAGE_TEXT = `
 Привет! 👋
+Это Linked.Coffee 🤖 робот.
 
-Я понимаю, что сейчас конец недели. 
-Но вдруг найдешь время на первый Linked Coffee. 
-Сейчас найду тебе пару ;)
+Слушай, тут такое дело.
+В сообщениях о партнерах была ошибка. 
+Я уже ее исправил. И даже старые сообщения теперь работают. 
+Прости, что не заметил этот баг раньше.
 
+Хорошего тебе кофе!
 Обнимаю! 🤗
 `;
 
@@ -81,6 +85,36 @@ async function getRecipients() {
         return records;
     }
 
+    if (target === 'matched') {
+        // 1. Get current week Monday
+        const monday = getMonday(new Date());
+        const weekStartStr = formatDate(monday);
+        console.log(`   Checking matches for week: ${weekStartStr}`);
+
+        // 2. Get matches for this week
+        const matches = await base(MATCHES_TABLE).select({
+            filterByFormula: `IS_SAME({Week_Start}, "${weekStartStr}", 'day')`
+        }).all();
+        console.log(`   Found ${matches.length} matches records.`);
+
+        // 3. Extract IDs of matched people
+        const matchedIds = new Set();
+        matches.forEach(m => {
+            if (m.fields.Member1) matchedIds.add(m.fields.Member1[0]);
+            if (m.fields.Member2) matchedIds.add(m.fields.Member2[0]);
+        });
+        console.log(`   Found ${matchedIds.size} unique matched users.`);
+
+        // 4. Get all members relevant for messaging
+        const allMembers = await base(MEMBERS_TABLE).select({
+            filterByFormula: "AND({Consent_GDPR}, {Tg_ID} != '')"
+        }).all();
+
+        // 5. Filter for only matched members
+        const matchedMembers = allMembers.filter(m => matchedIds.has(m.id));
+        return matchedMembers;
+    }
+
     if (target === 'unmatched') {
         // 1. Get current week Monday
         const monday = getMonday(new Date());
@@ -111,7 +145,7 @@ async function getRecipients() {
         return unmatched;
     }
 
-    throw new Error(`Unknown target '${target}'. Please use --target=all|admins|unmatched`);
+    throw new Error(`Unknown target '${target}'. Please use --target=all|admins|unmatched|matched`);
 }
 
 async function run() {

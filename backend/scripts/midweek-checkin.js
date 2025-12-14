@@ -143,7 +143,7 @@ Just press the button below to answer:`;
             Markup.button.callback('We scheduled 📆', `fb_stat:${matchId}:${role}:Scheduled`)
         ],
         [
-            Markup.button.callback('Something went wrong 😔', `fb_stat:${matchId}:${role}:No`)
+            Markup.button.callback('Something went wrong 😔', `fb_stat:${matchId}:${role}:Fail`)
         ]
     ]);
 
