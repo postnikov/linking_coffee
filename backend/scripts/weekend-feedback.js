@@ -14,8 +14,9 @@
  *   node backend/scripts/weekend-feedback.js [options]
  *
  * Options:
- *   --dry-run   : Log actions without sending messages
- *   --test      : Send all messages to the test Admin ID (defined in constant)
+ *   --dry-run               : Log actions without sending messages
+ *   --test                  : Send ALL messages to ADMIN_CHAT_ID (no DB status update)
+ *   --max-notifications=N   : Limit processing to N matches
  *
  * Examples:
  *   node backend/scripts/weekend-feedback.js --dry-run
@@ -38,8 +39,20 @@ if (!botToken) {
 }
 const bot = new Telegraf(botToken);
 
-const IS_DRY_RUN = process.argv.includes('--dry-run');
-const IS_TEST_MODE = process.argv.includes('--test');
+const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID;
+
+// Parse Max Notifications Flag
+const args = process.argv.slice(2);
+const maxArg = args.find(arg => arg.startsWith('--max-notifications='));
+const MAX_MATCHES_TO_PROCESS = maxArg ? parseInt(maxArg.split('=')[1]) : Infinity;
+
+const IS_DRY_RUN = args.includes('--dry-run');
+const IS_TEST_MODE = args.includes('--test');
+
+if (IS_TEST_MODE && !ADMIN_CHAT_ID) {
+    console.error('❌ ADMIN_CHAT_ID required for test mode (check .env).');
+    process.exit(1);
+}
 
 // Helper to get Monday of the current week
 function getMonday(d) {
@@ -59,39 +72,15 @@ const cleanUsername = (username) => {
 
 async function sendFeedbackRequests() {
     console.log(`Starting Weekend Feedback script...`);
-    if (IS_DRY_RUN) console.log('DRY RUN MODE: No messages will be sent.');
-    if (IS_TEST_MODE) {
-        if (!process.env.ADMIN_CHAT_ID) {
-            console.error('Error: ADMIN_CHAT_ID not found in .env. Cannot run in test mode.');
-            process.exit(1);
-        }
-        console.log(`TEST MODE: Sending all messages to ADMIN_CHAT_ID (${process.env.ADMIN_CHAT_ID})`);
-    }
+    console.log(`   Mode: ${IS_DRY_RUN ? 'DRY RUN' : 'LIVE'}`);
+    console.log(`   Test Mode: ${IS_TEST_MODE ? `ON (All to Admin ${ADMIN_CHAT_ID})` : 'OFF'}`);
+    if (MAX_MATCHES_TO_PROCESS !== Infinity) console.log(`   Limit: ${MAX_MATCHES_TO_PROCESS} matches`);
 
     const mondayDate = getMonday(new Date());
     const weekStartStr = mondayDate.toISOString().split('T')[0];
     console.log(`Targeting matches for week starting: ${weekStartStr}`);
 
     try {
-        // Fetch matches for the current week that haven't been Weekend-checked yet
-        // AND have empty feedback.
-        // Airtable formula: AND(IS_SAME({Week_Start}, "date", 'day'), NOT({Weekend_Checkin}))
-        // We will filter for empty feedback in code to be safer/simpler or add to formula.
-        // Let's filter in code to handle "Feedback1 OR Feedback2" logic per user role more precisely if needed,
-        // BUT the requirement says: "their matches have empty Feedback1 or Feedback2" -> maybe implies ANY feedback missing?
-        // Let's stick to the requirement: "their matches have empty Feedback1 or Feedback2" logic is applied generally to the MATCH record.
-        // But we need to check if the specific USER has given feedback? 
-        // Actually, usually feedback is stored per match per user if we have Feedback1 and Feedback2 fields.
-        // If Member 1 has given feedback (Feedback1 not empty), maybe we shouldn't bug them?
-        // The requirement says: "sends ... to all matched users ... if ... their matches have empty Feedback1 or Feedback2"
-        // This usually implies we check if *that specific user* needs to provide feedback.
-        // BUT the requirement says "Weekend_Checkin = Checked" is a global flag for the MATCH? Use caution.
-        // "Mark Weekend_Checkin = Checked" implies we do it once per match? Or per user?
-        // If it's a checkbox on the Match record, it's once per match.
-        // Result: logic likely sends to BOTH if the flag is false, then sets flag to true.
-        // Re-reading: "sends ... to all matched users ... if their matches don't have Weekend_Checkin = Checked"
-        // This implies if we run it, we send to everyone in that match, then mark it checked.
-        
         const matches = await base('tblx2OEN5sSR1xFI2').select({
             filterByFormula: `AND(IS_SAME({Week_Start}, "${weekStartStr}", 'day'), NOT({Weekend_Checkin}))`
         }).all();
@@ -101,31 +90,22 @@ async function sendFeedbackRequests() {
         let processedCount = 0;
 
         for (const match of matches) {
+            if (processedCount >= MAX_MATCHES_TO_PROCESS) {
+                 console.log(`🛑 Limit of ${MAX_MATCHES_TO_PROCESS} reached.`);
+                 break;
+            }
+
             const matchId = match.id;
-            
-            // detailed check for empty feedback (optional based on "and their matches have empty Feedback1 or Feedback2")
-            // If the user meant "Send to users who haven't given feedback", logic should be per user.
-            // But "Mark Weekend_Checkin = Checked" suggests a batch operation.
-            // However, if one user gave feedback but the other didn't, do we spam both?
-            // "if ... their matches have empty Feedback1 or Feedback2" -> If EITHER is empty, we process the match?
-            // Let's assume we process the match if the flag is unchecked, and within the match, we send to users.
-            
             const f1 = match.fields.Feedback1;
             const f2 = match.fields.Feedback2;
-            
-            // Using loose check for empty/undefined/null
             const isF1Empty = f1 == null; 
             const isF2Empty = f2 == null;
 
             if (!isF1Empty && !isF2Empty) {
-                console.log(`Match ${matchId} has both feedbacks. Skipping (though Weekend_Checkin was false).`);
-                // Should we mark it checked? Probably yes to avoid re-checking.
-                 if (!IS_DRY_RUN) await markWeekendChecked(matchId);
+                console.log(`Match ${matchId} has both feedbacks. Skipping.`);
+                if (!IS_DRY_RUN && !IS_TEST_MODE) await markWeekendChecked(matchId);
                 continue;
             }
-
-            const member1Id = match.fields.Member1 ? match.fields.Member1[0] : null;
-            const member2Id = match.fields.Member2 ? match.fields.Member2[0] : null;
 
             const m1TgId = match.fields['Tg_ID (from Member1)'] ? match.fields['Tg_ID (from Member1)'][0] : null;
             const m1Username = match.fields['Tg_Username (from Member1)'] ? match.fields['Tg_Username (from Member1)'][0] : null;
@@ -146,8 +126,13 @@ async function sendFeedbackRequests() {
             }
 
             // Mark checked
-             if (!IS_DRY_RUN) await markWeekendChecked(matchId);
-             processedCount++;
+            if (!IS_DRY_RUN && !IS_TEST_MODE) {
+                await markWeekendChecked(matchId);
+            } else if (IS_TEST_MODE) {
+                console.log(`[TEST] Would mark match ${matchId} as Weekend_Checkin = true (Skipped)`);
+            }
+             
+            processedCount++;
         }
 
         console.log(`Finished processing. Sent requests for ${processedCount} matches.`);
@@ -183,7 +168,15 @@ async function sendToMember(matchId, role, memberTgId, partnerUsername, partnerN
 
     const cleanPartnerHandle = partnerUsername ? `@${cleanUsername(partnerUsername)}` : '';
 
-    const message = `Hey there 👋
+    let messagePrefix = '';
+    let targetId = memberTgId;
+    
+    if (IS_TEST_MODE) {
+        targetId = ADMIN_CHAT_ID;
+        messagePrefix = `[TEST MODE - Original Reicipient: ${memberTgId}]\n\n`;
+    }
+
+    const message = `${messagePrefix}Hey there 👋
 How was your Coffee this week? 
 
 Have you met with your partner ${partnerName} ${cleanPartnerHandle}? 
@@ -203,21 +196,19 @@ Just press the button below to answer:`;
         ]
     ]);
 
-    const targetId = IS_TEST_MODE ? process.env.ADMIN_CHAT_ID : memberTgId;
-
     if (IS_DRY_RUN) {
-        console.log(`[DRY RUN] Would send to ${targetId} (Role ${role}):`);
+        console.log(`[DRY RUN] Would send to ${IS_TEST_MODE ? `ADMIN for ${memberTgId}` : memberTgId} (Role ${role}):`);
         console.log(message);
         return;
     }
 
     try {
         await bot.telegram.sendMessage(targetId, message, keyboard);
-        console.log(`Sent feedback request to Member ${role} (TgID: ${targetId}) for match ${matchId}`);
+        console.log(`Sent feedback request to Member ${role} (Target: ${targetId}) for match ${matchId}`);
         // Delay to avoid hitting rate limits
         await new Promise(resolve => setTimeout(resolve, 100));
     } catch (error) {
-        console.error(`Failed to send to Member ${role} (TgID: ${targetId}):`, error.message);
+        console.error(`Failed to send to Member ${role} (Target: ${targetId}):`, error.message);
     }
 }
 

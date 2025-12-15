@@ -8,16 +8,19 @@
  *   node backend/scripts/notify-matches.js [flags]
  *   node backend/scripts/notify-matches.js --dry-run
  *   node backend/scripts/notify-matches.js --test
+ *   node backend/scripts/notify-matches.js --max-notifications=5
  * 
  * Flags:
  *   --dry-run   : Run the script without sending messages or updating Airtable. Logs proposed actions.
- *   --test      : Run in test mode (only sends to users with Status='Admin').
+ *   --test      : Run in test mode (sends all messages to ADMIN_CHAT_ID).
+ *   --max-notifications=X : Limit number of matches processed.
  * 
  * Environment Variables (.env):
  *   - AIRTABLE_API_KEY
  *   - AIRTABLE_BASE_ID
  *   - AIRTABLE_MEMBERS_TABLE
  *   - BOT_TOKEN
+ *   - ADMIN_CHAT_ID
  */
 
 const path = require('path');
@@ -28,68 +31,124 @@ const { Telegraf } = require('telegraf');
 // Configuration
 const MATCHES_TABLE = 'tblx2OEN5sSR1xFI2'; // From SCHEMA
 const MEMBERS_TABLE = process.env.AIRTABLE_MEMBERS_TABLE;
-const BOT_TOKEN = process.env.BOT_TOKEN; // Always use production bot
+const BOT_TOKEN = process.env.BOT_TOKEN; 
+const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID;
+
 const DRY_RUN = process.argv.includes('--dry-run');
 const IS_TEST_MODE = process.argv.includes('--test');
 
-if (!process.env.AIRTABLE_API_KEY || !process.env.AIRTABLE_BASE_ID || !BOT_TOKEN) {
+// Parse Max Notifications Flag
+const maxArg = process.argv.find(arg => arg.startsWith('--max-notifications='));
+const MAX_MATCHES_TO_PROCESS = maxArg ? parseInt(maxArg.split('=')[1]) : Infinity;
+
+if (!process.env.AIRTABLE_API_KEY || !process.env.AIRTABLE_BASE_ID || !BOT_TOKEN || (IS_TEST_MODE && !ADMIN_CHAT_ID)) {
     console.error('❌ Missing configuration in .env');
+    if (IS_TEST_MODE && !ADMIN_CHAT_ID) {
+        console.error('   ADMIN_CHAT_ID is required for --test mode.');
+    }
     process.exit(1);
 }
 
 const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY }).base(process.env.AIRTABLE_BASE_ID);
 const bot = new Telegraf(BOT_TOKEN);
 
-async function notifyMember(member, partner) {
-    const memberName = member.fields.Name || 'Friend';
-    const partnerName = partner.fields.Name || 'a partner';
-    const partnerUsername = partner.fields.Tg_Username ? `@${partner.fields.Tg_Username}` : '(no username)';
+function getMessage(lang, memberName, partnerName, partnerUsername, introData, isTest = false, realRecipientName = '') {
+    const isRu = lang === 'Ru';
+    const partnerLink = partnerUsername && partnerUsername !== '(no username)' 
+        ? (isRu ? `Ссылка: https://linked.coffee/profile/${partnerUsername.replace('@', '')}` : `Link: https://linked.coffee/profile/${partnerUsername.replace('@', '')}`) 
+        : '';
 
-    const recipientId = member.fields.Tg_ID;
-    const memberStatus = member.fields.Status;
-
-    // In test mode, we strictly ONLY send to the test user.
-    // We do NOT redirect other people's messages to the test user anymore.
-    if (IS_TEST_MODE && memberStatus !== 'Admin') {
-        return;
+    let introText = '';
+    if (introData) {
+        try {
+            const intro = JSON.parse(introData);
+            // Intro structure: { greeting, why_interesting, conversation_starters }
+            const header = isRu ? "🤖 **Почему вам стоит пообщаться:**" : "🤖 **Why you should meet:**";
+            const why = intro.why_interesting;
+            const askHeader = isRu ? "💬 **О чем спросить:**" : "💬 **Icebreakers:**";
+            const ask = intro.conversation_starters.map(s => `- ${s}`).join('\n');
+            
+            introText = `\n${header}\n${why}\n\n${askHeader}\n${ask}\n`;
+        } catch (e) {
+            console.error('Error parsing intro JSON:', e);
+        }
     }
 
-    if (!recipientId) {
-        console.log(`⚠️  Skipping ${memberName} (no Telegram ID)`);
-        return;
-    }
+    const testPrefix = isTest ? `[TEST MODE - Original Recipient: ${realRecipientName}]\n\n` : '';
 
-    // Check GDPR Consent
-    if (!member.fields.Consent_GDPR) {
-        console.log(`⚠️  Skipping ${memberName} (No GDPR Consent)`);
-        return;
-    }
+    if (isRu) {
+        return `${testPrefix}Привет, ${memberName}!
+        
+🎉 Твой partner for Linked Coffee на эту неделю!
 
-    const partnerRawUsername = partner.fields.Tg_Username || '';
+Твой собеседник: ${partnerName} ${partnerUsername}
+${partnerLink}
+${introText}
+Договоритесь о встрече и выпейте кофе (в Zoom, Google Meet или лично).
+В личном кабинете (https://linked.coffee) можно узнать больше деталей о собеседнике.
 
-    const message = `
-Hey, ${memberName}!
+Удачи!
+❤️`;
+    } else {
+        return `${testPrefix}Hey, ${memberName}!
 
 🎉 You've got a Linked Coffee partner for this week!
 
 Your partner: ${partnerName} ${partnerUsername}
-${partnerRawUsername ? `Link: https://linked.coffee/profile/${partnerRawUsername}` : ''}
-
+${partnerLink}
+${introText}
 Set up a meeting and drink some Zoom or Google-Meet coffee together.
 On the dashboard (https://linked.coffee) you can find some details about your partner.
 
 Good Luck!
-❤️
-`;
+❤️`;
+    }
+}
+
+async function notifyMember(member, partner, introField) {
+    const memberName = member.fields.Name || 'Friend';
+    const partnerName = partner.fields.Name || 'a partner';
+    const partnerUsername = partner.fields.Tg_Username ? `@${partner.fields.Tg_Username}` : '(no username)';
+    const recipientId = member.fields.Tg_ID;
+    const lang = member.fields.Notifications_Language || 'En';
+
+    if (!recipientId && !IS_TEST_MODE) {
+        console.log(`⚠️  Skipping ${memberName} (no Telegram ID)`);
+        return false;
+    }
+
+    // In test mode, we strictly ONLY send to the test user.
+    // We do NOT redirect other people's messages to the test user anymore.
+    // This check is removed as per new test mode logic.
+    // if (IS_TEST_MODE && memberStatus !== 'Admin') {
+    //     return;
+    // }
+
+    // Check GDPR Consent
+    if (!member.fields.Consent_GDPR) {
+        console.log(`⚠️  Skipping ${memberName} (No GDPR Consent)`);
+        return false;
+    }
+
+    // Determine Intro Field content (Intro_1 or Intro_2 passed from caller)
+    // Note: Caller passes the raw string from Airtable
+    
+    const message = getMessage(lang, memberName, partnerName, partnerUsername, introField, IS_TEST_MODE, memberName);
+
+    // Determine final recipient
+    const targetChatId = IS_TEST_MODE ? ADMIN_CHAT_ID : recipientId;
 
     if (DRY_RUN) {
-        console.log(`\n[DRY RUN] Would send to ${memberName} (TgID: ${recipientId}):\n${message}`);
+        console.log(`\n[DRY RUN] Would send to ${IS_TEST_MODE ? 'ADMIN' : memberName} (Target ID: ${targetChatId}):\n${message}`);
+        return true; 
     } else {
         try {
-            await bot.telegram.sendMessage(recipientId, message);
-            console.log(`✅ Sent notification to ${memberName} (Actual recipient ID: ${recipientId})`);
+            await bot.telegram.sendMessage(targetChatId, message);
+            console.log(`✅ Sent notification to ${IS_TEST_MODE ? `ADMIN (for ${memberName})` : memberName} (Actual recipient ID: ${targetChatId})`);
+            return true;
         } catch (error) {
-            console.error(`❌ Failed to send to ${memberName}:`, error.message);
+            console.error(`❌ Failed to send to ${memberName} (Target ID: ${targetChatId}):`, error.message);
+            return false;
         }
     }
 }
@@ -97,7 +156,8 @@ Good Luck!
 async function main() {
     console.log(`🚀 Starting Notification Script`);
     console.log(`   Mode: ${DRY_RUN ? 'DRY RUN' : 'LIVE'}`);
-    console.log(`   Target: ${IS_TEST_MODE ? 'TEST (Admins only)' : 'PRODUCTION'}`);
+    console.log(`   Target: ${IS_TEST_MODE ? `TEST (All to Admin ${ADMIN_CHAT_ID})` : 'PRODUCTION'}`);
+    if (MAX_MATCHES_TO_PROCESS !== Infinity) console.log(`   Limit: ${MAX_MATCHES_TO_PROCESS} matches`);
 
     try {
         // 1. Fetch Pending Matches
@@ -134,9 +194,19 @@ async function main() {
 
         console.log(`✅ Found ${matches.length} pending matches.`);
 
+        let processedCount = 0;
+
         for (const match of matches) {
+            if (processedCount >= MAX_MATCHES_TO_PROCESS) {
+                console.log(`🛑 Reached limit of ${MAX_MATCHES_TO_PROCESS} matches.`);
+                break;
+            }
+
             // Get Member Details
-            if (!match.fields.Member1 || !match.fields.Member2) continue;
+            if (!match.fields.Member1 || !match.fields.Member2) {
+                console.log(`⚠️ Skipping match ${match.id} due to missing Member1 or Member2.`);
+                continue;
+            }
 
             try {
                 const member1 = await base(MEMBERS_TABLE).find(match.fields.Member1[0]);
@@ -145,21 +215,11 @@ async function main() {
                 let sent1 = false;
                 let sent2 = false;
 
-                // Notify Member 1
-                try {
-                    await notifyMember(member1, member2);
-                    sent1 = true;
-                } catch (e) {
-                    console.error(`Failed to notify member 1: ${e.message}`);
-                }
-
-                // Notify Member 2
-                try {
-                    await notifyMember(member2, member1);
-                    sent2 = true;
-                } catch (e) {
-                    console.error(`Failed to notify member 2: ${e.message}`);
-                }
+                // Notify Member 1 (Use Intro_1)
+                sent1 = await notifyMember(member1, member2, match.fields.Intro_1);
+                
+                // Notify Member 2 (Use Intro_2)
+                sent2 = await notifyMember(member2, member1, match.fields.Intro_2);
 
                 // Update Match record if ANY message was sent (or attempted in live mode)
                 // In DRY_RUN we don't update.
@@ -177,16 +237,18 @@ async function main() {
                         }]);
                         console.log(`📝 Updated match ${match.id} status to 'Sent'`);
                     }
-                } else if (!DRY_RUN && IS_TEST_MODE) {
+                } else if (IS_TEST_MODE) {
                     // In test mode, we might want to update ONLY if we really targeted that user?
                     // Or just log that we WOULD update. 
                     // Let's protect the data in test mode and NOT update status unless explicitly asked.
                     // The user asked "After successful sending... change to Sent". 
                     // If I send to myself in test mode, I shouldn't mark the REAL match as sent to the REAL user.
                     console.log(`[TEST] Would update match ${match.id} status to 'Sent' (Skipped in test mode)`);
-                } else {
+                } else { // DRY_RUN
                     console.log(`[DRY RUN] Would update match ${match.id} status to 'Sent'`);
                 }
+
+                processedCount++;
 
             } catch (err) {
                 console.error(`❌ Error processing match ${match.id}:`, err);

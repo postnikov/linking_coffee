@@ -13,8 +13,9 @@
  *   node backend/scripts/weekend-invitation-all.js [options]
  *
  * Options:
- *   --dry-run   : Log actions without sending messages
- *   --test      : Send only to Admins
+ *   --dry-run               : Log actions without sending messages
+ *   --test                  : Send ALL messages to ADMIN_CHAT_ID (no DB status update)
+ *   --max-notifications=N   : Limit processing to N users
  */
 
 require('dotenv').config({ path: require('path').join(__dirname, '../../.env') });
@@ -35,15 +36,27 @@ const bot = new Telegraf(botToken);
 const IS_DRY_RUN = process.argv.includes('--dry-run');
 const IS_TEST_MODE = process.argv.includes('--test');
 
+// Parse Max Notifications Flag
+const args = process.argv.slice(2);
+const maxArg = args.find(arg => arg.startsWith('--max-notifications='));
+const MAX_MESSAGES_TO_PROCESS = maxArg ? parseInt(maxArg.split('=')[1]) : Infinity;
+
+const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID;
+
+if (IS_TEST_MODE && !ADMIN_CHAT_ID) {
+    console.error('❌ ADMIN_CHAT_ID required for test mode (check .env).');
+    process.exit(1);
+}
+
 async function run() {
     console.log(`🚀 Starting Weekend Invitation (All) Script`);
     console.log(`   Mode: ${IS_DRY_RUN ? 'DRY RUN' : 'LIVE'}`);
-    console.log(`   Test Mode: ${IS_TEST_MODE ? 'ON (Target: Admins only)' : 'OFF'}`);
+    console.log(`   Test Mode: ${IS_TEST_MODE ? `ON (All to Admin ${ADMIN_CHAT_ID})` : 'OFF'}`);
+    if (MAX_MESSAGES_TO_PROCESS !== Infinity) console.log(`   Limit: ${MAX_MESSAGES_TO_PROCESS} messages`);
 
     try {
         console.log('📡 Fetching users from Airtable...');
         // Filter: Has Tg_ID, NOT({No_Spam}), {Consent_GDPR}, NOT({Weekend_Notification_Sent})
-        // Note: We do NOT filter by status here, as we target ALL.
         const records = await base(process.env.AIRTABLE_MEMBERS_TABLE).select({
             filterByFormula: "AND({Tg_ID} != '', NOT({No_Spam}), {Consent_GDPR}, NOT({Weekend_Notification_Sent}))",
             view: "Grid view"
@@ -53,22 +66,34 @@ async function run() {
 
         let sentCount = 0;
         let skippedCount = 0;
+        let processedCount = 0;
 
         for (const record of records) {
+            if (processedCount >= MAX_MESSAGES_TO_PROCESS) {
+                 console.log(`🛑 Limit of ${MAX_MESSAGES_TO_PROCESS} reached.`);
+                 break;
+            }
+
             const name = record.fields.Name || 'Member';
             const userTgId = record.fields.Tg_ID;
-            const status = record.fields.Status;
             const nextWeekStatus = record.fields.Next_Week_Status; // Active or Passive
 
-            // Test Mode Filter
-            if (IS_TEST_MODE && status !== 'Admin') {
-                continue;
+            // In new test mode logic, we DO NOT filter by status. We process everyone but redirect.
+            // if (IS_TEST_MODE && status !== 'Admin') continue; // REMOVED
+
+            // Determine Recipient
+            let targetId = userTgId;
+            let messagePrefix = '';
+            
+            if (IS_TEST_MODE) {
+                targetId = ADMIN_CHAT_ID;
+                messagePrefix = `[TEST MODE - Original Reicipient: ${name}]\n\n`;
             }
 
             // Determine Message Based on Status
             let message = "";
             if (nextWeekStatus === 'Active') {
-                message = `☕️↔☕️
+                message = `${messagePrefix}☕️↔☕️
 Hello, ${name} 
 New week is starting!
 
@@ -78,7 +103,7 @@ If you want to skip the week — just press the button below.
 See you 💜`;
             } else {
                 // Passive (or undefined/other)
-                message = `☕️↔☕️
+                message = `${messagePrefix}☕️↔☕️
 Hello, ${name} 
 New week is starting!
 
@@ -100,18 +125,20 @@ See you 💜`;
             ]);
 
             if (IS_DRY_RUN) {
-                console.log(`   [DRY RUN] Would send to ${name} (${userTgId}) [Status: ${nextWeekStatus || 'None'}]`);
-                // console.log(message); // Uncomment to debug message content
+                console.log(`   [DRY RUN] Would send to ${name} (Target: ${targetId}) [Status: ${nextWeekStatus || 'None'}]`);
+                // console.log(message); 
+                processedCount++;
                 sentCount++;
                 continue;
             }
 
             try {
-                await bot.telegram.sendMessage(userTgId, message, keyboard);
-                console.log(`   ✅ Sent to ${name} (${userTgId})`);
+                await bot.telegram.sendMessage(targetId, message, keyboard);
+                console.log(`   ✅ Sent to ${IS_TEST_MODE ? `ADMIN for ${name}` : name} (${targetId})`);
                 
-                // Mark as sent
-                if (!IS_DRY_RUN) {
+                // Mark as sent - ONLY if NOT IN TEST MODE (or maybe we want to test status update too? User said "Rebuild --test... sends to Admin". Usually updating status invalidates real user data).
+                // I will skip status update in test mode logic to be safe.
+                if (!IS_TEST_MODE) {
                     try {
                         await base(process.env.AIRTABLE_MEMBERS_TABLE).update([{
                             id: record.id,
@@ -123,13 +150,17 @@ See you 💜`;
                     } catch (updateErr) {
                         console.error(`      ❌ Failed to mark as sent:`, updateErr.message);
                     }
+                } else {
+                     console.log(`      [TEST] Would mark as sent (skipped)`);
                 }
                 
                 sentCount++;
             } catch (err) {
-                console.error(`   ❌ Failed to send to ${name} (${userTgId}):`, err.message);
+                console.error(`   ❌ Failed to send to ${name} (${targetId}):`, err.message);
                 skippedCount++;
             }
+            
+            processedCount++;
 
             // Rate limit delay
             await new Promise(resolve => setTimeout(resolve, 100));

@@ -7,8 +7,9 @@
  *   node backend/scripts/midweek-checkin.js [options]
  *
  * Options:
- *   --dry-run   : Log actions without sending messages
- *   --test      : Send all messages to the test Admin ID (defined in constant)
+ *   --dry-run               : Log actions without sending messages
+ *   --test                  : Send ALL messages to ADMIN_CHAT_ID (no DB update)
+ *   --max-notifications=N   : Limit processing to N matches
  *
  * Examples:
  *   node backend/scripts/midweek-checkin.js --dry-run
@@ -32,8 +33,20 @@ if (!botToken) {
 }
 const bot = new Telegraf(botToken);
 
-const IS_DRY_RUN = process.argv.includes('--dry-run');
-const IS_TEST_MODE = process.argv.includes('--test');
+const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID;
+
+// Parse Max Notifications Flag
+const args = process.argv.slice(2);
+const maxArg = args.find(arg => arg.startsWith('--max-notifications='));
+const MAX_MATCHES_TO_PROCESS = maxArg ? parseInt(maxArg.split('=')[1]) : Infinity;
+
+const IS_DRY_RUN = args.includes('--dry-run');
+const IS_TEST_MODE = args.includes('--test');
+
+if (IS_TEST_MODE && !ADMIN_CHAT_ID) {
+    console.error('❌ ADMIN_CHAT_ID required for test mode (check .env).');
+    process.exit(1);
+}
 
 // Helper to get Monday of the current week
 function getMonday(d) {
@@ -53,14 +66,9 @@ const cleanUsername = (username) => {
 
 async function sendFeedbackRequests() {
     console.log(`Starting feedback request script...`);
-    if (IS_DRY_RUN) console.log('DRY RUN MODE: No messages will be sent.');
-    if (IS_TEST_MODE) {
-        if (!process.env.ADMIN_CHAT_ID) {
-            console.error('Error: ADMIN_CHAT_ID not found in .env. Cannot run in test mode.');
-            process.exit(1);
-        }
-        console.log(`TEST MODE: Sending all messages to ADMIN_CHAT_ID (${process.env.ADMIN_CHAT_ID})`);
-    }
+    console.log(`   Mode: ${IS_DRY_RUN ? 'DRY RUN' : 'LIVE'}`);
+    console.log(`   Test Mode: ${IS_TEST_MODE ? `ON (All to Admin ${ADMIN_CHAT_ID})` : 'OFF'}`);
+    if (MAX_MATCHES_TO_PROCESS !== Infinity) console.log(`   Limit: ${MAX_MATCHES_TO_PROCESS} matches`);
 
     const mondayDate = getMonday(new Date());
     const weekStartStr = mondayDate.toISOString().split('T')[0];
@@ -74,15 +82,17 @@ async function sendFeedbackRequests() {
 
         console.log(`Found ${matches.length} matches to process.`);
 
+        let processedCount = 0;
+
         for (const match of matches) {
+            if (processedCount >= MAX_MATCHES_TO_PROCESS) {
+                 console.log(`🛑 Limit of ${MAX_MATCHES_TO_PROCESS} reached.`);
+                 break;
+            }
+
             const matchId = match.id;
-            const member1Id = match.fields.Member1 ? match.fields.Member1[0] : null;
-            const member2Id = match.fields.Member2 ? match.fields.Member2[0] : null;
-
-            // Fetch member details including Tg_ID and Username
-            // Note: We used lookups in schema, so we might have arrays of values directly in match record
-            // Schema says: Tg_ID (from Member1) is multipleLookupValues
-
+            
+            // Fetch member details
             const m1TgId = match.fields['Tg_ID (from Member1)'] ? match.fields['Tg_ID (from Member1)'][0] : null;
             const m1Username = match.fields['Tg_Username (from Member1)'] ? match.fields['Tg_Username (from Member1)'][0] : null;
 
@@ -96,7 +106,8 @@ async function sendFeedbackRequests() {
             await sendToMember(matchId, 2, m2TgId, m1Username);
 
             // Update match record to mark as checked in
-            if (!IS_DRY_RUN) {
+            // Logic: Not Dry Run AND Not Test Mode (to preserve real state)
+            if (!IS_DRY_RUN && !IS_TEST_MODE) {
                 try {
                     await base('tblx2OEN5sSR1xFI2').update([{
                         id: matchId,
@@ -108,7 +119,11 @@ async function sendFeedbackRequests() {
                 } catch (err) {
                     console.error(`Failed to mark match ${matchId} as checked in:`, err);
                 }
+            } else if (IS_TEST_MODE) {
+                 console.log(`[TEST] Would mark match ${matchId} as checked in (Skipped)`);
             }
+            
+            processedCount++;
         }
 
         console.log('Finished processing all matches.');
@@ -128,7 +143,15 @@ async function sendToMember(matchId, role, memberTgId, partnerUsername) {
         ? `https://linked.coffee/profile/${cleanUsername(partnerUsername)}`
         : 'your partner';
 
-    const message = `Hey there 👋
+    let messagePrefix = '';
+    let targetId = memberTgId;
+    
+    if (IS_TEST_MODE) {
+        targetId = ADMIN_CHAT_ID;
+        messagePrefix = `[TEST MODE - Original Reicipient: ${memberTgId}]\n\n`;
+    }
+
+    const message = `${messagePrefix}Hey there 👋
 
 How is your Coffee going? 
 Have you met with your partner already? 
@@ -147,21 +170,19 @@ Just press the button below to answer:`;
         ]
     ]);
 
-    const targetId = IS_TEST_MODE ? process.env.ADMIN_CHAT_ID : memberTgId;
-
     if (IS_DRY_RUN) {
-        console.log(`[DRY RUN] Would send to ${targetId} (Role ${role}):`);
+        console.log(`[DRY RUN] Would send to ${IS_TEST_MODE ? `ADMIN for ${memberTgId}` : memberTgId} (Role ${role}):`);
         console.log(message);
         return;
     }
 
     try {
         await bot.telegram.sendMessage(targetId, message, keyboard);
-        console.log(`Sent feedback request to Member ${role} (TgID: ${targetId}) for match ${matchId}`);
+        console.log(`Sent feedback request to Member ${role} (Target: ${targetId}) for match ${matchId}`);
         // Delay to avoid hitting rate limits
         await new Promise(resolve => setTimeout(resolve, 100));
     } catch (error) {
-        console.error(`Failed to send to Member ${role} (TgID: ${targetId}):`, error.message);
+        console.error(`Failed to send to Member ${role} (Target: ${targetId}):`, error.message);
     }
 }
 

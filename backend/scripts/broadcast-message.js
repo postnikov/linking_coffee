@@ -4,7 +4,7 @@
  * Sends a custom message to a specific group of users.
  * 
  * Usage:
- *   node backend/scripts/broadcast-message.js --target=[all|admins|unmatched|matched] [--dry-run]
+ *   node backend/scripts/broadcast-message.js --target=[all|admins|unmatched|matched] [--dry-run] [--test] [--max-notifications=N]
  * 
  * Targets:
  *   - all       : All users with Consent_GDPR checked and a Telegram ID.
@@ -50,8 +50,19 @@ const MATCHES_TABLE = 'tblx2OEN5sSR1xFI2'; // From schema
 // --- ARGS ---
 const args = process.argv.slice(2);
 const isDryRun = args.includes('--dry-run');
+const isTestMode = args.includes('--test');
 const targetArg = args.find(a => a.startsWith('--target='));
 const target = targetArg ? targetArg.split('=')[1] : null;
+
+// Parse Max Notifications Flag
+const maxArg = args.find(arg => arg.startsWith('--max-notifications='));
+const MAX_MESSAGES_TO_PROCESS = maxArg ? parseInt(maxArg.split('=')[1]) : Infinity;
+
+const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID;
+if (isTestMode && !ADMIN_CHAT_ID) {
+    console.error('❌ ADMIN_CHAT_ID required for test mode (check .env).');
+    process.exit(1);
+}
 
 // --- HELPERS ---
 function getMonday(d) {
@@ -157,6 +168,8 @@ async function run() {
     console.log(`🚀 Starting Broadcast Script`);
     console.log(`   Target: ${target}`);
     console.log(`   Dry Run: ${isDryRun}`);
+    console.log(`   Test Mode: ${isTestMode ? `ON (All to Admin ${ADMIN_CHAT_ID})` : 'OFF'}`);
+    if (MAX_MESSAGES_TO_PROCESS !== Infinity) console.log(`   Limit: ${MAX_MESSAGES_TO_PROCESS} messages`);
     console.log(`   Message Length: ${MESSAGE_TEXT.length} chars`);
 
     try {
@@ -165,29 +178,46 @@ async function run() {
 
         let success = 0;
         let fail = 0;
+        let processedCount = 0;
 
         for (const recipient of recipients) {
-            const name = recipient.fields.Name;
+            if (processedCount >= MAX_MESSAGES_TO_PROCESS) {
+                 console.log(`🛑 Limit of ${MAX_MESSAGES_TO_PROCESS} reached.`);
+                 break;
+            }
+
+            const name = recipient.fields.Name || 'User';
             const tgId = recipient.fields.Tg_ID;
 
             if (!tgId) continue;
 
+            let targetId = tgId;
+            let message = MESSAGE_TEXT;
+            
+            if (isTestMode) {
+                targetId = ADMIN_CHAT_ID;
+                message = `[TEST MODE - Original Reicipient: ${name}]\n\n${MESSAGE_TEXT}`;
+            }
+
             if (isDryRun) {
-                console.log(`   [DRY RUN] Would send to ${name} (${tgId})`);
-                success++; // Count as success for dry run stats
+                console.log(`   [DRY RUN] Would send to ${isTestMode ? `ADMIN for ${name}` : name} (${targetId})`);
+                success++; 
+                processedCount++;
                 continue;
             }
 
             try {
-                await bot.telegram.sendMessage(tgId, MESSAGE_TEXT);
-                console.log(`   ✅ Sent to ${name} (${tgId})`);
+                await bot.telegram.sendMessage(targetId, message);
+                console.log(`   ✅ Sent to ${isTestMode ? `ADMIN for ${name}` : name} (${targetId})`);
                 success++;
                 // Small pause to be nice to API
                 await new Promise(r => setTimeout(r, 50));
             } catch (e) {
-                console.error(`   ❌ Failed to send to ${name} (${tgId}): ${e.message}`);
+                console.error(`   ❌ Failed to send to ${name} (${targetId}): ${e.message}`);
                 fail++;
             }
+            
+            processedCount++;
         }
 
         console.log('\n🏁 Done!');
