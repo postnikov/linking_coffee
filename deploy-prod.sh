@@ -44,7 +44,15 @@ if [ $? -ne 0 ]; then
 fi
 
 # 3. Trigger deployment on server
+# 3. Copy production docker-compose file and trigger deployment
 echo "📡 Connecting to server ($SERVER_IP) to deploy..."
+scp docker-compose.prod.yml $SERVER_USER@$SERVER_IP:$SERVER_DIR/docker-compose.yml
+
+if [ $? -ne 0 ]; then
+  echo "❌ Failed to copy docker-compose.prod.yml to server."
+  exit 1
+fi
+
 ssh $SERVER_USER@$SERVER_IP "cd $SERVER_DIR && ./deploy.sh"
 
 if [ $? -eq 0 ]; then
