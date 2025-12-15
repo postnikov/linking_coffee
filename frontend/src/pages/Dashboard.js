@@ -1737,6 +1737,40 @@ const Dashboard = () => {
                                     </Link>
                                 </div>
                             </div>
+                            
+                            {/* AI Intro / Context */}
+                            {currentMatch.intro && (
+                                <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(0,0,0,0.05)' }}>
+                                    <h4 style={{ fontSize: '0.95rem', color: '#4b5563', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        ✨ Why you matched
+                                    </h4>
+                                    <p style={{ fontSize: '0.9rem', color: '#374151', lineHeight: '1.5', fontStyle: 'italic', marginBottom: '1rem' }}>
+                                        "{currentMatch.intro.why_interesting}"
+                                    </p>
+                                    
+                                    {currentMatch.intro.conversation_starters && currentMatch.intro.conversation_starters.length > 0 && (
+                                        <div>
+                                             <h4 style={{ fontSize: '0.95rem', color: '#4b5563', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                💬 Icebreakers
+                                            </h4>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                                {currentMatch.intro.conversation_starters.map((starter, idx) => (
+                                                    <div key={idx} style={{ 
+                                                        background: 'white', 
+                                                        padding: '0.5rem 0.75rem', 
+                                                        borderRadius: '0.5rem', 
+                                                        fontSize: '0.85rem', 
+                                                        color: '#4b5563',
+                                                        border: '1px solid rgba(0,0,0,0.05)'
+                                                    }}>
+                                                        {starter}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     )}
 

@@ -1136,11 +1136,22 @@ app.get('/api/profile', async (req, res) => {
         const isMember1 = member1Username === cleanUsername;
         const otherMemberPrefix = isMember1 ? 'Member2' : 'Member1';
         const otherMemberLink = match.fields[otherMemberPrefix];
+        
+        // Extract Intro for the current user
+        let introRaw = isMember1 ? match.fields.Intro_1 : match.fields.Intro_2;
+        let intro = null;
+        if (introRaw) {
+            try {
+                intro = JSON.parse(introRaw);
+            } catch (e) {
+                console.error('Failed to parse current match intro:', e);
+            }
+        }
 
         if (otherMemberLink && otherMemberLink.length > 0) {
           enrichmentPromises.push(
             base(process.env.AIRTABLE_MEMBERS_TABLE).find(otherMemberLink[0])
-              .then(r => ({ type: 'partner', data: r }))
+              .then(r => ({ type: 'partner', data: r, intro: intro }))
               .catch(e => ({ type: 'partner', error: e }))
           );
         }
@@ -1154,6 +1165,25 @@ app.get('/api/profile', async (req, res) => {
     let country = null;
     let city = null;
     let currentMatch = null;
+    
+    // Prepare Match Intro for the Public Profile View (Requester viewing User)
+    let publicMatchIntro = null;
+    if (cleanUsername !== cleanRequester && accessMatchRecords.length > 0) {
+        const accessMatch = accessMatchRecords[0];
+        // Who is the requester in this match?
+        const m1Username = accessMatch.fields['Tg_Username (from Member1)'] ? accessMatch.fields['Tg_Username (from Member1)'][0] : '';
+        // Note: accessMatch filter ensures one of them is requester and the other is target.
+        const requesterIsMember1 = m1Username === cleanRequester;
+        const introString = requesterIsMember1 ? accessMatch.fields.Intro_1 : accessMatch.fields.Intro_2;
+        
+        if (introString) {
+            try {
+                publicMatchIntro = JSON.parse(introString);
+            } catch (e) {
+                console.error('Failed to parse public match intro:', e);
+            }
+        }
+    }
 
     enrichmentResults.forEach(res => {
       if (res.error) {
@@ -1176,7 +1206,8 @@ app.get('/api/profile', async (req, res) => {
           name: r.fields.Name,
           family: r.fields.Family,
           username: r.fields.Tg_Username,
-          avatar: r.fields.Avatar && r.fields.Avatar.length > 0 ? r.fields.Avatar[0].url : ''
+          avatar: r.fields.Avatar && r.fields.Avatar.length > 0 ? r.fields.Avatar[0].url : '',
+          intro: res.intro // Attach the intro we parsed earlier
         };
       }
     });
@@ -1208,7 +1239,7 @@ app.get('/api/profile', async (req, res) => {
     };
     
     console.timeEnd(`Profile_Req_${requestId}`);
-    res.json({ success: true, profile, currentMatch });
+    res.json({ success: true, profile, currentMatch, matchIntro: publicMatchIntro });
 
   } catch (error) {
     console.error('Profile API Error:', error);
