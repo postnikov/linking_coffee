@@ -1119,20 +1119,31 @@ app.get('/api/profile', async (req, res) => {
     let matchDataRaw = null;
     if (latestMatchRecords.length > 0) {
       const match = latestMatchRecords[0];
-      matchDataRaw = match; // Store for later debugging or usage if needed
+      
+      // Calculate start of current week (Monday)
+      const d = new Date();
+      const day = d.getDay();
+      const diff = d.getDate() - day + (day == 0 ? -6 : 1);
+      const monday = new Date(d.setDate(diff));
+      const currentWeekStart = monday.toISOString().split('T')[0];
 
-      // Identify partner ID to fetch
-      const member1Username = match.fields['Tg_Username (from Member1)'] ? match.fields['Tg_Username (from Member1)'][0] : '';
-      const isMember1 = member1Username === cleanUsername;
-      const otherMemberPrefix = isMember1 ? 'Member2' : 'Member1';
-      const otherMemberLink = match.fields[otherMemberPrefix];
+      // Only show if the match is for the current week
+      if (match.fields.Week_Start === currentWeekStart) {
+        matchDataRaw = match;
 
-      if (otherMemberLink && otherMemberLink.length > 0) {
-        enrichmentPromises.push(
-          base(process.env.AIRTABLE_MEMBERS_TABLE).find(otherMemberLink[0])
-            .then(r => ({ type: 'partner', data: r }))
-            .catch(e => ({ type: 'partner', error: e }))
-        );
+        // Identify partner ID to fetch
+        const member1Username = match.fields['Tg_Username (from Member1)'] ? match.fields['Tg_Username (from Member1)'][0] : '';
+        const isMember1 = member1Username === cleanUsername;
+        const otherMemberPrefix = isMember1 ? 'Member2' : 'Member1';
+        const otherMemberLink = match.fields[otherMemberPrefix];
+
+        if (otherMemberLink && otherMemberLink.length > 0) {
+          enrichmentPromises.push(
+            base(process.env.AIRTABLE_MEMBERS_TABLE).find(otherMemberLink[0])
+              .then(r => ({ type: 'partner', data: r }))
+              .catch(e => ({ type: 'partner', error: e }))
+          );
+        }
       }
     }
 
