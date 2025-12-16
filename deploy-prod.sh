@@ -53,7 +53,7 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-ssh $SERVER_USER@$SERVER_IP "cd $SERVER_DIR && ./deploy.sh"
+ssh $SERVER_USER@$SERVER_IP "cd $SERVER_DIR && git pull && docker-compose down && docker-compose up -d --build"
 
 if [ $? -eq 0 ]; then
     echo "✅ Deployment completed successfully!"
