@@ -99,14 +99,15 @@
         "verify_btn": "Войти",
         "step1_btn": "Войти через Telegram",
         "step2_title": "Подтвердите аккаунт",
-        "step2_subtitle": "Пожалуйста, введите код подтверждения, отправленный вам в Telegram.",
+        "step2_subtitle": "Пожалуйста, введите код подтверждения, отправленный вам в <1>Telegram</1>.",
         "otp_sent_proactive": "Код отправлен в ваш Telegram!",
         "check_bot": "Проверьте <1>@linked_coffee_bot</1>",
         "verify_existing": "Пожалуйста, введите код подтверждения, отправленный в ваш Telegram.",
         "verify_new": "Пожалуйста, запустите наш телеграм бот <1>@Linked_Coffee_Bot</1>, нажмите start и получите код подтверждения",
         "welcome_back": "С возвращением в Linked Coffee",
         "get_code": "Получить код",
-        "open_bot": "Открыть LC Bot"
+        "open_bot": "Открыть LC Bot",
+        "warning_msg": "⚠️ Вы получите код <1>в Телеграм Боте</1> ⚠️"
     },
     "header": {
         "about": "О проекте",

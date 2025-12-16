@@ -100,14 +100,15 @@
         "verify_btn": "Login",
         "step1_btn": "Login with Telegram",
         "step2_title": "Verify your account",
-        "step2_subtitle": "Please enter the verification code sent to your Telegram.",
+        "step2_subtitle": "Please enter the verification code sent to your <1>Telegram</1>.",
         "otp_sent_proactive": "Code sent to your Telegram!",
         "check_bot": "Check <1>@linked_coffee_bot</1>",
         "verify_existing": "Please enter the verification code sent to your Telegram.",
         "verify_new": "Please launch our telegram bot <1>@Linked_Coffee_Bot</1>, press start and get your verification code",
         "welcome_back": "Welcome back to Linked Coffee",
         "get_code": "Get Code",
-        "open_bot": "Open LC Bot"
+        "open_bot": "Open LC Bot",
+        "warning_msg": "⚠️ You will get the code <1>in Telegram Bot</1> ⚠️"
     },
     "header": {
         "about": "About",

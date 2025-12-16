@@ -33,6 +33,9 @@ const LoginPage = ({ onLogin }) => {
             return;
         }
 
+        // Open window immediately to bypass popup blockers
+        const botWindow = window.open('', '_blank');
+
         try {
             const response = await fetch(`${API_URL}/api/register`, {
                 method: 'POST',
@@ -47,14 +50,17 @@ const LoginPage = ({ onLogin }) => {
                 setHasTelegramId(data.hasTelegramId);
                 setStep(2);
                 setIsLoading(false);
-                // Attempt to open the bot link. Note: This might be blocked by popup blockers if the async delay is too long.
-                window.open('https://t.me/Linked_Coffee_Bot', '_blank');
+                if (botWindow) {
+                    botWindow.location.href = 'https://t.me/Linked_Coffee_Bot';
+                }
             } else {
                 setIsLoading(false);
+                if (botWindow) botWindow.close();
                 alert(data.message || t('form.error_generic'));
             }
         } catch (error) {
             setIsLoading(false);
+            if (botWindow) botWindow.close();
             alert(t('form.error_generic'));
         }
     };
@@ -160,7 +166,16 @@ const LoginPage = ({ onLogin }) => {
                         {step === 1 ? (
                             t('form.welcome_back')
                         ) : (
-                            hasTelegramId && t('form.verify_existing')
+                            hasTelegramId ? (
+                                t('form.verify_existing')
+                            ) : (
+                                <Trans
+                                    i18nKey="form.step2_subtitle"
+                                    components={{
+                                        1: <strong />
+                                    }}
+                                />
+                            )
                         )}
                     </p>
                     {step === 2 && (
@@ -201,6 +216,16 @@ const LoginPage = ({ onLogin }) => {
                                     required
                                 />
                             </div>
+                        </div>
+                        
+                        {/* Warning Message */}
+                        <div style={{ margin: '0.5rem 0 0.5rem', textAlign: 'center', fontSize: '0.9rem', color: '#15803d' }}>
+                            <Trans
+                                i18nKey="form.warning_msg"
+                                components={{
+                                    1: <strong />
+                                }}
+                            />
                         </div>
 
                         <button type="submit" className="submit-btn" disabled={isLoading}>
@@ -251,6 +276,7 @@ const LoginPage = ({ onLogin }) => {
                                 <Trans
                                     i18nKey="form.verify_new"
                                     components={{
+                                        // eslint-disable-next-line jsx-a11y/anchor-has-content
                                         1: <a href="https://t.me/Linked_Coffee_Bot" target="_blank" rel="noopener noreferrer" style={{ color: '#7c3aed', textDecoration: 'underline', fontWeight: 'bold' }} />
                                     }}
                                 />
@@ -281,11 +307,6 @@ const LoginPage = ({ onLogin }) => {
                         </button>
                     </form>
                 )}
-            </div>
-            {/* DEBUG OVERLAY - TO BE REMOVED */}
-            <div style={{position:'fixed', bottom:'10px', right:'10px', background:'rgba(255,0,0,0.8)', color:'white', padding:'10px', zIndex:9999, borderRadius:'4px', fontSize:'12px'}}>
-                Debug: v2 Loaded<br/>
-                hasTelegramId: {hasTelegramId ? 'TRUE' : 'FALSE'}
             </div>
         </main>
     );

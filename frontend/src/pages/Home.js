@@ -26,6 +26,9 @@ const Home = ({ onLogin }) => {
             return;
         }
 
+        // Open window immediately to bypass popup blockers
+        const botWindow = window.open('', '_blank');
+
         try {
             const response = await fetch(`${API_URL}/api/register`, {
                 method: 'POST',
@@ -40,16 +43,21 @@ const Home = ({ onLogin }) => {
                 setHasTelegramId(data.hasTelegramId);
                 setStep(2);
                 setIsLoading(false);
+                if (botWindow) {
+                    botWindow.location.href = 'https://t.me/Linked_Coffee_Bot';
+                }
                 // Optional: Set a message based on whether OTP was sent proactively
                 // if (data.hasTelegramId) {
                 //     setMessage(t('form.otp_sent_proactive') || "Code sent to your Telegram!");
                 // }
             } else {
                 setIsLoading(false);
+                if (botWindow) botWindow.close();
                 alert(data.message || t('form.error_generic'));
             }
         } catch (error) {
             setIsLoading(false);
+            if (botWindow) botWindow.close();
             alert(t('form.error_generic'));
         }
     };
@@ -188,7 +196,16 @@ const Home = ({ onLogin }) => {
                                 {step === 1 ? (
                                     <Trans i18nKey="form.subtitle" />
                                 ) : (
-                                    hasTelegramId && t('form.verify_existing')
+                                    hasTelegramId ? (
+                                        t('form.verify_existing')
+                                    ) : (
+                                        <Trans
+                                            i18nKey="form.step2_subtitle"
+                                            components={{
+                                                1: <strong />
+                                            }}
+                                        />
+                                    )
                                 )}
                             </p>
                         </div>
@@ -212,6 +229,16 @@ const Home = ({ onLogin }) => {
                                             required
                                         />
                                     </div>
+                                </div>
+                                
+                                {/* Warning Message */}
+                                <div style={{ margin: '0.5rem 0 0.5rem', textAlign: 'center', fontSize: '0.9rem', color: '#15803d' }}>
+                                    <Trans
+                                        i18nKey="form.warning_msg"
+                                        components={{
+                                            1: <strong />
+                                        }}
+                                    />
                                 </div>
 
                                 <button type="submit" className="submit-btn" disabled={isLoading}>
@@ -244,10 +271,23 @@ const Home = ({ onLogin }) => {
                                     </div>
                                 </div>
                                 {!hasTelegramId && (
-                                    <div style={{ margin: '1rem 0', textAlign: 'center', fontSize: '0.9rem', color: '#4b5563', lineHeight: '1.5' }}>
+                                    <div style={{ 
+                                        margin: '1.5rem 0', 
+                                        textAlign: 'center', 
+                                        fontSize: '1.05rem', 
+                                        color: '#1e3a8a', 
+                                        lineHeight: '1.5',
+                                        backgroundColor: '#eff6ff',
+                                        padding: '1.25rem',
+                                        borderRadius: '0.75rem',
+                                        border: '1px solid #bfdbfe',
+                                        fontWeight: '500',
+                                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+                                    }}>
                                         <Trans
                                             i18nKey="form.verify_new"
                                             components={{
+                                                // eslint-disable-next-line jsx-a11y/anchor-has-content
                                                 1: <a href="https://t.me/Linked_Coffee_Bot" target="_blank" rel="noopener noreferrer" style={{ color: '#7c3aed', textDecoration: 'underline', fontWeight: 'bold' }} />
                                             }}
                                         />
