@@ -165,7 +165,7 @@ const AdminHealth = ({ user, isAdmin }) => {
     setLoading(true);
     setError(null);
     try {
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+      const API_URL = process.env.REACT_APP_API_URL || '';
       const headers = {
         'Content-Type': 'application/json',
         'x-admin-user': user.tg_username // Custom header for auth check
