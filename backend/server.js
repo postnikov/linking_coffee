@@ -932,15 +932,36 @@ app.get('/api/admin/backups', checkAdmin, (req, res) => {
   
   if (fs.existsSync(dir)) {
     try {
-      const files = fs.readdirSync(dir).map(f => {
-        const stats = fs.statSync(path.join(dir, f));
-        return {
-          name: f,
-          size: stats.size,
-          created: stats.birthtime,
-          mtime: stats.mtime
-        };
-      }).sort((a,b) => b.mtime - a.mtime); // Newest first
+      let fileList = [];
+
+      // Helper to process a directory
+      const processDir = (baseDir, relativePath = '') => {
+        const fullPath = path.join(baseDir, relativePath);
+        if (fs.existsSync(fullPath)) {
+          const items = fs.readdirSync(fullPath);
+          items.forEach(f => {
+            const itemPath = path.join(fullPath, f);
+            const stats = fs.statSync(itemPath);
+            if (stats.isDirectory()) {
+              // Only recurse into 'daily' for now to match script logic
+              if (f === 'daily') {
+                processDir(baseDir, path.join(relativePath, f));
+              }
+            } else {
+              fileList.push({
+                name: path.join(relativePath, f), // e.g. "daily/backup.json.gz"
+                size: stats.size,
+                created: stats.birthtime,
+                mtime: stats.mtime
+              });
+            }
+          });
+        }
+      };
+
+      processDir(dir);
+
+      const files = fileList.sort((a,b) => b.mtime - a.mtime); // Newest first
       res.json({ success: true, files });
     } catch (e) {
       console.error('Backup listing error:', e);
