@@ -10,6 +10,7 @@ import Prices from './pages/Prices';
 import Dashboard from './pages/Dashboard';
 import PublicProfile from './pages/PublicProfile';
 import AdminPage from './pages/AdminPage';
+import TokenProfile from './pages/TokenProfile';
 // import AdminHealth from './pages/AdminHealth'; // Now integrated
 
 
@@ -69,6 +70,7 @@ function App() {
                     <MainLayout>
                         <Routes>
                             <Route path="/" element={user ? <Dashboard /> : <Home onLogin={handleLogin} />} />
+                            <Route path="/view/:token" element={<TokenProfile />} />
                             <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
                             <Route path="/about" element={<About />} />
                             <Route path="/rules" element={<Rules />} />
