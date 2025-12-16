@@ -45,8 +45,6 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-      args:
-        - REACT_APP_API_URL=https://linked.coffee
     container_name: linking-coffee-frontend
     restart: unless-stopped
     ports:
