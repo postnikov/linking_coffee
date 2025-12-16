@@ -18,8 +18,14 @@
  */
 
 const path = require('path');
+const crypto = require('crypto');
 require('dotenv').config({ path: path.join(__dirname, '../../.env') });
 const Airtable = require('airtable');
+
+// Generate a URL-safe token for profile viewing
+function generateViewToken() {
+    return crypto.randomBytes(16).toString('hex'); // 32 chars
+}
 
 // Configuration
 const MEMBERS_TABLE = process.env.AIRTABLE_MEMBERS_TABLE;
@@ -417,7 +423,9 @@ async function main() {
                             'Status': 'Matched',
                             'Notifications': 'Pending',
                             'Intro_1': intro1,
-                            'Intro_2': intro2
+                            'Intro_2': intro2,
+                            'View_Token_1': generateViewToken(),
+                            'View_Token_2': generateViewToken()
                         }
                     };
                 }));

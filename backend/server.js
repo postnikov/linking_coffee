@@ -1010,6 +1010,106 @@ app.get('/api/interests', (req, res) => {
   }
 });
 
+// Tokenized Profile View - No Auth Required
+app.get('/api/view/:token', async (req, res) => {
+  const { token } = req.params;
+  
+  if (!token || token.length !== 32) {
+    return res.status(404).json({ success: false, message: 'Invalid token' });
+  }
+
+  try {
+    // Find match by View_Token_1 or View_Token_2
+    const matchRecords = await base('tblx2OEN5sSR1xFI2').select({
+      filterByFormula: `OR({View_Token_1} = '${token}', {View_Token_2} = '${token}')`,
+      maxRecords: 1
+    }).firstPage();
+
+    if (matchRecords.length === 0) {
+      return res.status(404).json({ success: false, message: 'Token not found' });
+    }
+
+    const match = matchRecords[0];
+    const weekStart = new Date(match.fields.Week_Start);
+    const now = new Date();
+    const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+
+    // Check if match is older than 2 weeks
+    if (weekStart < twoWeeksAgo) {
+      return res.status(404).json({ success: false, message: 'Token expired' });
+    }
+
+    // Determine which profile to show based on which token was used
+    const isToken1 = match.fields.View_Token_1 === token;
+    // Token1 is for Member1 to view Member2, Token2 is for Member2 to view Member1
+    const partnerField = isToken1 ? 'Member2' : 'Member1';
+    const partnerLink = match.fields[partnerField];
+
+    if (!partnerLink || partnerLink.length === 0) {
+      return res.status(404).json({ success: false, message: 'Partner not found' });
+    }
+
+    // Fetch partner profile
+    const partnerRecord = await base(process.env.AIRTABLE_MEMBERS_TABLE).find(partnerLink[0]);
+    const p = partnerRecord.fields;
+
+    // Fetch country/city if linked
+    let country = null;
+    let city = null;
+
+    if (p.Country && p.Country.length > 0) {
+      try {
+        const countryRecord = await base('tblcBPZqf3wFEXGwq').find(p.Country[0]);
+        const isoCode = countryRecord.fields.ISO_Code;
+        const flag = isoCode ? isoCode.toUpperCase().replace(/./g, char => String.fromCodePoint(char.charCodeAt(0) + 127397)) : '';
+        country = { name: countryRecord.fields.Name_en, flag, iso: isoCode };
+      } catch (e) { /* ignore */ }
+    }
+
+    if (p.City && p.City.length > 0) {
+      try {
+        const cityRecord = await base('tblHpJu6sDjk99Wpt').find(p.City[0]);
+        city = { name: cityRecord.fields.name_en };
+      } catch (e) { /* ignore */ }
+    }
+
+    // Get intro for the viewer
+    const introField = isToken1 ? 'Intro_1' : 'Intro_2';
+    let intro = null;
+    if (match.fields[introField]) {
+      try {
+        intro = JSON.parse(match.fields[introField]);
+      } catch (e) { /* ignore */ }
+    }
+
+    const profile = {
+      name: p.Name,
+      family: p.Family,
+      avatar: p.Avatar && p.Avatar.length > 0 ? p.Avatar[0].url : null,
+      profession: p.Profession,
+      grade: p.Grade,
+      country,
+      city,
+      timezone: p.Timezone,
+      professionalDesc: p.Professional_Description,
+      personalDesc: p.Personal_Description,
+      professionalInterests: p.Professional_Interests,
+      personalInterests: p.Personal_Interests,
+      coffeeGoals: p.Coffee_Goals,
+      languages: p.Languages,
+      bestMeetingDays: p.Best_Meeting_Days,
+      linkedin: p.LinkedIn,
+      tg_username: p.Tg_Username
+    };
+
+    res.json({ success: true, profile, intro });
+
+  } catch (error) {
+    console.error('View Token API Error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
 // Step 4: Get User Profile
 // Step 4: Get User Profile
 app.get('/api/profile', async (req, res) => {

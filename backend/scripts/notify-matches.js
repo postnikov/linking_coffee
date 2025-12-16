@@ -52,11 +52,20 @@ if (!process.env.AIRTABLE_API_KEY || !process.env.AIRTABLE_BASE_ID || !BOT_TOKEN
 const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY }).base(process.env.AIRTABLE_BASE_ID);
 const bot = new Telegraf(BOT_TOKEN);
 
-function getMessage(lang, memberName, partnerName, partnerUsername, introData, isTest = false, realRecipientName = '') {
+function getMessage(lang, memberName, partnerName, partnerUsername, introData, isTest = false, realRecipientName = '', viewToken = null) {
     const isRu = lang === 'Ru';
-    const partnerLink = partnerUsername && partnerUsername !== '(no username)' 
-        ? (isRu ? `Ссылка: https://linked.coffee/profile/${partnerUsername.replace('@', '')}` : `Link: https://linked.coffee/profile/${partnerUsername.replace('@', '')}`) 
-        : '';
+    
+    // Use tokenized link if available, otherwise fall back to profile link
+    let partnerLink = '';
+    if (viewToken) {
+        partnerLink = isRu 
+            ? `Профиль: https://linked.coffee/view/${viewToken}` 
+            : `Profile: https://linked.coffee/view/${viewToken}`;
+    } else if (partnerUsername && partnerUsername !== '(no username)') {
+        partnerLink = isRu 
+            ? `Ссылка: https://linked.coffee/profile/${partnerUsername.replace('@', '')}` 
+            : `Link: https://linked.coffee/profile/${partnerUsername.replace('@', '')}`;
+    }
 
     let introText = '';
     if (introData) {
@@ -105,7 +114,7 @@ Good Luck!
     }
 }
 
-async function notifyMember(member, partner, introField) {
+async function notifyMember(member, partner, introField, viewToken = null) {
     const memberName = member.fields.Name || 'Friend';
     const partnerName = partner.fields.Name || 'a partner';
     const partnerUsername = partner.fields.Tg_Username ? `@${partner.fields.Tg_Username}` : '(no username)';
@@ -133,7 +142,7 @@ async function notifyMember(member, partner, introField) {
     // Determine Intro Field content (Intro_1 or Intro_2 passed from caller)
     // Note: Caller passes the raw string from Airtable
     
-    const message = getMessage(lang, memberName, partnerName, partnerUsername, introField, IS_TEST_MODE, memberName);
+    const message = getMessage(lang, memberName, partnerName, partnerUsername, introField, IS_TEST_MODE, memberName, viewToken);
 
     // Determine final recipient
     const targetChatId = IS_TEST_MODE ? ADMIN_CHAT_ID : recipientId;
@@ -215,11 +224,11 @@ async function main() {
                 let sent1 = false;
                 let sent2 = false;
 
-                // Notify Member 1 (Use Intro_1)
-                sent1 = await notifyMember(member1, member2, match.fields.Intro_1);
+                // Notify Member 1 (Use Intro_1, View_Token_1)
+                sent1 = await notifyMember(member1, member2, match.fields.Intro_1, match.fields.View_Token_1);
                 
-                // Notify Member 2 (Use Intro_2)
-                sent2 = await notifyMember(member2, member1, match.fields.Intro_2);
+                // Notify Member 2 (Use Intro_2, View_Token_2)
+                sent2 = await notifyMember(member2, member1, match.fields.Intro_2, match.fields.View_Token_2);
 
                 // Update Match record if ANY message was sent (or attempted in live mode)
                 // In DRY_RUN we don't update.
