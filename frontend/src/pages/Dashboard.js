@@ -24,7 +24,7 @@ const DAYS_OF_WEEK = [
     "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
 ];
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+const API_URL = process.env.REACT_APP_API_URL || '';
 
 const DAY_COLORS = {
     'Monday': '#fee2e2',

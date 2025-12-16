@@ -538,3 +538,12 @@
 [2025-12-16T13:57:41.710Z] GET /api/profile request for kisodrakon by kisodrakon
 [2025-12-16T13:57:41.742Z] GET /api/profile request for kisodrakon by kisodrakon
 [2025-12-16T13:57:41.752Z] GET /api/profile request for kisodrakon by kisodrakon
+[2025-12-16T14:05:30.559Z] GET /api/profile request for max_postnikov by max_postnikov
+[2025-12-16T14:05:31.761Z] GET /api/profile request for max_postnikov by max_postnikov
+[2025-12-16T14:06:38.856Z] PUT /api/profile request for max_postnikov. Data: Name=Maxim, Family=Postnikov
+[2025-12-16T14:10:17.230Z] GET /api/profile request for max_postnikov by max_postnikov
+[2025-12-16T14:10:18.598Z] GET /api/profile request for max_postnikov by max_postnikov
+[2025-12-16T14:13:30.980Z] GET /api/profile request for max_postnikov by max_postnikov
+[2025-12-16T14:13:32.137Z] GET /api/profile request for max_postnikov by max_postnikov
+[2025-12-16T19:25:20.699Z] GET /api/profile request for max_postnikov by max_postnikov
+[2025-12-16T19:25:20.735Z] GET /api/profile request for max_postnikov by max_postnikov
