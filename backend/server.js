@@ -884,16 +884,33 @@ app.post('/api/admin/bot/test', checkAdmin, async (req, res) => {
 
 // Logs
 app.get('/api/admin/logs', checkAdmin, (req, res) => {
-  const logsDir = path.join(__dirname, 'logs');
+  const logDir = path.join(__dirname, 'logs');
   const files = [];
 
-  // Root logs
-  if (fs.existsSync(debugLogFile)) files.push({ name: 'debug.log', path: 'logs/debug.log', size: fs.statSync(debugLogFile).size });
-  if (fs.existsSync(authLogFile)) files.push({ name: 'auth.log', path: 'logs/auth.log', size: fs.statSync(authLogFile).size });
+  if (fs.existsSync(logDir)) {
+    try {
+      const items = fs.readdirSync(logDir);
+      items.forEach(f => {
+        const filePath = path.join(logDir, f);
+        const stats = fs.statSync(filePath);
+        if (stats.isFile()) {
+           files.push({ 
+             name: f, 
+             path: `logs/${f}`, 
+             size: stats.size,
+             mtime: stats.mtime
+           });
+        }
+      });
+      
+      // Sort by modified time, newest first
+      files.sort((a,b) => b.mtime - a.mtime);
 
-  // Recursive or just simplified logs dir? The structure is backend/logs/auth.log and backend/debug.log.
-  // Actually authLogFile is defined as path.join(__dirname, 'logs/auth.log').
-  
+    } catch (e) {
+      console.error('Error listing log files:', e);
+    }
+  }
+
   res.json({ success: true, files });
 });
 
