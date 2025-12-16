@@ -16,7 +16,7 @@
     "script": "backup-airtable.js",
     "cron": "0 2 * * *",
     "enabled": true,
-    "lastRun": "2025-12-16T01:00:00.314Z",
+    "lastRun": "2025-12-16T07:51:34.740Z",
     "lastStatus": "Failed"
   }
 ]
