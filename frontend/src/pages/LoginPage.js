@@ -47,6 +47,8 @@ const LoginPage = ({ onLogin }) => {
                 setHasTelegramId(data.hasTelegramId);
                 setStep(2);
                 setIsLoading(false);
+                // Attempt to open the bot link. Note: This might be blocked by popup blockers if the async delay is too long.
+                window.open('https://t.me/Linked_Coffee_Bot', '_blank');
             } else {
                 setIsLoading(false);
                 alert(data.message || t('form.error_generic'));
@@ -230,8 +232,22 @@ const LoginPage = ({ onLogin }) => {
                                 />
                             </div>
                         </div>
+                        
+                        {/* Important: Verify New User Instructions */}
                         {!hasTelegramId && (
-                            <div style={{ margin: '1rem 0', textAlign: 'center', fontSize: '0.9rem', color: '#4b5563', lineHeight: '1.5' }}>
+                            <div style={{ 
+                                margin: '1.5rem 0', 
+                                textAlign: 'center', 
+                                fontSize: '1.05rem', 
+                                color: '#1e3a8a', 
+                                lineHeight: '1.5',
+                                backgroundColor: '#eff6ff',
+                                padding: '1.25rem',
+                                borderRadius: '0.75rem',
+                                border: '1px solid #bfdbfe',
+                                fontWeight: '500',
+                                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+                            }}>
                                 <Trans
                                     i18nKey="form.verify_new"
                                     components={{
@@ -265,6 +281,11 @@ const LoginPage = ({ onLogin }) => {
                         </button>
                     </form>
                 )}
+            </div>
+            {/* DEBUG OVERLAY - TO BE REMOVED */}
+            <div style={{position:'fixed', bottom:'10px', right:'10px', background:'rgba(255,0,0,0.8)', color:'white', padding:'10px', zIndex:9999, borderRadius:'4px', fontSize:'12px'}}>
+                Debug: v2 Loaded<br/>
+                hasTelegramId: {hasTelegramId ? 'TRUE' : 'FALSE'}
             </div>
         </main>
     );
