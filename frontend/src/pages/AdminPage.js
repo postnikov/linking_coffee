@@ -5,7 +5,7 @@ import './Dashboard.css'; // Reusing dashboard styles for now
 import './AdminPage.css'; // Admin specific overrides
 import AdminHealth from './AdminHealth';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+const API_URL = process.env.REACT_APP_API_URL || '';
 
 const AdminPage = () => {
     const { t } = useTranslation();
