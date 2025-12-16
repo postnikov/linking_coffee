@@ -12,6 +12,7 @@ services:
       - "3001:3001"
     volumes:
       - /opt/linking-coffee/logs:/app/logs
+      - /opt/linking-coffee/backups:/app/backups
     environment:
       - NODE_ENV=production
       - AIRTABLE_API_KEY=${AIRTABLE_API_KEY}
