@@ -1854,6 +1854,31 @@ const Dashboard = () => {
                             <h2 className="section-title" style={{ marginBottom: 0 }}>{t('dashboard.matching.title', 'Matching Settings')}</h2>
                         </div>
 
+                         {/* Community Block */}
+                         {formData.community && (
+                            <div className="input-group" style={{ marginBottom: '1.5rem', paddingBottom: '1.5rem', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                                    <label className="form-label" style={{ textAlign: 'left', margin: 0, display: 'flex', alignItems: 'center' }}>
+                                        {t('dashboard.matching.your_community', 'Your Community')}
+                                    </label>
+                                </div>
+                                <div style={{ 
+                                    background: '#f8fafc', 
+                                    padding: '0.75rem 1rem', 
+                                    borderRadius: '0.5rem', 
+                                    border: '1px solid #e2e8f0',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem',
+                                    color: '#1f2937',
+                                    fontWeight: '500'
+                                }}>
+                                    <span style={{ fontSize: '1.2rem' }}>🏙️</span>
+                                    {formData.community.name}
+                                </div>
+                            </div>
+                        )}
+
                         {/* Next Week Status Switch */}
                         <div className="input-group" style={{ marginBottom: '1.5rem', paddingBottom: '1.5rem', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', minHeight: '27px' }}>

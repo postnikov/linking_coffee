@@ -215,3 +215,142 @@
 [2025-12-16T11:10:32.140Z] Proactive OTP successfully sent to max_postnikov (379053)
 [2025-12-16T11:10:55.603Z] API Register request for: max_postnikov
 [2025-12-16T11:10:56.320Z] Proactive OTP successfully sent to max_postnikov (379053)
+[2025-12-16T11:26:39.890Z] API Register request for: kisodrakon
+[2025-12-16T11:27:21.999Z] API Verify attempt: User=kisodrakon, OTP=831184
+[2025-12-16T11:27:27.293Z] API Register request for: kisodrakon
+[2025-12-16T11:27:37.755Z] Bot /start received from: kisodrakon (ID: 7769456432)
+[2025-12-16T11:27:37.767Z] Generated OTP for kisodrakon: 643029
+[2025-12-16T11:27:43.582Z] API Verify attempt: User=kisodrakon, OTP=643029
+[2025-12-16T11:27:43.585Z] Verify Success for kisodrakon. OTP matches.
+[2025-12-16T11:36:19.322Z] Server Initialized
+[2025-12-16T11:37:45.836Z] Server Initialized
+[2025-12-16T11:38:08.291Z] Server Initialized
+[2025-12-16T11:38:13.080Z] Server Initialized
+[2025-12-16T11:59:47.246Z] Server Initialized
+[2025-12-16T12:01:04.332Z] Server Initialized
+[2025-12-16T12:01:26.216Z] Server Initialized
+[2025-12-16T12:08:18.306Z] API Register request for: kisodrakon
+[2025-12-16T12:08:19.049Z] Proactive OTP successfully sent to kisodrakon (7769456432)
+[2025-12-16T12:09:15.623Z] API Verify attempt: User=kisodrakon, OTP=676545
+[2025-12-16T12:09:15.625Z] Verify Success for kisodrakon. OTP matches.
+[2025-12-16T12:10:00.164Z] API Register request for: kisodrakon
+[2025-12-16T12:10:01.087Z] Proactive OTP successfully sent to kisodrakon (7769456432)
+[2025-12-16T12:15:42.182Z] API Register request for: kisodrakon
+[2025-12-16T12:15:44.818Z] Proactive OTP successfully sent to kisodrakon (7769456432)
+[2025-12-16T12:16:19.490Z] API Verify attempt: User=kisodrakon, OTP=416491
+[2025-12-16T12:16:19.491Z] Verify Success for kisodrakon. OTP matches.
+[2025-12-16T12:17:41.239Z] API Register request for: kisodrakon
+[2025-12-16T12:17:41.919Z] Proactive OTP successfully sent to kisodrakon (7769456432)
+[2025-12-16T12:17:59.579Z] API Verify attempt: User=kisodrakon, OTP=750691
+[2025-12-16T12:17:59.583Z] Verify Success for kisodrakon. OTP matches.
+[2025-12-16T12:19:13.404Z] API Register request for: kisodrakon
+[2025-12-16T12:19:14.230Z] Proactive OTP successfully sent to kisodrakon (7769456432)
+[2025-12-16T12:19:22.218Z] API Verify attempt: User=kisodrakon, OTP=786498
+[2025-12-16T12:19:22.218Z] Verify Success for kisodrakon. OTP matches.
+[2025-12-16T12:24:07.828Z] API Register request for: kisodrakon
+[2025-12-16T12:24:08.648Z] Proactive OTP successfully sent to kisodrakon (7769456432)
+[2025-12-16T12:24:24.191Z] API Verify attempt: User=kisodrakon, OTP=224590
+[2025-12-16T12:24:24.191Z] Verify Success for kisodrakon. OTP matches.
+[2025-12-16T12:25:45.656Z] API Register request for: kisodrakon
+[2025-12-16T12:25:46.364Z] Proactive OTP successfully sent to kisodrakon (7769456432)
+[2025-12-16T12:26:02.003Z] API Verify attempt: User=kisodrakon, OTP=744065
+[2025-12-16T12:26:02.009Z] Verify Success for kisodrakon. OTP matches.
+[2025-12-16T12:30:08.058Z] Server Initialized
+[2025-12-16T12:35:30.323Z] Server Initialized
+[2025-12-16T12:35:51.469Z] API Register request for: kisodrakon
+[2025-12-16T12:36:51.035Z] Bot /start received from: kisodrakon (ID: 7769456432)
+[2025-12-16T12:36:51.042Z] Generated OTP for kisodrakon: 653028
+[2025-12-16T12:36:55.423Z] API Verify attempt: User=kisodrakon, OTP=653028
+[2025-12-16T12:36:55.425Z] Verify Success for kisodrakon. OTP matches.
+[2025-12-16T12:39:23.958Z] Server Initialized
+[2025-12-16T12:40:17.049Z] API Register request for: kisodrakon
+[2025-12-16T12:40:33.441Z] Bot /start received from: kisodrakon (ID: 7769456432)
+[2025-12-16T12:40:33.442Z] Generated OTP for kisodrakon: 108584
+[2025-12-16T12:40:44.337Z] API Verify attempt: User=kisodrakon, OTP=108584
+[2025-12-16T12:40:44.338Z] Verify Success for kisodrakon. OTP matches.
+[2025-12-16T12:45:00.431Z] API Register request for: kisodrakon
+[2025-12-16T12:45:06.450Z] Bot /start received from: kisodrakon (ID: 7769456432)
+[2025-12-16T12:45:06.452Z] Generated OTP for kisodrakon: 327079
+[2025-12-16T12:45:10.796Z] API Verify attempt: User=kisodrakon, OTP=327079
+[2025-12-16T12:45:10.801Z] Verify Success for kisodrakon. OTP matches.
+[2025-12-16T12:47:51.331Z] Server Initialized
+[2025-12-16T12:48:49.499Z] Server Initialized
+[2025-12-16T12:49:24.533Z] Server Initialized
+[2025-12-16T12:49:35.181Z] Server Initialized
+[2025-12-16T12:50:51.978Z] API Register request for: kisodrakon
+[2025-12-16T12:51:05.170Z] API Verify attempt: User=kisodrakon, OTP=327079
+[2025-12-16T12:51:10.794Z] Bot /start received from: kisodrakon (ID: 7769456432)
+[2025-12-16T12:51:10.804Z] Generated OTP for kisodrakon: 210881
+[2025-12-16T12:51:16.439Z] API Verify attempt: User=kisodrakon, OTP=210881
+[2025-12-16T12:51:16.444Z] Verify Success for kisodrakon. OTP matches.
+[2025-12-16T12:53:49.704Z] Server Initialized
+[2025-12-16T12:55:19.919Z] API Register request for: kisodrakon
+[2025-12-16T12:55:26.818Z] Bot /start received from: kisodrakon (ID: 7769456432)
+[2025-12-16T12:55:26.822Z] Generated OTP for kisodrakon: 251288
+[2025-12-16T12:55:31.903Z] API Verify attempt: User=kisodrakon, OTP=251288
+[2025-12-16T12:55:31.904Z] Verify Success for kisodrakon. OTP matches.
+[2025-12-16T12:57:55.525Z] API Register request for: kisodrakon
+[2025-12-16T12:58:05.641Z] Bot /start received from: kisodrakon (ID: 7769456432)
+[2025-12-16T12:58:05.644Z] Generated OTP for kisodrakon: 882402
+[2025-12-16T12:58:10.602Z] API Verify attempt: User=kisodrakon, OTP=882402
+[2025-12-16T12:58:10.604Z] Verify Success for kisodrakon. OTP matches.
+[2025-12-16T13:00:35.605Z] Server Initialized
+[2025-12-16T13:01:34.484Z] API Register request for: kisodrakon
+[2025-12-16T13:01:43.066Z] Bot /start received from: kisodrakon (ID: 7769456432)
+[2025-12-16T13:01:43.072Z] Generated OTP for kisodrakon: 447714
+[2025-12-16T13:01:48.710Z] API Verify attempt: User=kisodrakon, OTP=447714
+[2025-12-16T13:01:48.711Z] Verify Success for kisodrakon. OTP matches.
+[2025-12-16T13:06:15.460Z] Server Initialized
+[2025-12-16T13:07:40.448Z] Server Initialized
+[2025-12-16T13:08:05.873Z] API Register request for: kisodrakon
+[2025-12-16T13:08:13.835Z] Bot /start received from: kisodrakon (ID: 7769456432)
+[2025-12-16T13:08:13.836Z] Generated OTP for kisodrakon: 729958
+[2025-12-16T13:08:17.762Z] API Verify attempt: User=kisodrakon, OTP=729958
+[2025-12-16T13:08:17.763Z] Verify Success for kisodrakon. OTP matches.
+[2025-12-16T13:11:57.822Z] Server Initialized
+[2025-12-16T13:12:17.015Z] API Register request for: kisodrakon
+[2025-12-16T13:12:22.830Z] Bot /start received from: kisodrakon (ID: 7769456432)
+[2025-12-16T13:12:22.834Z] Generated OTP for kisodrakon: 268659
+[2025-12-16T13:12:28.980Z] API Verify attempt: User=kisodrakon, OTP=268659
+[2025-12-16T13:12:28.983Z] Verify Success for kisodrakon. OTP matches.
+[2025-12-16T13:35:02.146Z] Server Initialized
+[2025-12-16T13:35:02.146Z] Server Initialized
+[2025-12-16T13:35:02.745Z] Bot /start received from: kisodrakon (ID: 7769456432)
+[2025-12-16T13:35:02.746Z] Generated OTP for kisodrakon: 889725
+[2025-12-16T13:35:11.606Z] Server Initialized
+[2025-12-16T13:35:19.693Z] Server Initialized
+[2025-12-16T13:36:31.276Z] Server Initialized
+[2025-12-16T13:37:12.803Z] API Register request for: kisodrakon
+[2025-12-16T13:37:15.803Z] Proactive OTP successfully sent to kisodrakon (7769456432)
+[2025-12-16T13:37:26.192Z] API Verify attempt: User=kisodrakon, OTP=832024
+[2025-12-16T13:37:26.193Z] Verify Success for kisodrakon. OTP matches.
+[2025-12-16T13:37:37.705Z] API Register request for: max_postnikov
+[2025-12-16T13:37:38.348Z] Proactive OTP successfully sent to max_postnikov (379053)
+[2025-12-16T13:38:14.291Z] API Verify attempt: User=max_postnikov, OTP=622632
+[2025-12-16T13:38:14.292Z] Verify Success for max_postnikov. OTP matches.
+[2025-12-16T13:44:48.223Z] API Register request for: kisodrakon
+[2025-12-16T13:44:49.026Z] Proactive OTP successfully sent to kisodrakon (7769456432)
+[2025-12-16T13:44:55.460Z] API Verify attempt: User=kisodrakon, OTP=372890
+[2025-12-16T13:44:55.461Z] Verify Success for kisodrakon. OTP matches.
+[2025-12-16T13:51:26.096Z] Server Initialized
+[2025-12-16T13:51:26.096Z] Server Initialized
+[2025-12-16T13:51:26.096Z] Server Initialized
+[2025-12-16T13:52:10.114Z] Server Initialized
+[2025-12-16T13:53:46.820Z] Server Initialized
+[2025-12-16T13:54:44.539Z] Server Initialized
+[2025-12-16T13:54:44.544Z] Server Initialized
+[2025-12-16T13:54:44.548Z] Server Initialized
+[2025-12-16T13:54:44.546Z] Server Initialized
+[2025-12-16T13:54:54.898Z] Server Initialized
+[2025-12-16T13:56:25.131Z] Server Initialized
+[2025-12-16T13:56:25.164Z] Server Initialized
+[2025-12-16T13:56:25.170Z] Server Initialized
+[2025-12-16T13:56:25.177Z] Server Initialized
+[2025-12-16T13:56:25.179Z] Server Initialized
+[2025-12-16T13:56:42.444Z] Server Initialized
+[2025-12-16T13:57:27.911Z] Server Initialized
+[2025-12-16T13:57:28.023Z] Server Initialized
+[2025-12-16T13:57:28.025Z] Server Initialized
+[2025-12-16T13:57:28.032Z] Server Initialized
+[2025-12-16T13:57:28.068Z] Server Initialized
+[2025-12-16T13:57:28.082Z] Server Initialized

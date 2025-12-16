@@ -107,7 +107,8 @@
         "welcome_back": "С возвращением в Linked Coffee",
         "get_code": "Получить код",
         "open_bot": "Открыть LC Bot",
-        "warning_msg": "⚠️ Вы получите код <1>в Телеграм Боте</1> ⚠️"
+        "warning_msg": "⚠️ Вы получите код <1>в Телеграм Боте</1> ⚠️",
+        "launch_bot_help": "Чтобы получить код — запустите <1>@Linked_Coffee_Bot</1> в Telegram."
     },
     "header": {
         "about": "О проекте",

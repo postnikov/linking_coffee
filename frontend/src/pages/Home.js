@@ -121,7 +121,8 @@ const Home = ({ onLogin }) => {
                 username: pendingUser.username,
                 linkedin: modalData?.linkedin || '',
                 name: modalData?.name || '',
-                family: modalData?.family || ''
+                family: modalData?.family || '',
+                communityCode: modalData?.communityCode || ''
             };
 
             const response = await fetch(`${API_URL}/api/consent`, {
@@ -232,7 +233,8 @@ const Home = ({ onLogin }) => {
                                 </div>
                                 
                                 {/* Warning Message */}
-                                <div style={{ margin: '0.5rem 0 0.5rem', textAlign: 'center', fontSize: '0.9rem', color: '#15803d' }}>
+                                {/* Warning Message */}
+                                <div style={{ margin: '0.5rem 0 0.5rem', textAlign: 'center', fontSize: '1.05rem', color: '#15803d' }}>
                                     <Trans
                                         i18nKey="form.warning_msg"
                                         components={{
@@ -289,6 +291,17 @@ const Home = ({ onLogin }) => {
                                             components={{
                                                 // eslint-disable-next-line jsx-a11y/anchor-has-content
                                                 1: <a href="https://t.me/Linked_Coffee_Bot" target="_blank" rel="noopener noreferrer" style={{ color: '#7c3aed', textDecoration: 'underline', fontWeight: 'bold' }} />
+                                            }}
+                                        />
+                                    </div>
+                                )}
+
+                                {hasTelegramId && (
+                                    <div style={{ margin: '1rem 0', textAlign: 'center', fontSize: '0.95rem' }}>
+                                        <Trans
+                                            i18nKey="form.launch_bot_help"
+                                            components={{
+                                                1: <a href="https://t.me/Linked_Coffee_Bot" target="_blank" rel="noopener noreferrer" style={{ color: '#4f46e5', fontWeight: 'bold' }} />
                                             }}
                                         />
                                     </div>

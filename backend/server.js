@@ -451,7 +451,7 @@ app.post('/api/register', async (req, res) => {
         fields: {
           Tg_Username: cleanUsername,
           Status: 'EarlyBird',
-          Created_At: new Date().toISOString()
+          Created_At: new Date().toISOString().split('T')[0]
         }
       }
     ]);
@@ -463,10 +463,12 @@ app.post('/api/register', async (req, res) => {
       hasTelegramId: false
     });
   } catch (error) {
-    console.error('Airtable error:', error);
+    console.error('Airtable Register Error:', JSON.stringify(error, null, 2));
+    if (error.message) console.error('Error Message:', error.message);
     res.status(500).json({
       success: false,
-      message: 'Registration failed. Please try again later.'
+      message: 'Registration failed. Please try again later.',
+      details: error.message
     });
   }
 });
@@ -619,6 +621,7 @@ app.post('/api/consent', async (req, res) => {
   const cleanUsername = username.replace('@', '').trim().toLowerCase();
 
   try {
+
     const records = await base(process.env.AIRTABLE_MEMBERS_TABLE)
       .select({
         filterByFormula: `{Tg_Username} = '${cleanUsername}'`,
@@ -628,25 +631,92 @@ app.post('/api/consent', async (req, res) => {
 
     if (records.length > 0) {
       const record = records[0];
-      const fieldsToUpdate = {
+      const updates = {
         Consent_GDPR: true
       };
-      if (linkedin) {
-        fieldsToUpdate.Linkedin = linkedin;
-      }
-      if (name) {
-        fieldsToUpdate.Name = name;
-      }
-      if (family) {
-        fieldsToUpdate.Family = family;
+      
+      if (linkedin) updates.Linkedin = linkedin;
+      if (name) updates.Name = name;
+      if (family) updates.Family = family;
+
+      let communityId = null;
+      let communityName = null;
+      
+      console.log('--- START CONSENT UPDATE ---');
+      console.log(`User: ${cleanUsername}, CommunityCode: ${req.body.communityCode}`);
+      console.log(`Base ID: ${process.env.AIRTABLE_BASE_ID}`);
+
+      // Validate Community Code first
+      if (req.body.communityCode) {
+        const code = req.body.communityCode.trim();
+        console.log(`Checking community code: ${code}`);
+
+        const commRecords = await base('tblSMXQlCTpl7BZED').select({
+            filterByFormula: `{Invite_Code} = '${code}'`,
+            maxRecords: 1
+        }).firstPage();
+
+        if (commRecords.length === 0) {
+            return res.status(400).json({ success: false, message: 'Invalid community code' });
+        }
+
+        const comm = commRecords[0];
+        if (comm.fields.Status !== 'Active') {
+            return res.status(400).json({ success: false, message: 'Community is not active' });
+        }
+
+        // Valid community
+        communityId = comm.id;
+        communityName = comm.fields.Name;
+        updates.Primary_Community = [communityId];
+        updates.Is_Global_Pool = false;
       }
 
+      // Update Member Record
       await base(process.env.AIRTABLE_MEMBERS_TABLE).update([
         {
           id: record.id,
-          fields: fieldsToUpdate
+          fields: updates
         }
       ]);
+
+       // Create Community Membership if needed
+       console.log(`Checking communityId for creation: ${communityId}`);
+       if (communityId) {
+        try {
+           console.log('Attempting to create Community_Members record...');
+           console.log('Target Table:', 'tblPN0ni3zaaTCPcF');
+           
+           const payload = {
+                'Member': [record.id],
+                'Community': [communityId],
+                'Role': 'Member',
+                'Status': 'Active',
+                'Joined_At': new Date().toISOString().split('T')[0]
+           };
+           console.log('Payload being sent:', JSON.stringify(payload, null, 2));
+
+           const createdRecords = await base('tblPN0ni3zaaTCPcF').create([{
+               fields: payload
+           }]);
+           
+           if (createdRecords && createdRecords.length > 0) {
+               console.log(`✅ SUCCESS! Created record ID: ${createdRecords[0].id}`);
+           } else {
+               console.error('⚠️ WARNING: Create call returned no records but no error throw?');
+           }
+           
+           console.log(`✅ Added user to community: ${communityName}`);
+        } catch (linkError) {
+           console.error('❌ Failed to create community link:', linkError);
+           console.error('   Error Details:', JSON.stringify(linkError, null, 2));
+           return res.status(500).json({ 
+               success: false, 
+               message: 'Failed to create community link: ' + linkError.message,
+               details: linkError 
+           });
+        }
+      }
 
       res.json({ success: true, message: 'Consent updated' });
     } else {
@@ -1307,6 +1377,27 @@ app.get('/api/profile', async (req, res) => {
       }
     }
 
+    // 4. Active Community
+    // Fetch active community membership for this user by Tg_Username
+    enrichmentPromises.push(
+        base('tblPN0ni3zaaTCPcF').select({
+            filterByFormula: `AND(FIND('${cleanUsername}', ARRAYJOIN({Tg_Username (from Member)})), {Status} = 'Active')`,
+            maxRecords: 1
+        }).firstPage()
+        .then(records => {
+            if (records.length > 0) {
+                const comm = records[0];
+                const commName = comm.fields['Name (from Community)'] ? comm.fields['Name (from Community)'][0] : null;
+                return { type: 'community', name: commName };
+            }
+            return { type: 'community', name: null };
+        })
+        .catch(e => {
+            console.error(`❌ Community query error:`, e);
+            return { type: 'community', error: e };
+        })
+    );
+
     const enrichmentResults = await Promise.all(enrichmentPromises);
     console.timeEnd(`Phase3_Enrich_${requestId}`);
 
@@ -1314,6 +1405,7 @@ app.get('/api/profile', async (req, res) => {
     let country = null;
     let city = null;
     let currentMatch = null;
+    let activeCommunity = null;
     
     // Prepare Match Intro for the Public Profile View (Requester viewing User)
     let publicMatchIntro = null;
@@ -1359,6 +1451,11 @@ app.get('/api/profile', async (req, res) => {
           intro: res.intro // Attach the intro we parsed earlier
         };
       }
+      if (res.type === 'community') {
+        if (res.name) {
+            activeCommunity = { name: res.name };
+        }
+      }
     });
 
     // Construct Response
@@ -1370,6 +1467,7 @@ app.get('/api/profile', async (req, res) => {
         timezone: fields.Time_Zone || 'UTC (UTC+0)',
         profession: fields.Profession || '',
         grade: fields.Grade || 'Prefer not to say',
+        community: activeCommunity,
         professionalDesc: fields.Professional_Description || '',
         personalDesc: fields.Personal_Description || '',
         professionalInterests: fields.Professional_Interests || [],
