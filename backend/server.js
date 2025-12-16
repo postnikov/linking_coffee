@@ -929,16 +929,22 @@ app.get('/api/admin/logs/view', checkAdmin, (req, res) => {
 app.get('/api/admin/backups', checkAdmin, (req, res) => {
   // Use the same logic as initialization
   const dir = process.env.BACKUP_DIR || path.join(__dirname, 'backups');
+  console.log(`📂 Listing backups from: ${dir}`);
   
   if (fs.existsSync(dir)) {
     try {
       let fileList = [];
+      console.log('✅ Directory exists.');
 
       // Helper to process a directory
       const processDir = (baseDir, relativePath = '') => {
         const fullPath = path.join(baseDir, relativePath);
+        console.log(`🔎 Scanning: ${fullPath}`);
+
         if (fs.existsSync(fullPath)) {
           const items = fs.readdirSync(fullPath);
+          console.log(`📄 Found ${items.length} items in ${relativePath || 'root'}:`, items);
+
           items.forEach(f => {
             const itemPath = path.join(fullPath, f);
             const stats = fs.statSync(itemPath);
@@ -956,11 +962,14 @@ app.get('/api/admin/backups', checkAdmin, (req, res) => {
               });
             }
           });
+        } else {
+            console.log(`❌ Path does not exist: ${fullPath}`);
         }
       };
 
       processDir(dir);
 
+      console.log(`🏁 Total files found: ${fileList.length}`);
       const files = fileList.sort((a,b) => b.mtime - a.mtime); // Newest first
       res.json({ success: true, files });
     } catch (e) {
@@ -968,9 +977,11 @@ app.get('/api/admin/backups', checkAdmin, (req, res) => {
       res.status(500).json({ success: false, message: 'Failed to list backups' });
     }
   } else {
+    console.log(`❌ Backup directory not found: ${dir}`);
     res.json({ success: true, files: [], message: 'Backup directory not found' });
   }
 });
+
 
 // Scheduler
 app.get('/api/admin/scheduler', checkAdmin, (req, res) => {
