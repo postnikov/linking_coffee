@@ -574,3 +574,10 @@ html {
         border-radius: 12px;
     }
 }
+
+/* Fluid content override for Dashboard and Profile pages */
+.main-content-fluid {
+    padding: 0 !important;
+    display: block !important;
+    max-width: none !important;
+}

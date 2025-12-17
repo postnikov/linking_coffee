@@ -1,0 +1,27 @@
+.public-profile-container {
+    box-sizing: border-box;
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 3rem;
+    max-width: 1200px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 2rem 2rem;
+    align-items: start;
+}
+
+.public-profile-section {
+    width: 100%;
+    min-width: 0;
+}
+
+.public-match-section {
+    width: 100%;
+    min-width: 0;
+}
+
+@media (max-width: 968px) {
+    .public-profile-container {
+        grid-template-columns: 1fr;
+    }
+}

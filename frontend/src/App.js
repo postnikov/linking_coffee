@@ -41,23 +41,28 @@ function App() {
         setUser(null);
     };
 
-    const MainLayout = ({ children }) => (
-        <div className="app-container">
-            <div className="background-decoration">
-                <div className="bg-circle bg-circle-1"></div>
-                <div className="bg-circle bg-circle-2"></div>
-                <div className="bg-circle bg-circle-3"></div>
+    const MainLayout = ({ children }) => {
+        const location = useLocation();
+        const isFullWidth = location.pathname === '/' || location.pathname.startsWith('/profile');
+        
+        return (
+            <div className="app-container">
+                <div className="background-decoration">
+                    <div className="bg-circle bg-circle-1"></div>
+                    <div className="bg-circle bg-circle-2"></div>
+                    <div className="bg-circle bg-circle-3"></div>
+                </div>
+
+                <Header user={user} onLogout={handleLogout} />
+
+                <main className={`main-content ${isFullWidth ? 'main-content-fluid' : ''}`}>
+                    {children}
+                </main>
+
+                <Footer />
             </div>
-
-            <Header user={user} onLogout={handleLogout} />
-
-            <main className="main-content">
-                {children}
-            </main>
-
-            <Footer />
-        </div>
-    );
+        );
+    };
 
     return (
         <Router>

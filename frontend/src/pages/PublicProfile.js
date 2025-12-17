@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import './PublicProfile.css';
 import './Dashboard.css';
 
 const API_URL = process.env.REACT_APP_API_URL || '';
@@ -119,9 +120,9 @@ const PublicProfile = () => {
 
     return (
 
-        <main className="main-content" style={{ paddingTop: '120px', display: 'block', minHeight: '100vh' }}>
-            <div className="dashboard-container">
-                <div className="profile-section">
+        <main className="main-content" style={{ paddingTop: '120px', display: 'block', minHeight: '100vh', paddingLeft: 0, paddingRight: 0 }}>
+            <div className="public-profile-container">
+                <div className="public-profile-section">
                     <div className="glass-card profile-view" style={{ padding: '2rem' }}>
                         <div className="profile-view-header">
                             <div className="avatar-preview view-mode-avatar">
@@ -143,14 +144,14 @@ const PublicProfile = () => {
 
                                     {formData.grade && (
                                         <>
-                                            {formData.profession && <span style={{ opacity: 0.7 }}> • </span>}
+                                            {formData.profession && <span style={{ opacity: 0.7 }}>•</span>}
                                             <span>{formData.grade}</span>
                                         </>
                                     )}
 
                                     {formData.linkedin && (
                                         <>
-                                            {(formData.profession || formData.grade) && <span style={{ opacity: 0.7 }}> • </span>}
+                                            {(formData.profession || formData.grade) && <span style={{ opacity: 0.7 }}>•</span>}
                                             <a
                                                 href={formData.linkedin}
                                                 target="_blank"
@@ -306,7 +307,7 @@ const PublicProfile = () => {
                     </div>
                 </div>
 
-                <div className="matching-section">
+                <div className="public-match-section">
                     <div className="glass-card" style={{ padding: '2rem', position: 'sticky', top: '5rem' }}>
                         <h3 className="section-title" style={{ fontSize: '1.2rem', marginBottom: '1rem', background: 'none', WebkitTextFillColor: 'initial', color: '#1f2937' }}>Match of the Week</h3>
                         <p style={{ marginBottom: '1.5rem', color: '#4b5563' }}>

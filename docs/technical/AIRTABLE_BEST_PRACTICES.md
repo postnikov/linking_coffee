@@ -150,12 +150,15 @@ base(process.env.AIRTABLE_MEMBERS_TABLE);
 base("tblCrnbDupkzWUx9P"); // Hardcoded
 ```
 
-### Hardcoded Table IDs (When Necessary)
+### ❌ STRICT RULE: No Hardcoded Table IDs
 
-For tables without env vars, document the ID:
+We **NEVER** hardcode Table IDs in the codebase. All Table IDs must be defined in the `.env` file and accessed via `process.env`.
 
 ```javascript
-// Community_Members table (tblPN0ni3zaaTCPcF)
+// ✅ Good
+base(process.env.AIRTABLE_COMMUNITY_MEMBERS_TABLE).select({...})
+
+// ❌ Bad
 base('tblPN0ni3zaaTCPcF').select({...})
 ```
 
