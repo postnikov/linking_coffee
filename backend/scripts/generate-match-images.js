@@ -349,14 +349,32 @@ async function main() {
                 // Let's just save to disk first.
 
                 const filename = `match_${mId}_${Date.now()}.png`;
-                const outPath = path.join(__dirname, '../../generated_images', filename);
+                // Save to 'uploads' folder so it is accessible via Nginx proxy -> Backend Static Serve
+                const relativeUploadPath = '../uploads/generated_match_images';
+                const outPath = path.join(__dirname, relativeUploadPath, filename);
+                const publicUrl = `https://linked.coffee/uploads/generated_match_images/${filename}`;
 
                 // Ensure dir exists
                 fs.mkdirSync(path.dirname(outPath), { recursive: true });
                 fs.writeFileSync(outPath, finalImageBuffer);
 
                 console.log(`   💾 Saved locally to: ${outPath}`);
-                console.log(`   ⚠️  Airtable Upload skipped (requires public URL hosting).`);
+                console.log(`   🔗 Public URL: ${publicUrl}`);
+
+                try {
+                    console.log('   ☁️  Uploading to Airtable...');
+                    await base(MATCHES_TABLE).update([{
+                        id: mId,
+                        fields: {
+                            'Intro_Image': [
+                                { url: publicUrl }
+                            ]
+                        }
+                    }]);
+                    console.log('   ✅ Airtable updated successfully!');
+                } catch (uploadErr) {
+                    console.error('   ❌ Failed to update Airtable:', uploadErr.message);
+                }
 
             } else {
                 console.log('   👀 Dry Run: Image generated in memory (would be saved).');
