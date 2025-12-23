@@ -177,43 +177,7 @@ const PublicProfile = () => {
 
                         <div className="profile-content-grid">
                             {/* AI Match Context */}
-                            {matchIntro && (
-                                <div className="profile-section-block" style={{ 
-                                    background: 'linear-gradient(to right, #faf5ff, #fff)', 
-                                    border: '1px solid #e9d5ff',
-                                    marginBottom: '2rem'
-                                }}>
-                                    <h4 style={{ color: '#9333ea', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                        ✨ Why you matched
-                                    </h4>
-                                    <p style={{ fontStyle: 'italic', color: '#4b5563', marginBottom: '1rem', lineHeight: '1.6' }}>
-                                        "{matchIntro.why_interesting}"
-                                    </p>
-                                    
-                                     {matchIntro.conversation_starters && matchIntro.conversation_starters.length > 0 && (
-                                        <div>
-                                             <h5 style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '0.5rem', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                                💬 Icebreakers
-                                            </h5>
-                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                                                {matchIntro.conversation_starters.map((starter, idx) => (
-                                                    <span key={idx} style={{ 
-                                                        background: 'white', 
-                                                        padding: '0.5rem 0.8rem', 
-                                                        borderRadius: '0.75rem', 
-                                                        fontSize: '0.9rem', 
-                                                        color: '#4b5563',
-                                                        border: '1px solid rgba(0,0,0,0.05)',
-                                                        boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
-                                                    }}>
-                                                        {starter}
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
+
                             {formData.professionalDesc && (
                                 <div className="profile-section-block">
                                     <h4>{t('dashboard.profile.professional_desc')}</h4>
@@ -314,7 +278,7 @@ const PublicProfile = () => {
                             This is your match for the week.
                         </p>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: matchIntro ? '2rem' : '0' }}>
                             <a
                                 href={formData.tg_username ? `https://t.me/${formData.tg_username.replace('@', '')}` : '#'}
                                 target="_blank"
@@ -347,6 +311,61 @@ const PublicProfile = () => {
                             </button>
                             */}
                         </div>
+
+                        {/* AI Intro / Icebreakers Match Info (Moved to Sidebar) */}
+                        {matchIntro && (
+                            <div style={{
+                                marginTop: '1.5rem',
+                                paddingTop: '1.5rem',
+                                borderTop: '1px solid #e5e7eb'
+                            }}>
+                                <div style={{ marginBottom: '1.5rem' }}>
+                                    <h4 style={{
+                                        color: '#9333ea',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.5rem',
+                                        fontSize: '0.95rem',
+                                        fontWeight: '600',
+                                        marginBottom: '0.5rem'
+                                    }}>
+                                        ✨ {t('dashboard.current_match.why_interesting', 'Why you matched')}
+                                    </h4>
+                                    <p style={{ fontStyle: 'italic', color: '#4b5563', lineHeight: '1.5', fontSize: '0.9rem' }}>
+                                        "{matchIntro.why_interesting}"
+                                    </p>
+                                </div>
+
+                                {matchIntro.conversation_starters && matchIntro.conversation_starters.length > 0 && (
+                                    <div>
+                                        <h5 style={{
+                                            color: '#6b7280',
+                                            fontSize: '0.8rem',
+                                            fontWeight: '600',
+                                            textTransform: 'uppercase',
+                                            letterSpacing: '0.05em',
+                                            marginBottom: '0.75rem'
+                                        }}>
+                                            💬 {t('dashboard.current_match.icebreakers', 'Icebreakers')}
+                                        </h5>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                            {matchIntro.conversation_starters.map((starter, idx) => (
+                                                <div key={idx} style={{
+                                                    background: '#f9fafb',
+                                                    padding: '0.75rem',
+                                                    borderRadius: '0.5rem',
+                                                    fontSize: '0.85rem',
+                                                    color: '#374151',
+                                                    border: '1px solid #f3f4f6'
+                                                }}>
+                                                    {starter}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
