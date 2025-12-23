@@ -190,17 +190,17 @@ bot.action('participate_yes', async (ctx) => {
 
       // Conditional Logging: If previously Passive -> Activated
       if (record.fields.Next_Week_Status === 'Passive') {
-          try {
-              await base(process.env.AIRTABLE_LOGS_TABLE || 'tbln4rLHEgXUkL9Jh').create([{
-                  fields: {
-                      'Event': 'Activated',
-                      'Member': [record.id]
-                  }
-              }]);
-              console.log(`📝 Logged Activated event for ${record.id}`);
-          } catch (logErr) {
-              console.error('❌ Failed to log activation:', logErr);
-          }
+        try {
+          await base(process.env.AIRTABLE_LOGS_TABLE || 'tbln4rLHEgXUkL9Jh').create([{
+            fields: {
+              'Event': 'Activated',
+              'Member': [record.id]
+            }
+          }]);
+          console.log(`📝 Logged Activated event for ${record.id}`);
+        } catch (logErr) {
+          console.error('❌ Failed to log activation:', logErr);
+        }
       }
 
       // Update Next_Week_Status to 'Active'
@@ -235,42 +235,42 @@ bot.action('participate_no', async (ctx) => {
   logAuth(`User ${telegramId} clicked NO for next week`);
 
   try {
-      // Find user by Tg_ID to check status first
-      const records = await base(process.env.AIRTABLE_MEMBERS_TABLE)
-        .select({
-          filterByFormula: `{Tg_ID} = '${telegramId}'`,
-          maxRecords: 1
-        })
-        .firstPage();
+    // Find user by Tg_ID to check status first
+    const records = await base(process.env.AIRTABLE_MEMBERS_TABLE)
+      .select({
+        filterByFormula: `{Tg_ID} = '${telegramId}'`,
+        maxRecords: 1
+      })
+      .firstPage();
 
-      if (records.length > 0) {
-          const record = records[0];
+    if (records.length > 0) {
+      const record = records[0];
 
-          // Conditional Logging: If previously Active -> Deactivated
-          if (record.fields.Next_Week_Status === 'Active') {
-              try {
-                  await base(process.env.AIRTABLE_LOGS_TABLE || 'tbln4rLHEgXUkL9Jh').create([{
-                      fields: {
-                          'Event': 'Deactivated',
-                          'Member': [record.id]
-                      }
-                  }]);
-                  console.log(`📝 Logged Deactivated event for ${record.id}`);
-              } catch (logErr) {
-                  console.error('❌ Failed to log deactivation:', logErr);
-              }
-          }
-
-          // Update Next_Week_Status to 'Passive'
-          await base(process.env.AIRTABLE_MEMBERS_TABLE).update([
-            {
-              id: record.id,
-              fields: {
-                'Next_Week_Status': 'Passive'
-              }
+      // Conditional Logging: If previously Active -> Deactivated
+      if (record.fields.Next_Week_Status === 'Active') {
+        try {
+          await base(process.env.AIRTABLE_LOGS_TABLE || 'tbln4rLHEgXUkL9Jh').create([{
+            fields: {
+              'Event': 'Deactivated',
+              'Member': [record.id]
             }
-          ]);
+          }]);
+          console.log(`📝 Logged Deactivated event for ${record.id}`);
+        } catch (logErr) {
+          console.error('❌ Failed to log deactivation:', logErr);
+        }
       }
+
+      // Update Next_Week_Status to 'Passive'
+      await base(process.env.AIRTABLE_MEMBERS_TABLE).update([
+        {
+          id: record.id,
+          fields: {
+            'Next_Week_Status': 'Passive'
+          }
+        }
+      ]);
+    }
 
     await ctx.answerCbQuery('Skipped.');
     await ctx.editMessageText(
@@ -634,14 +634,14 @@ app.post('/api/consent', async (req, res) => {
       const updates = {
         Consent_GDPR: true
       };
-      
+
       if (linkedin) updates.Linkedin = linkedin;
       if (name) updates.Name = name;
       if (family) updates.Family = family;
 
       let communityId = null;
       let communityName = null;
-      
+
       console.log('--- START CONSENT UPDATE ---');
       console.log(`User: ${cleanUsername}, CommunityCode: ${req.body.communityCode}`);
       console.log(`Base ID: ${process.env.AIRTABLE_BASE_ID}`);
@@ -652,17 +652,17 @@ app.post('/api/consent', async (req, res) => {
         console.log(`Checking community code: ${code}`);
 
         const commRecords = await base('tblSMXQlCTpl7BZED').select({
-            filterByFormula: `{Invite_Code} = '${code}'`,
-            maxRecords: 1
+          filterByFormula: `{Invite_Code} = '${code}'`,
+          maxRecords: 1
         }).firstPage();
 
         if (commRecords.length === 0) {
-            return res.status(400).json({ success: false, message: 'Invalid community code' });
+          return res.status(400).json({ success: false, message: 'Invalid community code' });
         }
 
         const comm = commRecords[0];
         if (comm.fields.Status !== 'Active') {
-            return res.status(400).json({ success: false, message: 'Community is not active' });
+          return res.status(400).json({ success: false, message: 'Community is not active' });
         }
 
         // Valid community
@@ -680,41 +680,41 @@ app.post('/api/consent', async (req, res) => {
         }
       ]);
 
-       // Create Community Membership if needed
-       console.log(`Checking communityId for creation: ${communityId}`);
-       if (communityId) {
+      // Create Community Membership if needed
+      console.log(`Checking communityId for creation: ${communityId}`);
+      if (communityId) {
         try {
-           console.log('Attempting to create Community_Members record...');
-           console.log('Target Table:', 'tblPN0ni3zaaTCPcF');
-           
-           const payload = {
-                'Member': [record.id],
-                'Community': [communityId],
-                'Role': 'Member',
-                'Status': 'Active',
-                'Joined_At': new Date().toISOString().split('T')[0]
-           };
-           console.log('Payload being sent:', JSON.stringify(payload, null, 2));
+          console.log('Attempting to create Community_Members record...');
+          console.log('Target Table:', 'tblPN0ni3zaaTCPcF');
 
-           const createdRecords = await base('tblPN0ni3zaaTCPcF').create([{
-               fields: payload
-           }]);
-           
-           if (createdRecords && createdRecords.length > 0) {
-               console.log(`✅ SUCCESS! Created record ID: ${createdRecords[0].id}`);
-           } else {
-               console.error('⚠️ WARNING: Create call returned no records but no error throw?');
-           }
-           
-           console.log(`✅ Added user to community: ${communityName}`);
+          const payload = {
+            'Member': [record.id],
+            'Community': [communityId],
+            'Role': 'Member',
+            'Status': 'Active',
+            'Joined_At': new Date().toISOString().split('T')[0]
+          };
+          console.log('Payload being sent:', JSON.stringify(payload, null, 2));
+
+          const createdRecords = await base('tblPN0ni3zaaTCPcF').create([{
+            fields: payload
+          }]);
+
+          if (createdRecords && createdRecords.length > 0) {
+            console.log(`✅ SUCCESS! Created record ID: ${createdRecords[0].id}`);
+          } else {
+            console.error('⚠️ WARNING: Create call returned no records but no error throw?');
+          }
+
+          console.log(`✅ Added user to community: ${communityName}`);
         } catch (linkError) {
-           console.error('❌ Failed to create community link:', linkError);
-           console.error('   Error Details:', JSON.stringify(linkError, null, 2));
-           return res.status(500).json({ 
-               success: false, 
-               message: 'Failed to create community link: ' + linkError.message,
-               details: linkError 
-           });
+          console.error('❌ Failed to create community link:', linkError);
+          console.error('   Error Details:', JSON.stringify(linkError, null, 2));
+          return res.status(500).json({
+            success: false,
+            message: 'Failed to create community link: ' + linkError.message,
+            details: linkError
+          });
         }
       }
 
@@ -906,9 +906,9 @@ app.get('/api/admin/data', async (req, res) => {
 const checkAdmin = async (req, res, next) => {
   const requester = req.headers['x-admin-user'] || req.query.requester;
   if (!requester) return res.status(403).json({ success: false, message: 'No admin user specified' });
-  
+
   const cleanRequester = requester.replace('@', '').trim().toLowerCase();
-  
+
   try {
     const records = await base(process.env.AIRTABLE_MEMBERS_TABLE).select({
       filterByFormula: `{Tg_Username} = '${cleanRequester}'`,
@@ -931,20 +931,20 @@ const checkAdmin = async (req, res, next) => {
 app.post('/api/admin/bot/test', checkAdmin, async (req, res) => {
   try {
     const me = await bot.telegram.getMe();
-    
+
     // Optional: Send a test message to the admin if chat ID is available
     if (process.env.ADMIN_CHAT_ID) {
       await bot.telegram.sendMessage(process.env.ADMIN_CHAT_ID, `🤖 Bot Health Check: Online as @${me.username}`);
     }
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       bot: {
         id: me.id,
         username: me.username,
         firstName: me.first_name
       },
-      message: 'Bot is online and responding.' 
+      message: 'Bot is online and responding.'
     });
   } catch (error) {
     console.error('Bot Health Check Failed:', error);
@@ -964,17 +964,17 @@ app.get('/api/admin/logs', checkAdmin, (req, res) => {
         const filePath = path.join(logDir, f);
         const stats = fs.statSync(filePath);
         if (stats.isFile()) {
-           files.push({ 
-             name: f, 
-             path: `logs/${f}`, 
-             size: stats.size,
-             mtime: stats.mtime
-           });
+          files.push({
+            name: f,
+            path: `logs/${f}`,
+            size: stats.size,
+            mtime: stats.mtime
+          });
         }
       });
-      
+
       // Sort by modified time, newest first
-      files.sort((a,b) => b.mtime - a.mtime);
+      files.sort((a, b) => b.mtime - a.mtime);
 
     } catch (e) {
       console.error('Error listing log files:', e);
@@ -993,13 +993,13 @@ app.get('/api/admin/logs/view', checkAdmin, (req, res) => {
   if (file.includes('..')) return res.status(400).json({ message: 'Invalid file path' });
 
   const filePath = path.join(__dirname, file);
-  
+
   if (fs.existsSync(filePath)) {
     // Read last 1000 lines? Or just read file (careful with size)
     // Let's us 'tail' via child_process for efficiency on large files or just read last N bytes.
     // For simplicity, read whole file but limit size? Or use stream?
     // User asked "see logs", typically tail.
-    
+
     // Simple implementation: read file, take last 2000 lines.
     fs.readFile(filePath, 'utf8', (err, data) => {
       if (err) return res.status(500).json({ message: 'Read error' });
@@ -1017,7 +1017,7 @@ app.get('/api/admin/backups', checkAdmin, (req, res) => {
   // Use the same logic as initialization
   const dir = process.env.BACKUP_DIR || path.join(__dirname, 'backups');
   console.log(`📂 Listing backups from: ${dir}`);
-  
+
   if (fs.existsSync(dir)) {
     try {
       let fileList = [];
@@ -1050,14 +1050,14 @@ app.get('/api/admin/backups', checkAdmin, (req, res) => {
             }
           });
         } else {
-            console.log(`❌ Path does not exist: ${fullPath}`);
+          console.log(`❌ Path does not exist: ${fullPath}`);
         }
       };
 
       processDir(dir);
 
       console.log(`🏁 Total files found: ${fileList.length}`);
-      const files = fileList.sort((a,b) => b.mtime - a.mtime); // Newest first
+      const files = fileList.sort((a, b) => b.mtime - a.mtime); // Newest first
       res.json({ success: true, files });
     } catch (e) {
       console.error('Backup listing error:', e);
@@ -1077,7 +1077,7 @@ app.get('/api/admin/scheduler', checkAdmin, (req, res) => {
 
 app.post('/api/admin/scheduler', checkAdmin, (req, res) => {
   const { action, job } = req.body; // action: add, update, delete, start-now
-  
+
   try {
     if (action === 'add') {
       scheduler.addJob(job);
@@ -1132,28 +1132,31 @@ app.get('/api/interests', (req, res) => {
 // Tokenized Profile View - No Auth Required
 app.get('/api/view/:token', async (req, res) => {
   const { token } = req.params;
-  
+
   if (!token || token.length !== 32) {
     return res.status(404).json({ success: false, message: 'Invalid token' });
   }
 
   try {
-    // Find match by View_Token_1 or View_Token_2
+    // Move date calculation before query to use in filter
+    const now = new Date();
+    const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+    const dateFilter = twoWeeksAgo.toISOString().split('T')[0];
+
+    // Find match by View_Token_1 or View_Token_2 AND ensure it's recent
     const matchRecords = await base('tblx2OEN5sSR1xFI2').select({
-      filterByFormula: `OR({View_Token_1} = '${token}', {View_Token_2} = '${token}')`,
+      filterByFormula: `AND(IS_AFTER({Week_Start}, '${dateFilter}'), OR({View_Token_1} = '${token}', {View_Token_2} = '${token}'))`,
       maxRecords: 1
     }).firstPage();
 
     if (matchRecords.length === 0) {
-      return res.status(404).json({ success: false, message: 'Token not found' });
+      return res.status(404).json({ success: false, message: 'Token not found or expired' });
     }
 
     const match = matchRecords[0];
     const weekStart = new Date(match.fields.Week_Start);
-    const now = new Date();
-    const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
 
-    // Check if match is older than 2 weeks
+    // Double check if match is older than 2 weeks (redundant but safe)
     if (weekStart < twoWeeksAgo) {
       return res.status(404).json({ success: false, message: 'Token expired' });
     }
@@ -1178,16 +1181,16 @@ app.get('/api/view/:token', async (req, res) => {
 
     if (p.Country && p.Country.length > 0) {
       try {
-        const countryRecord = await base('tblcBPZqf3wFEXGwq').find(p.Country[0]);
+        const countryRecord = await base('tblTDQuqGDEDTPMLO').find(p.Country[0]);
         const isoCode = countryRecord.fields.ISO_Code;
         const flag = isoCode ? isoCode.toUpperCase().replace(/./g, char => String.fromCodePoint(char.charCodeAt(0) + 127397)) : '';
         country = { name: countryRecord.fields.Name_en, flag, iso: isoCode };
       } catch (e) { /* ignore */ }
     }
 
-    if (p.City && p.City.length > 0) {
+    if (p.City_Link && p.City_Link.length > 0) {
       try {
-        const cityRecord = await base('tblHpJu6sDjk99Wpt').find(p.City[0]);
+        const cityRecord = await base('tbllGzaGTz3PsxxWT').find(p.City_Link[0]);
         city = { name: cityRecord.fields.name_en };
       } catch (e) { /* ignore */ }
     }
@@ -1209,7 +1212,7 @@ app.get('/api/view/:token', async (req, res) => {
       grade: p.Grade,
       country,
       city,
-      timezone: p.Timezone,
+      timezone: p.Time_Zone,
       professionalDesc: p.Professional_Description,
       personalDesc: p.Personal_Description,
       professionalInterests: p.Professional_Interests,
@@ -1235,7 +1238,7 @@ app.get('/api/profile', async (req, res) => {
   const { username, requester } = req.query;
   const requestId = Date.now();
   console.time(`Profile_Req_${requestId}`);
-  
+
   if (!username || !requester) {
     return res.status(400).json({ success: false, message: 'Username and requester are required' });
   }
@@ -1248,7 +1251,7 @@ app.get('/api/profile', async (req, res) => {
   try {
     // --- PHASE 1: Fetch Core Data in Parallel ---
     console.time(`Phase1_Core_${requestId}`);
-    
+
     // 1. Fetch Target User
     const pTargetUser = base(process.env.AIRTABLE_MEMBERS_TABLE)
       .select({ filterByFormula: `{Tg_Username} = '${cleanUsername}'`, maxRecords: 1 })
@@ -1263,33 +1266,45 @@ app.get('/api/profile', async (req, res) => {
     }
 
     // 3. Fetch Access Validation Match (if not self view)
-    // to check if requester and target are matched
+    // OPTIMIZED: Use direct lookup checks instead of expensive FIND/ARRAYJOIN
     let pAccessMatch = Promise.resolve([]);
     if (cleanUsername !== cleanRequester) {
-       pAccessMatch = base('tblx2OEN5sSR1xFI2').select({
-          filterByFormula: `OR(
-              AND(FIND('${cleanRequester}', ARRAYJOIN({Tg_Username (from Member1)})), FIND('${cleanUsername}', ARRAYJOIN({Tg_Username (from Member2)}))),
-              AND(FIND('${cleanUsername}', ARRAYJOIN({Tg_Username (from Member1)})), FIND('${cleanRequester}', ARRAYJOIN({Tg_Username (from Member2)})))
+      pAccessMatch = base('tblx2OEN5sSR1xFI2').select({
+        filterByFormula: `OR(
+              AND({Tg_Username (from Member1)} = '${cleanRequester}', {Tg_Username (from Member2)} = '${cleanUsername}'),
+              AND({Tg_Username (from Member1)} = '${cleanUsername}', {Tg_Username (from Member2)} = '${cleanRequester}')
           )`,
-          maxRecords: 1
-       }).firstPage();
+        maxRecords: 1
+      }).firstPage();
     }
 
     // 4. Fetch Latest Match for Target User (to display "Current Match")
-    // Note: We need this to get the partner's details later
+    // OPTIMIZED: Add date filter to reduce scan
+    const d = new Date();
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day == 0 ? -6 : 1);
+    const monday = new Date(d.setDate(diff));
+    const currentWeekStart = monday.toISOString().split('T')[0];
+
+    // We only care about matches from current week or older? 
+    // Actually we just want the *latest* match.
+    // But adding a date filter helps if we only care about recent history.
+    // Let's at least filter for matches since 2024 to avoid scanning ancient history
+    const recentDate = '2024-01-01';
+
     const pLatestMatch = base('tblx2OEN5sSR1xFI2').select({
-        filterByFormula: `OR({Tg_Username (from Member1)} = '${cleanUsername}', {Tg_Username (from Member2)} = '${cleanUsername}')`,
-        sort: [{ field: 'Week_Start', direction: 'desc' }],
-        maxRecords: 1
+      filterByFormula: `AND(IS_AFTER({Week_Start}, '${recentDate}'), OR({Tg_Username (from Member1)} = '${cleanUsername}', {Tg_Username (from Member2)} = '${cleanUsername}'))`,
+      sort: [{ field: 'Week_Start', direction: 'desc' }],
+      maxRecords: 1
     }).firstPage();
 
-    const [targetUserRecords, requesterRecords, accessMatchRecords, latestMatchRecords] = 
+    const [targetUserRecords, requesterRecords, accessMatchRecords, latestMatchRecords] =
       await Promise.all([pTargetUser, pRequesterUser, pAccessMatch, pLatestMatch]);
-    
+
     console.timeEnd(`Phase1_Core_${requestId}`);
 
     // --- PHASE 2: Validation & Core Data Extraction ---
-    
+
     // User Existence Check
     if (targetUserRecords.length === 0) {
       return res.status(404).json({ success: false, message: 'User not found' });
@@ -1303,23 +1318,23 @@ app.get('/api/profile', async (req, res) => {
       const isMatched = accessMatchRecords.length > 0;
 
       if (!isRequesterAdmin && !isMatched) {
-        return res.status(403).json({ 
-          success: false, 
-          message: 'Access denied. You can only view profiles of your matches.', 
-          error_code: 'access_denied_match_only' 
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied. You can only view profiles of your matches.',
+          error_code: 'access_denied_match_only'
         });
       }
     }
 
     // --- PHASE 3: Fetch Enrichment Data in Parallel ---
     console.time(`Phase3_Enrich_${requestId}`);
-    
+
     const enrichmentPromises = [];
-    
+
     // 1. Country
     if (fields.Countries && fields.Countries.length > 0) {
       enrichmentPromises.push(
-        base(process.env.AIRTABLE_COUNTRIES_TABLE || 'Countries').find(fields.Countries[0])
+        base('tblTDQuqGDEDTPMLO').find(fields.Countries[0])
           .then(r => ({ type: 'country', data: r }))
           .catch(e => ({ type: 'country', error: e }))
       );
@@ -1338,7 +1353,7 @@ app.get('/api/profile', async (req, res) => {
     let matchDataRaw = null;
     if (latestMatchRecords.length > 0) {
       const match = latestMatchRecords[0];
-      
+
       // Calculate start of current week (Monday)
       const d = new Date();
       const day = d.getDay();
@@ -1355,16 +1370,16 @@ app.get('/api/profile', async (req, res) => {
         const isMember1 = member1Username === cleanUsername;
         const otherMemberPrefix = isMember1 ? 'Member2' : 'Member1';
         const otherMemberLink = match.fields[otherMemberPrefix];
-        
+
         // Extract Intro for the current user
         let introRaw = isMember1 ? match.fields.Intro_1 : match.fields.Intro_2;
         let intro = null;
         if (introRaw) {
-            try {
-                intro = JSON.parse(introRaw);
-            } catch (e) {
-                console.error('Failed to parse current match intro:', e);
-            }
+          try {
+            intro = JSON.parse(introRaw);
+          } catch (e) {
+            console.error('Failed to parse current match intro:', e);
+          }
         }
 
         if (otherMemberLink && otherMemberLink.length > 0) {
@@ -1380,21 +1395,21 @@ app.get('/api/profile', async (req, res) => {
     // 4. Active Community
     // Fetch active community membership for this user by Tg_Username
     enrichmentPromises.push(
-        base('tblPN0ni3zaaTCPcF').select({
-            filterByFormula: `AND(FIND('${cleanUsername}', ARRAYJOIN({Tg_Username (from Member)})), {Status} = 'Active')`,
-            maxRecords: 1
-        }).firstPage()
+      base('tblPN0ni3zaaTCPcF').select({
+        filterByFormula: `AND(FIND('${cleanUsername}', ARRAYJOIN({Tg_Username (from Member)})), {Status} = 'Active')`,
+        maxRecords: 1
+      }).firstPage()
         .then(records => {
-            if (records.length > 0) {
-                const comm = records[0];
-                const commName = comm.fields['Name (from Community)'] ? comm.fields['Name (from Community)'][0] : null;
-                return { type: 'community', name: commName };
-            }
-            return { type: 'community', name: null };
+          if (records.length > 0) {
+            const comm = records[0];
+            const commName = comm.fields['Name (from Community)'] ? comm.fields['Name (from Community)'][0] : null;
+            return { type: 'community', name: commName };
+          }
+          return { type: 'community', name: null };
         })
         .catch(e => {
-            console.error(`❌ Community query error:`, e);
-            return { type: 'community', error: e };
+          console.error(`❌ Community query error:`, e);
+          return { type: 'community', error: e };
         })
     );
 
@@ -1406,24 +1421,24 @@ app.get('/api/profile', async (req, res) => {
     let city = null;
     let currentMatch = null;
     let activeCommunity = null;
-    
+
     // Prepare Match Intro for the Public Profile View (Requester viewing User)
     let publicMatchIntro = null;
     if (cleanUsername !== cleanRequester && accessMatchRecords.length > 0) {
-        const accessMatch = accessMatchRecords[0];
-        // Who is the requester in this match?
-        const m1Username = accessMatch.fields['Tg_Username (from Member1)'] ? accessMatch.fields['Tg_Username (from Member1)'][0] : '';
-        // Note: accessMatch filter ensures one of them is requester and the other is target.
-        const requesterIsMember1 = m1Username === cleanRequester;
-        const introString = requesterIsMember1 ? accessMatch.fields.Intro_1 : accessMatch.fields.Intro_2;
-        
-        if (introString) {
-            try {
-                publicMatchIntro = JSON.parse(introString);
-            } catch (e) {
-                console.error('Failed to parse public match intro:', e);
-            }
+      const accessMatch = accessMatchRecords[0];
+      // Who is the requester in this match?
+      const m1Username = accessMatch.fields['Tg_Username (from Member1)'] ? accessMatch.fields['Tg_Username (from Member1)'][0] : '';
+      // Note: accessMatch filter ensures one of them is requester and the other is target.
+      const requesterIsMember1 = m1Username === cleanRequester;
+      const introString = requesterIsMember1 ? accessMatch.fields.Intro_1 : accessMatch.fields.Intro_2;
+
+      if (introString) {
+        try {
+          publicMatchIntro = JSON.parse(introString);
+        } catch (e) {
+          console.error('Failed to parse public match intro:', e);
         }
+      }
     }
 
     enrichmentResults.forEach(res => {
@@ -1453,38 +1468,38 @@ app.get('/api/profile', async (req, res) => {
       }
       if (res.type === 'community') {
         if (res.name) {
-            activeCommunity = { name: res.name };
+          activeCommunity = { name: res.name };
         }
       }
     });
 
     // Construct Response
     const profile = {
-        name: fields.Name || '',
-        family: fields.Family || '',
-        country: country,
-        city: city,
-        timezone: fields.Time_Zone || 'UTC (UTC+0)',
-        profession: fields.Profession || '',
-        grade: fields.Grade || 'Prefer not to say',
-        community: activeCommunity,
-        professionalDesc: fields.Professional_Description || '',
-        personalDesc: fields.Personal_Description || '',
-        professionalInterests: fields.Professional_Interests || [],
-        otherProfessionalInterests: fields.Other_Professional_Interests || '',
-        personalInterests: fields.Personal_Interests || [],
-        otherPersonalInterests: fields.Other_Personal_Interests || '',
-        coffeeGoals: fields.Coffee_Goals || [],
-        linkedin: fields.Linkedin || '',
-        languages: fields.Languages || [],
-        bestMeetingDays: fields.Best_Meetings_Days || [],
-        serendipity: fields.Serendipity || 5,
-        proximity: fields.Proximity || 5,
-        nextWeekStatus: fields.Next_Week_Status || 'Active',
-        avatar: fields.Avatar && fields.Avatar.length > 0 ? fields.Avatar[0].url : '',
-        tg_username: fields.Tg_Username || ''
+      name: fields.Name || '',
+      family: fields.Family || '',
+      country: country,
+      city: city,
+      timezone: fields.Time_Zone || 'UTC (UTC+0)',
+      profession: fields.Profession || '',
+      grade: fields.Grade || 'Prefer not to say',
+      community: activeCommunity,
+      professionalDesc: fields.Professional_Description || '',
+      personalDesc: fields.Personal_Description || '',
+      professionalInterests: fields.Professional_Interests || [],
+      otherProfessionalInterests: fields.Other_Professional_Interests || '',
+      personalInterests: fields.Personal_Interests || [],
+      otherPersonalInterests: fields.Other_Personal_Interests || '',
+      coffeeGoals: fields.Coffee_Goals || [],
+      linkedin: fields.Linkedin || '',
+      languages: fields.Languages || [],
+      bestMeetingDays: fields.Best_Meetings_Days || [],
+      serendipity: fields.Serendipity || 5,
+      proximity: fields.Proximity || 5,
+      nextWeekStatus: fields.Next_Week_Status || 'Active',
+      avatar: fields.Avatar && fields.Avatar.length > 0 ? fields.Avatar[0].url : '',
+      tg_username: fields.Tg_Username || ''
     };
-    
+
     console.timeEnd(`Profile_Req_${requestId}`);
     res.json({ success: true, profile, currentMatch, matchIntro: publicMatchIntro });
 
