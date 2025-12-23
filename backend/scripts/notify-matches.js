@@ -32,7 +32,7 @@ const { logMessage } = require('../utils/logger');
 // Configuration
 const MATCHES_TABLE = 'tblx2OEN5sSR1xFI2'; // From SCHEMA
 const MEMBERS_TABLE = process.env.AIRTABLE_MEMBERS_TABLE;
-const BOT_TOKEN = process.env.BOT_TOKEN; 
+const BOT_TOKEN = process.env.BOT_TOKEN;
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID;
 
 const DRY_RUN = process.argv.includes('--dry-run');
@@ -55,16 +55,16 @@ const bot = new Telegraf(BOT_TOKEN);
 
 function getMessage(lang, memberName, partnerName, partnerUsername, introData, isTest = false, realRecipientName = '', viewToken = null) {
     const isRu = lang === 'Ru';
-    
+
     // Use tokenized link if available, otherwise fall back to profile link
     let partnerLink = '';
     if (viewToken) {
-        partnerLink = isRu 
-            ? `Профиль: https://linked.coffee/view/${viewToken}` 
+        partnerLink = isRu
+            ? `Профиль: https://linked.coffee/view/${viewToken}`
             : `Profile: https://linked.coffee/view/${viewToken}`;
     } else if (partnerUsername && partnerUsername !== '(no username)') {
-        partnerLink = isRu 
-            ? `Ссылка: https://linked.coffee/profile/${partnerUsername.replace('@', '')}` 
+        partnerLink = isRu
+            ? `Ссылка: https://linked.coffee/profile/${partnerUsername.replace('@', '')}`
             : `Link: https://linked.coffee/profile/${partnerUsername.replace('@', '')}`;
     }
 
@@ -77,7 +77,7 @@ function getMessage(lang, memberName, partnerName, partnerUsername, introData, i
             const why = intro.why_interesting;
             const askHeader = isRu ? "💬 **О чем спросить:**" : "💬 **Icebreakers:**";
             const ask = intro.conversation_starters.map(s => `- ${s}`).join('\n');
-            
+
             introText = `\n${header}\n${why}\n\n${askHeader}\n${ask}\n`;
         } catch (e) {
             console.error('Error parsing intro JSON:', e);
@@ -115,7 +115,7 @@ Good Luck!
     }
 }
 
-async function notifyMember(member, partner, introField, viewToken = null, matchId = null) {
+async function notifyMember(member, partner, introField, viewToken = null, matchId = null, introImages = null) {
     const memberName = member.fields.Name || 'Friend';
     const partnerName = partner.fields.Name || 'a partner';
     const partnerUsername = partner.fields.Tg_Username ? `@${partner.fields.Tg_Username}` : '(no username)';
@@ -140,13 +140,16 @@ async function notifyMember(member, partner, introField, viewToken = null, match
         console.log(`⚠️  Skipping ${memberName} (No GDPR Consent)`);
         return false;
     }
-    
+
     const message = getMessage(lang, memberName, partnerName, partnerUsername, introField, IS_TEST_MODE, memberName, viewToken);
 
     // Determine final recipient
     const targetChatId = IS_TEST_MODE ? ADMIN_CHAT_ID : recipientId;
 
     if (DRY_RUN) {
+        if (introImages && introImages.length > 0) {
+            console.log(`[DRY RUN] Would send image: ${introImages[0].url}`);
+        }
         await logMessage({
             scriptName: 'notify-matches',
             memberId: member.id,
@@ -154,9 +157,21 @@ async function notifyMember(member, partner, introField, viewToken = null, match
             content: message,
             matchId: matchId
         });
-        return true; 
+        return true;
     } else {
         try {
+            // Send Image first if available
+            if (introImages && introImages.length > 0) {
+                try {
+                    console.log(`📸 Sending image to ${memberName}...`);
+                    await bot.telegram.sendPhoto(targetChatId, introImages[0].url);
+                } catch (imgError) {
+                    console.error(`⚠️ Failed to send image to ${memberName}:`, imgError.message);
+                    // Continue to send text message even if image fails
+                }
+            }
+
+            // Send Text Message
             await bot.telegram.sendMessage(targetChatId, message);
             await logMessage({
                 scriptName: 'notify-matches',
@@ -218,10 +233,10 @@ async function main() {
                 let sent2 = false;
 
                 // Notify Member 1 (Use Intro_1, View_Token_1)
-                sent1 = await notifyMember(member1, member2, match.fields.Intro_1, match.fields.View_Token_1, match.id);
-                
+                sent1 = await notifyMember(member1, member2, match.fields.Intro_1, match.fields.View_Token_1, match.id, match.fields.Intro_Image);
+
                 // Notify Member 2 (Use Intro_2, View_Token_2)
-                sent2 = await notifyMember(member2, member1, match.fields.Intro_2, match.fields.View_Token_2, match.id);
+                sent2 = await notifyMember(member2, member1, match.fields.Intro_2, match.fields.View_Token_2, match.id, match.fields.Intro_Image);
 
                 // Update Match record if ANY message was sent (or attempted in live mode)
                 // In DRY_RUN we don't update.

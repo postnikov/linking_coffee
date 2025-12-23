@@ -110,178 +110,217 @@ const TokenProfile = () => {
     }
 
     return (
-        <div className="dashboard-container">
-            <h1 className="dashboard-title">
-                {t('profile.title_view', { name: formData.name })}
-            </h1>
-            <p className="dashboard-subtitle">{t('profile.subtitle_view')}</p>
+        <main className="main-content" style={{ paddingTop: '120px', display: 'block', minHeight: '100vh', paddingLeft: 0, paddingRight: 0 }}>
+            <div className="public-profile-container">
+                <div className="public-profile-section">
+                    <div className="glass-card profile-view" style={{ padding: '2rem' }}>
+                        <div className="profile-view-header">
+                            <div className="avatar-preview view-mode-avatar">
+                                {formData.avatar ? (
+                                    <img
+                                        src={getAvatarUrl(formData.avatar)}
+                                        alt="Profile"
+                                    />
+                                ) : (
+                                    <div className="avatar-placeholder">
+                                        {formData.name ? formData.name.charAt(0).toUpperCase() : '?'}
+                                    </div>
+                                )}
+                            </div>
+                            <div className="profile-view-info">
+                                <h3>{formData.name} {formData.family}</h3>
+                                <p className="profile-subtitle" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                    {formData.profession && <span>{formData.profession}</span>}
 
-            <div className="profile-content-grid">
-                {/* AI Intro / Icebreakers Match Info */}
-                {matchIntro && (
-                    <div className="profile-card ai-intro-card" style={{ gridColumn: '1 / -1', background: 'linear-gradient(135deg, #FFF5F5 0%, #FFF0F5 100%)', border: '1px solid #FFD1D1' }}>
-                        <div className="match-compatibility">
-                            <h3 className="section-title">✨ {t('dashboard.current_match.why_interesting', 'Why you matched')}</h3>
-                            <p style={{ fontSize: '1.1rem', lineHeight: '1.6', color: '#1f2937', marginBottom: '1.5rem' }}>
-                                {matchIntro.why_interesting}
-                            </p>
+                                    {formData.grade && (
+                                        <>
+                                            {formData.profession && <span style={{ opacity: 0.7 }}>•</span>}
+                                            <span>{formData.grade}</span>
+                                        </>
+                                    )}
 
-                            <h3 className="section-title">💬 {t('dashboard.current_match.icebreakers', 'Icebreakers')}</h3>
-                            <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                                {matchIntro.conversation_starters && matchIntro.conversation_starters.map((starter, idx) => (
-                                    <li key={idx} style={{ 
-                                        padding: '0.75rem 1rem', 
-                                        background: 'rgba(255, 255, 255, 0.6)', 
-                                        borderRadius: '8px', 
-                                        marginBottom: '0.5rem', 
-                                        fontSize: '1rem',
-                                        color: '#374151',
-                                        display: 'flex',
-                                        alignItems: 'start'
-                                    }}>
-                                        <span style={{ marginRight: '0.5rem' }}>🔹</span>
-                                        {starter}
-                                    </li>
-                                ))}
-                            </ul>
+                                    {formData.linkedin && (
+                                        <>
+                                            {(formData.profession || formData.grade) && <span style={{ opacity: 0.7 }}>•</span>}
+                                            <a
+                                                href={formData.linkedin}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                style={{ color: '#0077b5', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" /></svg>
+                                                LinkedIn
+                                            </a>
+                                        </>
+                                    )}
+                                </p>
+                                {(formData.city || formData.country) && (
+                                    <div className="profile-location">
+                                        {formData.country?.flag ? <span style={{ fontSize: '1.2rem' }}>{formData.country.flag}</span> : null}
+                                        {formData.country?.name && <span>{formData.country.name}</span>}
+                                        {formData.city && <span>• {formData.city.name}</span>}
+                                        {formData.timezone && <span>• {formData.timezone}</span>}
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                    </div>
-                )}
 
-                <div className="profile-column-left">
-                    <div className="profile-card profile-header-card">
-                        <div className="profile-avatar-container">
-                            {formData.avatar ? (
-                                <img
-                                    src={getAvatarUrl(formData.avatar)}
-                                    alt="Profile"
-                                    className="profile-avatar-large"
-                                    onError={(e) => { e.target.onerror = null; e.target.src = 'https://via.placeholder.com/150'; }}
-                                />
-                            ) : (
-                                <div className="profile-avatar-placeholder-large">
-                                    {formData.name ? formData.name.charAt(0).toUpperCase() : '?'}
+                        <div className="profile-content-grid">
+                            {/* AI Match Context */}
+                            {matchIntro && (
+                                <div className="profile-section-block" style={{
+                                    background: 'linear-gradient(to right, #faf5ff, #fff)',
+                                    border: '1px solid #e9d5ff',
+                                    marginBottom: '2rem'
+                                }}>
+                                    <h4 style={{ color: '#9333ea', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        ✨ Why you matched
+                                    </h4>
+                                    <p style={{ fontStyle: 'italic', color: '#4b5563', marginBottom: '1rem', lineHeight: '1.6' }}>
+                                        "{matchIntro.why_interesting}"
+                                    </p>
+
+                                    {matchIntro.conversation_starters && matchIntro.conversation_starters.length > 0 && (
+                                        <div>
+                                            <h5 style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '0.5rem', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                                💬 Icebreakers
+                                            </h5>
+                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                                {matchIntro.conversation_starters.map((starter, idx) => (
+                                                    <span key={idx} style={{
+                                                        background: 'white',
+                                                        padding: '0.5rem 0.8rem',
+                                                        borderRadius: '0.75rem',
+                                                        fontSize: '0.9rem',
+                                                        color: '#4b5563',
+                                                        border: '1px solid rgba(0,0,0,0.05)',
+                                                        boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                                                    }}>
+                                                        {starter}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             )}
-                        </div>
-                        <h2 className="profile-name">{formData.name} {formData.family}</h2>
-                        
-                        {(formData.profession || formData.grade) && (
-                            <div className="profile-role-badge">
-                                {formData.grade && <span className="role-grade">{formData.grade}</span>}
-                                {formData.profession && <span className="role-title">{formData.profession}</span>}
-                            </div>
-                        )}
 
-                        {(formData.city || formData.country) && (
-                            <div className="profile-location">
-                                {formData.country?.flag} {formData.city?.name ? `${formData.city.name}, ` : ''}{formData.country?.name}
-                            </div>
-                        )}
-                        
-                        <div className="profile-social-links">
-                            {formData.linkedin && (
-                                <a href={formData.linkedin} target="_blank" rel="noopener noreferrer" className="social-link linkedin">
-                                    LinkedIn
-                                </a>
-                            )}
-                            {formData.tg_username && (
-                                <a href={`https://t.me/${formData.tg_username.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="social-link telegram">
-                                    Telegram
-                                </a>
-                            )}
-                        </div>
-                    </div>
-
-                    {formData.languages && formData.languages.length > 0 && (
-                        <div className="profile-card">
-                            <h3 className="section-title">{t('profile.languages')}</h3>
-                            <div className="tags-container">
-                                {formData.languages.map((lang, index) => (
-                                    <span key={index} className="tag-pill language-tag">
-                                        {lang}
-                                    </span>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                </div>
-
-                <div className="profile-column-right">
-                     {/* Professional Section */}
-                     {(formData.professionalDesc || (formData.professionalInterests && formData.professionalInterests.length > 0)) && (
-                        <div className="profile-card">
-                            <h3 className="section-title">🚀 {t('profile.professional_section')}</h3>
-                            
                             {formData.professionalDesc && (
-                                <div className="profile-bio">
+                                <div className="profile-section-block">
+                                    <h4>{t('dashboard.profile.professional_desc')}</h4>
                                     <p>{formData.professionalDesc}</p>
                                 </div>
                             )}
 
-                            {formData.professionalInterests && formData.professionalInterests.length > 0 && (
-                                <div className="interests-section">
-                                    <h4>{t('profile.professional_interests')}</h4>
-                                    <div className="tags-container">
-                                        {formData.professionalInterests.map((interest, index) => (
-                                            <span 
-                                                key={index} 
-                                                className="tag-pill"
-                                                style={{ backgroundColor: getInterestColor(interest) }}
-                                            >
-                                                {getLocalizedInterest(interest, 'professional')}
-                                            </span>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-                    {/* Personal Section */}
-                    {(formData.personalDesc || (formData.personalInterests && formData.personalInterests.length > 0)) && (
-                        <div className="profile-card">
-                            <h3 className="section-title">🌟 {t('profile.personal_section')}</h3>
-                            
                             {formData.personalDesc && (
-                                <div className="profile-bio">
+                                <div className="profile-section-block">
+                                    <h4>{t('dashboard.profile.personal_desc')}</h4>
                                     <p>{formData.personalDesc}</p>
                                 </div>
                             )}
 
-                            {formData.personalInterests && formData.personalInterests.length > 0 && (
-                                <div className="interests-section">
-                                    <h4>{t('profile.personal_interests')}</h4>
-                                    <div className="tags-container">
-                                        {formData.personalInterests.map((interest, index) => (
-                                            <span 
-                                                key={index} 
-                                                className="tag-pill"
-                                                style={{ backgroundColor: getInterestColor(interest) }}
-                                            >
-                                                {getLocalizedInterest(interest, 'personal')}
-                                            </span>
-                                        ))}
-                                    </div>
+                            {(formData.professionalInterests?.length > 0 || formData.otherProfessionalInterests || formData.personalInterests?.length > 0 || formData.otherPersonalInterests) && (
+                                <div className="profile-interests-grid">
+                                    {(formData.professionalInterests?.length > 0 || formData.otherProfessionalInterests) && (
+                                        <div>
+                                            <h4>{t('dashboard.profile.professional_interests')}</h4>
+                                            <div className="language-chips" style={{ flexWrap: 'wrap' }}>
+                                                {formData.professionalInterests?.map(item => (
+                                                    <span key={item} className="chip" style={{ backgroundColor: getInterestColor(item) }}>
+                                                        {getLocalizedInterest(item, 'professional')}
+                                                    </span>
+                                                ))}
+                                                {formData.otherProfessionalInterests && formData.otherProfessionalInterests.split(/[,\.;]+/).map(item => item.trim()).filter(item => item).map((item, index) => (
+                                                    <span key={`other-prof-${index}`} className="chip" style={{ backgroundColor: getInterestColor(item) }}>
+                                                        {item}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                    {(formData.personalInterests?.length > 0 || formData.otherPersonalInterests) && (
+                                        <div>
+                                            <h4>{t('dashboard.profile.personal_interests')}</h4>
+                                            <div className="language-chips" style={{ flexWrap: 'wrap' }}>
+                                                {formData.personalInterests?.map(item => (
+                                                    <span key={item} className="chip" style={{ backgroundColor: getInterestColor(item) }}>
+                                                        {getLocalizedInterest(item, 'personal')}
+                                                    </span>
+                                                ))}
+                                                {formData.otherPersonalInterests && formData.otherPersonalInterests.split(/[,\.;]+/).map(item => item.trim()).filter(item => item).map((item, index) => (
+                                                    <span key={`other-pers-${index}`} className="chip" style={{ backgroundColor: getInterestColor(item) }}>
+                                                        {item}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             )}
-                        </div>
-                    )}
 
-                    {/* Goals / Help */}
-                    {(formData.coffeeGoals || formData.helpWith) && (
-                        <div className="profile-card">
-                            <h3 className="section-title">🤝 {t('profile.networking_goals')}</h3>
-                            {formData.coffeeGoals && (
-                                <div className="profile-bio">
-                                    <p>{formData.coffeeGoals}</p>
+                            {formData.coffeeGoals?.length > 0 && (
+                                <div className="profile-section-block">
+                                    <h4>{t('dashboard.profile.coffee_goals')}</h4>
+                                    <p>{Array.isArray(formData.coffeeGoals) ? formData.coffeeGoals.join(', ') : formData.coffeeGoals}</p>
                                 </div>
                             )}
+
+                            <div className="profile-interests-grid">
+                                {formData.languages?.length > 0 && (
+                                    <div>
+                                        <h4>{t('dashboard.profile.languages')}</h4>
+                                        <div className="language-chips" style={{ flexWrap: 'wrap' }}>
+                                            {formData.languages.map(lang => (
+                                                <span key={lang} className="chip">{lang}</span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {formData.bestMeetingDays?.length > 0 && (
+                                    <div>
+                                        <h4>{t('dashboard.profile.best_days')}</h4>
+                                        <div className="language-chips" style={{ flexWrap: 'wrap' }}>
+                                            {formData.bestMeetingDays.map(day => (
+                                                <span
+                                                    key={day}
+                                                    className="chip"
+                                                    style={{ backgroundColor: DAY_COLORS[day] || '#f3f4f6' }}
+                                                >
+                                                    {t(`dashboard.days.${day.toLowerCase()}`, day)}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                    )}
+                    </div>
+                </div>
+
+                <div className="public-match-section">
+                    <div className="glass-card" style={{ padding: '2rem', position: 'sticky', top: '5rem' }}>
+                        <h3 className="section-title" style={{ fontSize: '1.2rem', marginBottom: '1rem', background: 'none', WebkitTextFillColor: 'initial', color: '#1f2937' }}>Match of the Week</h3>
+                        <p style={{ marginBottom: '1.5rem', color: '#4b5563' }}>
+                            This is your match for the week.
+                        </p>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            <a
+                                href={formData.tg_username ? `https://t.me/${formData.tg_username.replace('@', '')}` : '#'}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="save-btn"
+                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', textDecoration: 'none', width: '100%', boxSizing: 'border-box', marginTop: 0 }}
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 11.944 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.638z" /></svg>
+                                Message
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
+        </main>
     );
 };
 

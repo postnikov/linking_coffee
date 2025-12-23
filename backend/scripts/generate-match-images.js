@@ -14,6 +14,7 @@
  *   --match-id=ID     : Process only a specific match (Airtable Record ID)
  *   --dry-run         : Generate images locally but don't upload to Airtable
  *   --force           : Regenerate images even if they already exist
+ *   --match-num=N     : Process only a specific match number (Airtable Record ID)
  * 
  * Dependencies:
  *   npm install sharp axios @google/generative-ai form-data
