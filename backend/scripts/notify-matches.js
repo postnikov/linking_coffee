@@ -27,6 +27,7 @@ const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../../.env') });
 const Airtable = require('airtable');
 const { Telegraf } = require('telegraf');
+const { logMessage } = require('../utils/logger');
 
 // Configuration
 const MATCHES_TABLE = 'tblx2OEN5sSR1xFI2'; // From SCHEMA
@@ -114,7 +115,7 @@ Good Luck!
     }
 }
 
-async function notifyMember(member, partner, introField, viewToken = null) {
+async function notifyMember(member, partner, introField, viewToken = null, matchId = null) {
     const memberName = member.fields.Name || 'Friend';
     const partnerName = partner.fields.Name || 'a partner';
     const partnerUsername = partner.fields.Tg_Username ? `@${partner.fields.Tg_Username}` : '(no username)';
@@ -123,24 +124,22 @@ async function notifyMember(member, partner, introField, viewToken = null) {
 
     if (!recipientId && !IS_TEST_MODE) {
         console.log(`⚠️  Skipping ${memberName} (no Telegram ID)`);
+        await logMessage({
+            scriptName: 'notify-matches',
+            memberId: member.id,
+            status: 'Failed',
+            content: 'No Telegram ID',
+            matchId: matchId,
+            error: 'Missing Tg_ID'
+        });
         return false;
     }
-
-    // In test mode, we strictly ONLY send to the test user.
-    // We do NOT redirect other people's messages to the test user anymore.
-    // This check is removed as per new test mode logic.
-    // if (IS_TEST_MODE && memberStatus !== 'Admin') {
-    //     return;
-    // }
 
     // Check GDPR Consent
     if (!member.fields.Consent_GDPR) {
         console.log(`⚠️  Skipping ${memberName} (No GDPR Consent)`);
         return false;
     }
-
-    // Determine Intro Field content (Intro_1 or Intro_2 passed from caller)
-    // Note: Caller passes the raw string from Airtable
     
     const message = getMessage(lang, memberName, partnerName, partnerUsername, introField, IS_TEST_MODE, memberName, viewToken);
 
@@ -148,15 +147,34 @@ async function notifyMember(member, partner, introField, viewToken = null) {
     const targetChatId = IS_TEST_MODE ? ADMIN_CHAT_ID : recipientId;
 
     if (DRY_RUN) {
-        console.log(`\n[DRY RUN] Would send to ${IS_TEST_MODE ? 'ADMIN' : memberName} (Target ID: ${targetChatId}):\n${message}`);
+        await logMessage({
+            scriptName: 'notify-matches',
+            memberId: member.id,
+            status: 'Dry Run',
+            content: message,
+            matchId: matchId
+        });
         return true; 
     } else {
         try {
             await bot.telegram.sendMessage(targetChatId, message);
-            console.log(`✅ Sent notification to ${IS_TEST_MODE ? `ADMIN (for ${memberName})` : memberName} (Actual recipient ID: ${targetChatId})`);
+            await logMessage({
+                scriptName: 'notify-matches',
+                memberId: member.id,
+                status: 'Sent',
+                content: message,
+                matchId: matchId
+            });
             return true;
         } catch (error) {
-            console.error(`❌ Failed to send to ${memberName} (Target ID: ${targetChatId}):`, error.message);
+            await logMessage({
+                scriptName: 'notify-matches',
+                memberId: member.id,
+                status: 'Failed',
+                content: message,
+                matchId: matchId,
+                error: error.message
+            });
             return false;
         }
     }
@@ -169,32 +187,7 @@ async function main() {
     if (MAX_MATCHES_TO_PROCESS !== Infinity) console.log(`   Limit: ${MAX_MATCHES_TO_PROCESS} matches`);
 
     try {
-        // 1. Fetch Pending Matches
-        // Note: The prompt says "Filters by Notifications = Pending".
-        // However, looking at schema (Step 121), there is NO "Notifications" field in Matches table.
-        // It has Status (Matched, Met, NoShow).
-        // I will assume we need to filter by Status='Matched'.
-        // To avoid re-sending, normally we'd need a flag like "Notification_Sent".
-        // Since the schema doesn't have it, I'll stick to:
-        // "Takes all the Matches from Matches table" -> I'll filter for this week's matches to be safe?
-        // Or just ALL matches? Usually notification is for current week. 
-        // Prompt says: "The script takes all the Matches from Matches table. Filters by Notifications = Pending"
-        // Since "Notifications" field is missing in schema, I will skip this filter but log a warning.
-        // Wait, I should probably check if I can filter by something else or just process recent ones.
-        // To follow instructions strictly, I'd need that field. 
-        // I'll assume the user might have added it or expects me to add it?
-        // But I cannot modify schema easily without instructions.
-        // I will select records where Status = 'Matched'.
-        // AND maybe I should check if I should add a check for "Notification_Sent" conceptually.
-        // For now, I will process ALL 'Matched' records. 
-        // IMPORTANT: The prompt explicitly says "Filters by Notifications = Pending". 
-        // If the field doesn't exist, the script effectively won't find anything if I try to filter by it.
-        // I will implement the script assuming the field MIGHT exist or ignore it if not found, 
-        // BUT the best approach is to filter by Status='Matched'.
-        // Let's look at the schema again (Step 121).
-        // Matches table fields: Week_Start, Member1, Member2, Status, Feedback...
-        // No "Notifications" field.
-        // I will write the script to fetch Status='Matched'.
+        // 1. Fetch Pending Matches from Airtable
 
         console.log(`🔍 Fetching matches with Notifications = 'Pending'...`);
         const matches = await base(MATCHES_TABLE).select({
@@ -225,10 +218,10 @@ async function main() {
                 let sent2 = false;
 
                 // Notify Member 1 (Use Intro_1, View_Token_1)
-                sent1 = await notifyMember(member1, member2, match.fields.Intro_1, match.fields.View_Token_1);
+                sent1 = await notifyMember(member1, member2, match.fields.Intro_1, match.fields.View_Token_1, match.id);
                 
                 // Notify Member 2 (Use Intro_2, View_Token_2)
-                sent2 = await notifyMember(member2, member1, match.fields.Intro_2, match.fields.View_Token_2);
+                sent2 = await notifyMember(member2, member1, match.fields.Intro_2, match.fields.View_Token_2, match.id);
 
                 // Update Match record if ANY message was sent (or attempted in live mode)
                 // In DRY_RUN we don't update.

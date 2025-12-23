@@ -400,6 +400,7 @@ async function main() {
                     const m2 = p.u2.fields;
                     let intro1 = null;
                     let intro2 = null;
+                    let sharedIntro = null;
                     
                     try {
                         const intro = await generateMatchIntros(m1, m2);
@@ -410,6 +411,7 @@ async function main() {
                             
                             intro1 = JSON.stringify(intro.introFor[m1.Tg_ID]);
                             intro2 = JSON.stringify(intro.introFor[m2.Tg_ID]);
+                            sharedIntro = intro.sharedCombined;
                         }
                     } catch (e) {
                         console.error(`Failed intro for ${m1.Name}-${m2.Name}:`, e.message);
@@ -424,6 +426,7 @@ async function main() {
                             'Notifications': 'Pending',
                             'Intro_1': intro1,
                             'Intro_2': intro2,
+                            'Shared_Intro': sharedIntro,
                             'View_Token_1': generateViewToken(),
                             'View_Token_2': generateViewToken()
                         }

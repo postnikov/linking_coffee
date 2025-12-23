@@ -19,6 +19,7 @@
 require('dotenv').config({ path: require('path').join(__dirname, '../../.env') });
 const Airtable = require('airtable');
 const { Telegraf, Markup } = require('telegraf');
+const { logMessage } = require('../utils/logger');
 
 // Initialize Airtable
 // Initialize Airtable
@@ -64,6 +65,40 @@ const cleanUsername = (username) => {
     return username.replace('@', '').trim();
 };
 
+const MEMBERS_TABLE_ID = 'tblCrnbDupkzWUx9P';
+
+const MESSAGES = {
+    En: {
+        greeting: "Hey there 👋",
+        body: (partnerLink) => `How is your Coffee going? \nHave you met with your partner already? \nPartner: ${partnerLink}\n\nOr maybe you've scheduled the meeting? \nJust press the button below to answer:`,
+        btn_met: 'We met ✅',
+        btn_scheduled: 'We scheduled 📆',
+        btn_fail: 'Something went wrong 😔',
+        partner_default: 'your partner'
+    },
+    Ru: {
+        greeting: "Привет 👋",
+        body: (partnerLink) => `Как успехи с Linked.Coffee? \nУже удалось встретиться с партнером? \nПартнер: ${partnerLink}\n\nИли вы пока только договорились о встрече? \nНажми кнопку ниже, чтобы ответить:`,
+        btn_met: 'Мы встретились ✅',
+        btn_scheduled: 'Договорились 📆',
+        btn_fail: 'Не получилось 😔',
+        partner_default: 'твоим партнером'
+    }
+};
+
+async function getMemberLanguage(memberId) {
+    if (!memberId) return 'En';
+    try {
+        const record = await base(MEMBERS_TABLE_ID).find(memberId);
+        const lang = record.fields['Notifications_Language'];
+        // Default to English if not 'Ru' (safe fallback)
+        return (lang === 'Ru') ? 'Ru' : 'En';
+    } catch (error) {
+        console.error(`Error fetching language for member ${memberId}:`, error.message);
+        return 'En';
+    }
+}
+
 async function sendFeedbackRequests() {
     console.log(`Starting feedback request script...`);
     console.log(`   Mode: ${IS_DRY_RUN ? 'DRY RUN' : 'LIVE'}`);
@@ -71,7 +106,11 @@ async function sendFeedbackRequests() {
     if (MAX_MATCHES_TO_PROCESS !== Infinity) console.log(`   Limit: ${MAX_MATCHES_TO_PROCESS} matches`);
 
     const mondayDate = getMonday(new Date());
-    const weekStartStr = mondayDate.toISOString().split('T')[0];
+    // Format date in local time to avoid UTC shift issues (e.g. midnight becoming previous day)
+    const year = mondayDate.getFullYear();
+    const month = String(mondayDate.getMonth() + 1).padStart(2, '0');
+    const day = String(mondayDate.getDate()).padStart(2, '0');
+    const weekStartStr = `${year}-${month}-${day}`;
     console.log(`Targeting matches for week starting: ${weekStartStr}`);
 
     try {
@@ -99,11 +138,18 @@ async function sendFeedbackRequests() {
             const m2TgId = match.fields['Tg_ID (from Member2)'] ? match.fields['Tg_ID (from Member2)'][0] : null;
             const m2Username = match.fields['Tg_Username (from Member2)'] ? match.fields['Tg_Username (from Member2)'][0] : null;
 
+            // Fetch languages (Member1 and Member2 are arrays of IDs)
+            const m1Id = match.fields['Member1'] ? match.fields['Member1'][0] : null;
+            const m1Lang = await getMemberLanguage(m1Id);
+
+            const m2Id = match.fields['Member2'] ? match.fields['Member2'][0] : null;
+            const m2Lang = await getMemberLanguage(m2Id);
+
             // Send to Member 1
-            await sendToMember(matchId, 1, m1TgId, m2Username);
+            await sendToMember(matchId, 1, m1TgId, m1Id, m2Username, m1Lang);
 
             // Send to Member 2
-            await sendToMember(matchId, 2, m2TgId, m1Username);
+            await sendToMember(matchId, 2, m2TgId, m2Id, m1Username, m2Lang);
 
             // Update match record to mark as checked in
             // Logic: Not Dry Run AND Not Test Mode (to preserve real state)
@@ -133,56 +179,71 @@ async function sendFeedbackRequests() {
     }
 }
 
-async function sendToMember(matchId, role, memberTgId, partnerUsername) {
+async function sendToMember(matchId, role, memberTgId, memberId, partnerUsername, language = 'En') {
     if (!memberTgId) {
         console.log(`No Telegram ID for Member ${role} in match ${matchId}. Skipping.`);
         return;
     }
 
+    const t = MESSAGES[language] || MESSAGES.En;
+
     const partnerLink = partnerUsername
         ? `https://linked.coffee/profile/${cleanUsername(partnerUsername)}`
-        : 'your partner';
+        : t.partner_default;
 
     let messagePrefix = '';
     let targetId = memberTgId;
     
     if (IS_TEST_MODE) {
         targetId = ADMIN_CHAT_ID;
-        messagePrefix = `[TEST MODE - Original Reicipient: ${memberTgId}]\n\n`;
+        messagePrefix = `[TEST MODE - Original Reicipient: ${memberTgId} (${language})]\n\n`;
     }
 
-    const message = `${messagePrefix}Hey there 👋
+    const message = `${messagePrefix}${t.greeting}
 
-How is your Coffee going? 
-Have you met with your partner already? 
-Partner: ${partnerLink}
-
-Or maybe you've scheduled the meeting? 
-Just press the button below to answer:`;
+${t.body(partnerLink)}`;
 
     const keyboard = Markup.inlineKeyboard([
         [
-            Markup.button.callback('We met ✅', `fb_stat:${matchId}:${role}:Met`),
-            Markup.button.callback('We scheduled 📆', `fb_stat:${matchId}:${role}:Scheduled`)
+            Markup.button.callback(t.btn_met, `fb_stat:${matchId}:${role}:Met`),
+            Markup.button.callback(t.btn_scheduled, `fb_stat:${matchId}:${role}:Scheduled`)
         ],
         [
-            Markup.button.callback('Something went wrong 😔', `fb_stat:${matchId}:${role}:Fail`)
+            Markup.button.callback(t.btn_fail, `fb_stat:${matchId}:${role}:Fail`)
         ]
     ]);
 
     if (IS_DRY_RUN) {
-        console.log(`[DRY RUN] Would send to ${IS_TEST_MODE ? `ADMIN for ${memberTgId}` : memberTgId} (Role ${role}):`);
-        console.log(message);
+        await logMessage({
+            scriptName: 'midweek-checkin',
+            memberId: memberId,
+            status: 'Dry Run',
+            content: message,
+            matchId: matchId
+        });
         return;
     }
 
     try {
         await bot.telegram.sendMessage(targetId, message, keyboard);
-        console.log(`Sent feedback request to Member ${role} (Target: ${targetId}) for match ${matchId}`);
+        await logMessage({
+            scriptName: 'midweek-checkin',
+            memberId: memberId,
+            status: 'Sent',
+            content: message,
+            matchId: matchId
+        });
         // Delay to avoid hitting rate limits
         await new Promise(resolve => setTimeout(resolve, 100));
     } catch (error) {
-        console.error(`Failed to send to Member ${role} (Target: ${targetId}):`, error.message);
+        await logMessage({
+            scriptName: 'midweek-checkin',
+            memberId: memberId,
+            status: 'Failed',
+            content: message,
+            matchId: matchId,
+            error: error.message
+        });
     }
 }
 

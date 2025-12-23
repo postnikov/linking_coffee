@@ -21,6 +21,7 @@
 require('dotenv').config({ path: require('path').join(__dirname, '../../.env') });
 const Airtable = require('airtable');
 const { Telegraf, Markup } = require('telegraf');
+const { logMessage } = require('../utils/logger');
 
 // Initialize Airtable
 const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY }).base(process.env.AIRTABLE_BASE_ID);
@@ -46,7 +47,23 @@ const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID;
 if (IS_TEST_MODE && !ADMIN_CHAT_ID) {
     console.error('❌ ADMIN_CHAT_ID required for test mode (check .env).');
     process.exit(1);
+    process.exit(1);
 }
+
+const MESSAGES = {
+    En: {
+        active: (name) => `☕️↔☕️\nHello, ${name} \nNew week has started!\n\n🟢 Tonight you will get your new match from Linked Coffee.\nIf you want to skip the week — just press the button below.\n\nSee you 💜`,
+        passive: (name) => `☕️↔☕️\nHello, ${name} \nNew week has started!\n\nDo you want to participate in the Linked Coffee this week?\nYour current status: ❌ I'll skip the week.\n\nIf you feel like meeting new peoplethis week - just press the button below.\nSee you 💜`,
+        btn_yes: "Yes, I'm in ✅",
+        btn_no: "No, I'll skip the week 🪫"
+    },
+    Ru: {
+        active: (name) => `☕️↔☕️\nПривет, ${name} \nНачалась новая неделя!\n\n🟢 Вечером ты получишь нового собеседника в Linked Coffee.\nЕсли хочешь пропустить неделю — нажми кнопку ниже.\n\nДо встречи 💜`,
+        passive: (name) => `☕️↔☕️\nПривет, ${name} \nНачалась новая неделя!\n\nХочешь участвовать в Linked Coffee на этой неделе?\nТвой текущий статус: ❌ Пропускаю неделю.\n\nЕсли решишь участвовать — просто нажми кнопку ниже.\nДо встречи 💜`,
+        btn_yes: "Да, участвую ✅",
+        btn_no: "Нет, пропущу неделю 🪫"
+    }
+};
 
 async function run() {
     console.log(`🚀 Starting Weekend Invitation (All) Script`);
@@ -70,13 +87,16 @@ async function run() {
 
         for (const record of records) {
             if (processedCount >= MAX_MESSAGES_TO_PROCESS) {
-                 console.log(`🛑 Limit of ${MAX_MESSAGES_TO_PROCESS} reached.`);
-                 break;
+                console.log(`🛑 Limit of ${MAX_MESSAGES_TO_PROCESS} reached.`);
+                break;
             }
 
             const name = record.fields.Name || 'Member';
             const userTgId = record.fields.Tg_ID;
             const nextWeekStatus = record.fields.Next_Week_Status; // Active or Passive
+            const langField = record.fields.Notifications_Language;
+            const lang = (langField === 'Ru') ? 'Ru' : 'En';
+            const t = MESSAGES[lang];
 
             // In new test mode logic, we DO NOT filter by status. We process everyone but redirect.
             // if (IS_TEST_MODE && status !== 'Admin') continue; // REMOVED
@@ -84,49 +104,38 @@ async function run() {
             // Determine Recipient
             let targetId = userTgId;
             let messagePrefix = '';
-            
+
             if (IS_TEST_MODE) {
                 targetId = ADMIN_CHAT_ID;
-                messagePrefix = `[TEST MODE - Original Reicipient: ${name}]\n\n`;
+                messagePrefix = `[TEST MODE - Original Reicipient: ${name} (${lang})]\n\n`;
             }
 
             // Determine Message Based on Status
             let message = "";
             if (nextWeekStatus === 'Active') {
-                message = `${messagePrefix}☕️↔☕️
-Hello, ${name} 
-New week is starting!
-
-🟢 Tomorrow you will get your new match from Linked Coffee.
-If you want to skip the week — just press the button below.
-
-See you 💜`;
+                message = `${messagePrefix}${t.active(name)}`;
             } else {
                 // Passive (or undefined/other)
-                message = `${messagePrefix}☕️↔☕️
-Hello, ${name} 
-New week is starting!
-
-Do you want to participate in the Linked Coffee this week?
-Your current status: ❌ I'll skip the week.
-
-Just press the button below.
-See you 💜`;
+                message = `${messagePrefix}${t.passive(name)}`;
             }
 
             // Buttons (Same for both)
             const keyboard = Markup.inlineKeyboard([
                 [
-                    Markup.button.callback("Yes, I'm in ✅", "participate_yes")
+                    Markup.button.callback(t.btn_yes, "participate_yes")
                 ],
                 [
-                    Markup.button.callback("No, I'll skip the week 🪫", "participate_no")
+                    Markup.button.callback(t.btn_no, "participate_no")
                 ]
             ]);
 
             if (IS_DRY_RUN) {
-                console.log(`   [DRY RUN] Would send to ${name} (Target: ${targetId}) [Status: ${nextWeekStatus || 'None'}]`);
-                // console.log(message); 
+                await logMessage({
+                    scriptName: 'weekend-invitation-all',
+                    memberId: record.id,
+                    status: 'Dry Run',
+                    content: message
+                });
                 processedCount++;
                 sentCount++;
                 continue;
@@ -134,8 +143,13 @@ See you 💜`;
 
             try {
                 await bot.telegram.sendMessage(targetId, message, keyboard);
-                console.log(`   ✅ Sent to ${IS_TEST_MODE ? `ADMIN for ${name}` : name} (${targetId})`);
-                
+                await logMessage({
+                    scriptName: 'weekend-invitation-all',
+                    memberId: record.id,
+                    status: 'Sent',
+                    content: message
+                });
+
                 // Mark as sent - ONLY if NOT IN TEST MODE (or maybe we want to test status update too? User said "Rebuild --test... sends to Admin". Usually updating status invalidates real user data).
                 // I will skip status update in test mode logic to be safe.
                 if (!IS_TEST_MODE) {
@@ -146,20 +160,26 @@ See you 💜`;
                                 'Weekend_Notification_Sent': true
                             }
                         }]);
-                        console.log(`      marked as sent`);
+                        // console.log(`      marked as sent`);
                     } catch (updateErr) {
                         console.error(`      ❌ Failed to mark as sent:`, updateErr.message);
                     }
                 } else {
-                     console.log(`      [TEST] Would mark as sent (skipped)`);
+                    console.log(`      [TEST] Would mark as sent (skipped)`);
                 }
-                
+
                 sentCount++;
             } catch (err) {
-                console.error(`   ❌ Failed to send to ${name} (${targetId}):`, err.message);
+                await logMessage({
+                    scriptName: 'weekend-invitation-all',
+                    memberId: record.id,
+                    status: 'Failed',
+                    content: message,
+                    error: err.message
+                });
                 skippedCount++;
             }
-            
+
             processedCount++;
 
             // Rate limit delay
