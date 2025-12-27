@@ -18,11 +18,15 @@ Linked.Coffee is a web service that connects people for meaningful conversations
 # Run backend only
 cd backend && npm run dev
 
-# Run frontend only  
+# Run frontend only
 cd frontend && npm start
 
 # Update database schema documentation
 cd backend && npm run update-schema
+
+# Run individual scripts
+cd backend && node scripts/match-users.js
+cd backend && node scripts/notify-matches.js
 ```
 
 ### Docker Deployment
@@ -30,11 +34,20 @@ cd backend && npm run update-schema
 # Deploy with Docker Compose
 docker compose up -d
 
-# Production deployment
+# Production deployment (auto-commits, pushes, and deploys to server)
 ./deploy-prod.sh
 
 # View logs
 docker compose logs -f
+```
+
+### Admin Operations
+```bash
+# Backup Airtable data
+cd backend && npm run backup
+
+# Sync backups to Google Drive
+cd backend && npm run sync
 ```
 
 ## Architecture & Key Components
@@ -44,7 +57,7 @@ The Express server handles all API endpoints and integrates with Airtable and Te
 
 **Core API Endpoints:**
 - `POST /api/register` - New user registration with Telegram username
-- `POST /api/verify` - Telegram authentication verification  
+- `POST /api/verify` - Telegram OTP authentication verification
 - `POST /api/consent` - GDPR consent handling
 - `GET /api/profile` - Retrieve user profile
 - `PUT /api/profile` - Update user profile with autosave support
@@ -52,85 +65,262 @@ The Express server handles all API endpoints and integrates with Airtable and Te
 - `GET /api/countries` - Fetch approved countries list
 - `GET/POST /api/cities` - Cities management
 - `GET /api/interests` - Professional and personal interests
+- `GET /api/admin/scheduler` - List scheduled jobs
+- `POST /api/admin/scheduler` - Add/update/delete scheduled jobs
+- `POST /api/admin/scheduler/run` - Trigger job immediately
+- `GET /api/admin/logs` - View system logs
+- `GET /api/health` - Health check endpoint
 
 **Key Features:**
 - Airtable integration for all data storage (Members, Countries, Cities, Matches tables)
-- Telegram Bot authentication using crypto.createHash for signature verification
+- Telegram Bot authentication using OTP system (10-minute validity)
 - Multer for file uploads to `/backend/uploads/`
 - CORS enabled for frontend communication
 - Environment-based configuration via dotenv
+- Cron-based job scheduler for automated matching workflow
+
+### Scheduler Architecture (`/backend/scheduler.js`)
+
+The Scheduler is a cron-based job orchestration system that manages the weekly matching cycle:
+
+**How It Works:**
+- Loads job configs from `scheduler.json` (persistent storage)
+- Uses `node-cron` to execute jobs on schedules (e.g., "0 9 * * MON" for Monday 9am)
+- Spawns each script as a child process with environment variables
+- Persists `lastRun` timestamp and `lastStatus` (Success/Failed) in config
+- Provides REST API for job management via admin dashboard
+
+**Job Config Structure:**
+```javascript
+{
+  name: "Weekly Matches",
+  script: "match-users.js",
+  cron: "0 8 * * MON",  // Every Monday at 8am
+  enabled: true,
+  lastRun: "2025-12-23T08:15:00Z",
+  lastStatus: "Success"
+}
+```
+
+### Weekly Matching Workflow (`/backend/scripts/`)
+
+The matching system operates on a **weekly cycle** with 5 main automated scripts:
+
+1. **`match-users.js`** - Core matching engine (Monday mornings):
+   - Fetches active members (`Next_Week_Status = 'Active'`)
+   - Implements smart pairing algorithm with:
+     - **Hard filters**: Language compatibility (-10000 penalty), timezone proximity (-5000 penalty for >6h diff)
+     - **Soft scoring**: Meeting day overlap (+200), professional interests (+50), personal interests (+30), shared goals (+100)
+     - **History optimization**: Prioritizes users who haven't met recently or never met (+1000 base for new pairs)
+   - Generates **AI-powered personalized intros** using Anthropic Claude Haiku
+   - Creates view tokens (32-char hex) for tokenized profile links
+   - Creates Matches records with status "Matched"
+
+2. **`notify-matches.js`** - Sends match notifications via Telegram (Monday):
+   - Fetches matches with `Notifications = 'Pending'`
+   - Generates language-aware messages (English/Russian based on `Notifications_Language`)
+   - Includes partner profile links (tokenized) and AI-generated intro summaries
+   - Optional image attachments from `generate-match-images.js`
+   - Updates match status to 'Sent'
+
+3. **`send-weekly-checkin.js`** - Weekend invitation for next week participation (Sunday):
+   - Targets users with `Consent_GDPR=true` and valid Telegram ID
+   - Sends "Are you up for coffee next week?" with inline buttons
+   - Allows users to respond via callbacks (`participate_yes`/`participate_no`)
+   - Updates `Next_Week_Status` to 'Active' or 'Passive'
+
+4. **`midweek-checkin.js`** - Wednesday feedback checkpoint:
+   - Targets current week matches not yet checked (`Midweek_Checkin = false`)
+   - Asks "Have you met yet?" with 3 options: Met, Scheduled, Failed
+   - Updates `We_Met_1/We_Met_2` fields
+   - Triggers follow-up rating survey if "Met" is selected
+
+5. **`weekend-feedback.js`** - Sunday feedback collection:
+   - Targets matches with incomplete feedback (`Feedback1/Feedback2` empty)
+   - Provides 4-option feedback: Met, Scheduled, Not Met, Something Wrong
+   - Updates `Feedback1/Feedback2` with ratings (1-4 scale)
+   - Marks `Weekend_Checkin = true`
+
+**Supporting Scripts:**
+- `generate-match-images.js` - Creates social cards using Google Gemini + Imagen for visual match context
+- `backup-airtable.js` - Daily backup system (gzip-compressed to backups/daily/)
+- `activate-feedback-users.js` - Processes event triggers for user activation
+- `broadcast-message.js` - Admin tool for bulk messaging
+- `update-schema-docs.js` - Generates database schema documentation
 
 ### Frontend (`/frontend/src/`)
+
 React application with internationalization and routing:
 
-**Main Components:**
-- `App.js` - Root component with router setup and auth state management
-- `pages/Dashboard.js` - User profile management with autosave functionality
-- `pages/Home.js` - Landing page with Telegram login
-- `pages/PublicProfile.js` - Public profile view
-- `components/GdprModal.js` - GDPR consent flow
-- `components/TelegramLoginButton.js` - Telegram OAuth widget integration
+**Routing Structure (`App.js`):**
+```
+/ or /dashboard - Dashboard (authenticated users) / Home (logged out)
+/login - Telegram OTP verification
+/view/:token - Tokenized match profile (no auth, 2-week expiration)
+/profile/:username - Public profile (requires auth + match relationship)
+/about, /rules, /prices - Info pages
+/admin - Admin dashboard (no layout wrapper, admin-only)
+```
+
+**Main Pages:**
+- `Home.js` - Landing page with Telegram login widget
+- `LoginPage.js` - OTP verification form
+- `Dashboard.js` - User's own profile (name, interests, languages, timezone, city, avatar)
+- `PublicProfile.js` - View matched user's profile (access control via match relationship)
+- `TokenProfile.js` - View match partner via secure token link (bypasses auth, time-limited)
+- `AdminPage.js` - Admin dashboard with system health checks
+- `AdminHealth.js` - Scheduler management, logs, backups monitoring
+
+**Core Components:**
+- `TelegramLoginButton.js` - Integrates Telegram WebApp widget
+- `GdprModal.js` - GDPR consent flow with community code entry
+- `Header.js` - Navigation with user dropdown
+- `Footer.js` - Static footer
+- `PageLayout.js` - Consistent page wrapper with sidebar/layout
 
 **Key Features:**
 - React Router for navigation
 - i18next for internationalization (English/Russian)
-- Local storage for auth persistence
+- Local storage for auth persistence (stores `user` object with `Tg_Username` and `Tg_ID`)
 - Responsive design with custom CSS
 - Autosave on field blur for profile updates
 
 ### Database Schema (Airtable)
 
-**Members Table (`tblCrnbDupkzWUx9P`)**
-- Primary key: `Num` (autonumber)
-- Core fields: `Tg_ID`, `Tg_Username`, `Name`, `Family`, `Status`
-- Profile: `Avatar`, `Profession`, `Grade`, `Professional_Description`, `Personal_Description`
-- Interests: `Professional_Interests`, `Personal_Interests` (multiple selects)
-- Matching: `Current_Week_Status`, `Next_Week_Status`, `Serendipity`, `Proximity`
-- Location: `Countries`, `City_Link`, `Time_Zone`
+**Members Table (`tblCrnbDupkzWUx9P`)** - User profiles:
+- **Auth**: `Tg_ID`, `Tg_Username`, `Consent_GDPR`
+- **Status**: `Status` (Free, PRO, Premium, Admin, EarlyBird), `Current_Week_Status`, `Next_Week_Status`
+- **Profile**: `Name`, `Family`, `Avatar`, `Profession`, `Grade`
+- **Descriptions**: `Professional_Description`, `Personal_Description`
+- **Interests**: `Professional_Interests`, `Personal_Interests`, `Coffee_Goals` (multiple selects)
+- **Location**: `Countries` (link), `City_Link`, `Time_Zone`
+- **Preferences**: `Languages`, `Best_Meetings_Days`, `Serendipity`, `Proximity`
+- **Relations**: `Primary_Community` (link), `Matches`, `Matches 2`, `Logs`, `Community_Members`
+- **Metadata**: `Created_At`, `Last_Seen`, `Notifications_Language`
 
-**Status Values:** Free, PRO, Premium, Admin, EarlyBird
+**Matches Table (`tblx2OEN5sSR1xFI2`)** - Weekly match records:
+- **Pair**: `Member1`, `Member2` (links to Members)
+- **Status**: `Status`, `Notifications` (Pending/Sent), `Midweek_Checkin`, `Weekend_Checkin`
+- **Feedback**: `Feedback1`, `Feedback2` (1-4 ratings), `We_Met_1`, `We_Met_2` (Met/Scheduled/No/Fail)
+- **Intros**: `Intro_1`, `Intro_2` (JSON with greeting, why_interesting, conversation_starters)
+- **Visual**: `Intro_Image` (generated social card), `Shared_Intro` (common context)
+- **Tokens**: `View_Token_1`, `View_Token_2` (32-char hex for profile links)
+- **Tracking**: `Week_Start` (date YYYY-MM-DD)
 
-**Countries Table (`tblTDQuqGDEDTPMLO`)**
-- ISO codes with multilingual names
+**Countries Table (`tblTDQuqGDEDTPMLO`)**:
+- `ISO_Code`, `Name_en`, `Name_ru`, `Members` (link)
 
-**Cities Table (`tbllGzaGTz3PsxxWT`)**
-- City slugs with approval status
+**Cities Table (`tbllGzaGTz3PsxxWT`)**:
+- `Slug`, `name_en`, `name_ru`, `country_iso`, `Approved` (boolean)
 
-**Matches Table (`tblx2OEN5sSR1xFI2`)**
-- Weekly match records with feedback tracking
+**Communities Table (`tblSMXQlCTpl7BZED`)** - Optional community pools:
+- `Name`, `Invite_Code`, `Status` (Active/Inactive)
+
+**Community_Members Table (`tblPN0ni3zaaTCPcF`)** - Membership links:
+- `Member`, `Community`, `Role`, `Status`, `Joined_At`, `Invited_By`
+
+**Event_Logs Table (`tbln4rLHEgXUkL9Jh`)** - Activity tracking:
+- `Event` (Activated, Deactivated), `Member` (link), `Timestamp`
 
 ## Environment Configuration
 
 Required environment variables in `.env`:
 ```
 AIRTABLE_API_KEY=         # Airtable Personal Access Token
-AIRTABLE_BASE_ID=         # Base ID 
+AIRTABLE_BASE_ID=         # Base ID
 AIRTABLE_MEMBERS_TABLE=   # Members table ID (tblCrnbDupkzWUx9P)
+AIRTABLE_CITIES_TABLE=    # Cities table ID (tbllGzaGTz3PsxxWT)
+AIRTABLE_MATCHES_TABLE=   # Matches table ID (tblx2OEN5sSR1xFI2)
 BOT_TOKEN=                # Telegram bot token for notifications
 ADMIN_BOT_TOKEN=          # Admin bot token
 ADMIN_CHAT_ID=            # Admin notifications chat
+ANTHROPIC_API_KEY=        # For AI-generated match intros
+GOOGLE_AI_API_KEY=        # For match image generation (Gemini + Imagen)
 PORT=3001                 # Backend port
+BACKUP_DIR=               # Optional backup directory (default: backend/backups)
 ```
 
 ## Important Implementation Details
 
-1. **Telegram Authentication**: The backend verifies Telegram login data using HMAC-SHA256 with the bot token as key
+### Authentication Flow
+1. User enters Telegram username → `POST /api/register`
+2. Backend sends OTP to user via Telegram bot (valid 10 minutes)
+3. User enters OTP → `POST /api/verify` (updates `Tg_ID`)
+4. User completes GDPR & profile → `POST /api/consent` + `PUT /api/profile`
+5. JWT-equivalent: Store `user` object in localStorage with `Tg_Username` and `Tg_ID`
 
-2. **Autosave Logic**: Dashboard implements debounced autosave on blur for text fields and immediate save for multi-select changes
+### AI Integration
 
-3. **GDPR Compliance**: Users must accept terms before profile completion, tracked via `Consent_GDPR` field
+**Match Intros (Anthropic Claude Haiku):**
+- Generates personalized "why you should meet" for each person
+- Language detection based on shared languages
+- Output: JSON with `shared_ground`, `for_member1`, `for_member2`
+- Stored in Matches table as `Intro_1`, `Intro_2`, `Shared_Intro`
 
-4. **File Uploads**: Avatar images stored locally in `/backend/uploads/` with timestamp-based naming
+**Match Images (Google Gemini + Imagen):**
+- Generates scene prompt via Gemini based on shared interests
+- Creates background image via Imagen REST API
+- Overlays user avatars using Sharp image processing library
+- Stores as attachment in `Intro_Image` field
 
-5. **Interest Categories**: Predefined lists in `/docs/interests.json` for professional and personal interests
+### File Upload System
+- Multer middleware stores avatars in `/backend/uploads/`
+- Filename format: `avatar-[timestamp]-[random].png`
+- Files are served statically via Express on `/uploads/` path
+- URLs stored in Airtable as attachment records with `url` field
 
-6. **Weekly Matching**: Status fields track member availability for current and next week matching cycles
+### Telegram Bot Integration
+- **Telegraf library** (`telegraf` npm package)
+- Handles `/start` command (OTP generation)
+- **Callback handlers** for inline button interactions:
+  - `participate_yes/participate_no` - Weekly participation toggle
+  - `fb_stat:matchId:role:status` - Midweek feedback status
+  - `fb_rate:matchId:role:rating` - Rating feedback (1-4)
+- Events logged to `auth.log` and `debug.log` in `/backend/logs/`
+
+### Logging System
+- **Custom logging functions**: `logAuth()`, `logDebug()`, `logMessage()`
+- **Separate log files**: `auth.log`, `debug.log` in `/backend/logs/`
+- **Event tracking**: Event_Logs table for member activation/deactivation
+- **Admin endpoints**: `GET /api/admin/logs`, `GET /api/admin/logs/view`
+
+### Performance Optimizations
+- Parallel Promise.all() for Airtable queries in profile endpoint
+- Batch operations: Creates/updates in 10-record batches
+- Date filtering in queries to avoid scanning ancient history
+- Rate limiting: 100ms delay between Telegram messages to avoid bot API limits
+- Caching: Scheduler configs loaded once, reused until modified
+
+### Error Handling
+- Graceful failures: Non-fatal errors don't halt execution (e.g., failed avatar fetch)
+- Try-catch blocks with logging for all Airtable operations
+- Telegram API error handling with retry logic
+- Admin notifications for critical failures (sent to `ADMIN_CHAT_ID`)
 
 ## Testing Approach
 
 No formal test suite currently exists. Manual testing recommended for:
-- User registration flow
-- Profile update and autosave
-- Avatar upload functionality  
+- User registration flow (Telegram username → OTP → verification)
+- Profile update and autosave (Dashboard)
+- Avatar upload functionality
 - Telegram authentication
 - GDPR consent flow
+- Match generation algorithm (`match-users.js`)
+- Notification delivery (`notify-matches.js`)
+- Feedback collection workflow (midweek + weekend)
+
+## Deployment Notes
+
+### Production Deployment Script (`deploy-prod.sh`)
+1. Auto-commits uncommitted changes with generated message
+2. Pushes to origin main
+3. Copies `docker-compose.prod.yml` to server as `docker-compose.yml`
+4. SSHs to server (91.98.235.147), pulls latest code, rebuilds and restarts containers
+5. Deployed site accessible at https://linked.coffee
+
+### Docker Configuration
+- Frontend runs on port 8080 (nginx serving React build)
+- Backend runs on port 3001 (Express API)
+- Logs persisted to `/opt/linking-coffee/logs` on host
+- Environment variables loaded from `.env` file
+- Health checks configured for backend service

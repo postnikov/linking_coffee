@@ -1,25 +1,28 @@
 /**
- * Activate Feedback Users Script
+ * Activate Feedback Users Script (Cleanup Mode)
  * ------------------------------
  * Analyzes matches from the previous week.
- * Identifies users who provided feedback (Feedback1 or Feedback2).
- * Sets their status to 'Active' for the upcoming cycle.
+ * 
+ * Default Behavior:
+ * 1. Identifies users who were matched but DID NOT provide feedback.
+ * 2. Sets their 'Next_Week_Status' to 'Passive'.
+ * 
+ * Optional Behavior:
+ * - If --activate-engaged is passed, it ALSO sets users who DID provide feedback to 'Active'.
  *
  * Logic:
- * 1. Calculate Previous Week Start (Current Week Start - 7 days).
- * 2. Fetch matches for that week.
- * 3. Filter matches where feedback was provided.
- * 4. Update identified members' Next_Week_Status to 'Active'.
- *    (Note: User request mentioned 'Current_Week_Status', but strict schema aligns 'Active' with 'Next_Week_Status'.
- *     We are updating 'Next_Week_Status' to ensure they are picked up by match-users.js).
+ * 1. Calculate Previous Week Start.
+ * 2. Fetch matches.
+ * 3. Identify who gave feedback and who didn't.
+ * 4. Apply updates based on flags.
  *
  * Usage:
  *   node backend/scripts/activate-feedback-users.js [options]
  *
  * Options:
- *   --dry-run               : Log actions without updating DB
- *   --week-start=YYYY-MM-DD : Force a specific week start date (for the "previous" week)
- *   --deactivate-others     : If passed, users who did NOT provide feedback will be set to 'Passive'.
+ *   --dry-run           : Log actions without updating DB
+ *   --activate-engaged  : Also set feedback providers to 'Active' (Old default behavior)
+ *   --week-start=DATE   : Force specific week start
  */
 
 require('dotenv').config({ path: require('path').join(__dirname, '../../.env') });
@@ -35,7 +38,7 @@ const MEMBERS_TABLE = process.env.AIRTABLE_MEMBERS_TABLE || 'tblCrnbDupkzWUx9P';
 // Arguments
 const args = process.argv.slice(2);
 const IS_DRY_RUN = args.includes('--dry-run');
-const DEACTIVATE_OTHERS = args.includes('--deactivate-others');
+const ACTIVATE_ENGAGED = args.includes('--activate-engaged');
 const weekStartArg = args.find(arg => arg.startsWith('--week-start='));
 const FORCED_WEEK_START = weekStartArg ? weekStartArg.split('=')[1] : null;
 
@@ -60,7 +63,8 @@ function formatDate(date) {
 async function run() {
     console.log('🚀 Starting Activate Feedback Users Script');
     console.log(`   Mode: ${IS_DRY_RUN ? 'DRY RUN' : 'LIVE'}`);
-    console.log(`   Deactivate Others: ${DEACTIVATE_OTHERS ? 'YES' : 'NO'}`);
+    console.log(`   Activate Engaged Users: ${ACTIVATE_ENGAGED ? 'YES' : 'NO (Default)'}`);
+    console.log(`   Deactivate Non-Responders: YES (Default)`);
 
     // 1. Determine "Previous Week" Start
     let targetDateStr;
@@ -113,14 +117,13 @@ async function run() {
 
         // Identify inactive users (Failed to provide feedback)
         const inactiveMemberIds = new Set();
-        if (DEACTIVATE_OTHERS) {
-            allMatchedMemberIds.forEach(id => {
-                if (!engagedMemberIds.has(id)) {
-                    inactiveMemberIds.add(id);
-                }
-            });
-            console.log(`⚠️  Found ${inactiveMemberIds.size} unique members who DID NOT provide feedback.`);
-        }
+        // Default behavior: Always identify non-responders
+        allMatchedMemberIds.forEach(id => {
+            if (!engagedMemberIds.has(id)) {
+                inactiveMemberIds.add(id);
+            }
+        });
+        console.log(`⚠️  Found ${inactiveMemberIds.size} unique members who DID NOT provide feedback.`);
 
         if (engagedMemberIds.size === 0 && inactiveMemberIds.size === 0) {
             console.log('No members to update.');
@@ -172,13 +175,18 @@ async function run() {
 
         // --- PREPARE UPDATES ---
 
-        // Group 1: Activations
-        const activationUpdates = Array.from(engagedMemberIds).map(id => ({
-            id,
-            fields: { 'Next_Week_Status': 'Active' }
-        }));
+        // Group 1: Activations (ONLY if ACTIVATE_ENGAGED)
+        let activationUpdates = [];
+        if (ACTIVATE_ENGAGED) {
+            activationUpdates = Array.from(engagedMemberIds).map(id => ({
+                id,
+                fields: { 'Next_Week_Status': 'Active' }
+            }));
+        } else if (engagedMemberIds.size > 0) {
+            console.log(`ℹ️  Skipping activation of ${engagedMemberIds.size} members (Default behavior: No auto-activation).`);
+        }
 
-        // Group 2: Deactivations
+        // Group 2: Deactivations (Default behavior)
         const deactivationUpdates = Array.from(inactiveMemberIds).map(id => ({
             id,
             fields: { 'Next_Week_Status': 'Passive' }
@@ -191,8 +199,8 @@ async function run() {
                 activationUpdates.forEach(u => console.log(`   - ${formatMember(u.id)}`));
             }
 
-            if (DEACTIVATE_OTHERS && deactivationUpdates.length > 0) {
-                console.log(`\n[DRY RUN] Would update ${deactivationUpdates.length} members to 'Passive' (--deactivate-others):`);
+            if (deactivationUpdates.length > 0) {
+                console.log(`\n[DRY RUN] Would update ${deactivationUpdates.length} members to 'Passive' (Deactivating non-responders):`);
                 deactivationUpdates.forEach(u => console.log(`   - ${formatMember(u.id)}`));
             }
         }
@@ -209,7 +217,7 @@ async function run() {
             }
 
             // Execute Deactivations
-            if (DEACTIVATE_OTHERS && deactivationUpdates.length > 0) {
+            if (deactivationUpdates.length > 0) {
                 console.log(`\n💾 Deactivating ${deactivationUpdates.length} members...`);
                 // Log detailed list
                 deactivationUpdates.forEach(u => console.log(`   - Deactivating ${formatMember(u.id)}`));

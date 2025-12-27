@@ -8,7 +8,9 @@
  * - Targets: All users with Consent_GDPR=true AND No_Spam=unchecked AND Tg_ID exists.
  * - Message Content varies by current status (Active vs Passive).
  * - Buttons are the same for everyone: "Yes, I'm in" and "No, I'll skip".
- *
+ * 
+ * RUN activate-feedback-users BEFORE this script
+ * 
  * Usage:
  *   node backend/scripts/weekend-invitation-all.js [options]
  *

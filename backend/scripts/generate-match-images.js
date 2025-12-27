@@ -8,6 +8,8 @@
  * 
  * Usage:
  *   node backend/scripts/generate-match-images.js [flags]
+ * in VPS
+ *   docker exec -it linking-coffee-backend node scripts/generate-match-images.js --match-num=37
  * 
  * Flags:
  *   --max-matches=N   : Limit processing to N matches

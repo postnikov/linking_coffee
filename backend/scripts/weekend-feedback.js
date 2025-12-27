@@ -79,7 +79,7 @@ const MEMBERS_TABLE_ID = 'tblCrnbDupkzWUx9P';
 const MESSAGES = {
     En: {
         greeting: "Hey there 👋",
-        question: (partnerName, partnerHandle, partnerLink) => `How was your Coffee this week? \n\nHave you met with your partner ${partnerName} ${partnerHandle}? \nPartner: ${partnerLink}\n\nJust press the button below to answer:`,
+        question: (partnerName, partnerHandle, partnerLink) => `How was your Linked Coffee this week? \n\nHave you met with your partner ${partnerName} ${partnerHandle}? \nPartner: ${partnerLink}\n\nJust press the button below to answer:`,
         btn_met: 'We met ✅',
         btn_scheduled: 'We scheduled 📆',
         btn_not_met: 'We have not met ⭕️',
@@ -88,7 +88,7 @@ const MESSAGES = {
     },
     Ru: {
         greeting: "Привет 👋",
-        question: (partnerName, partnerHandle, partnerLink) => `Как прошел твой Coffee на прошлой неделе? \n\nУдалось встретиться с партнером ${partnerName} ${partnerHandle}? \nПартнер: ${partnerLink}\n\nНажми кнопку ниже, чтобы ответить:`,
+        question: (partnerName, partnerHandle, partnerLink) => `Как прошел твой Linked Coffee на этой неделе? \n\nУдалось встретиться с партнером ${partnerName} ${partnerHandle}? \nПартнер: ${partnerLink}\n\nНажми кнопку ниже, чтобы ответить:`,
         btn_met: 'Мы встретились ✅',
         btn_scheduled: 'Договорились 📆',
         btn_not_met: 'Мы не встретились ⭕️',
@@ -125,7 +125,10 @@ async function sendFeedbackRequests() {
         }
     } else {
         const mondayDate = getMonday(new Date());
-        weekStartStr = mondayDate.toISOString().split('T')[0];
+        const year = mondayDate.getFullYear();
+        const month = String(mondayDate.getMonth() + 1).padStart(2, '0');
+        const day = String(mondayDate.getDate()).padStart(2, '0');
+        weekStartStr = `${year}-${month}-${day}`;
     }
     console.log(`Targeting matches for week starting: ${weekStartStr}`);
 
