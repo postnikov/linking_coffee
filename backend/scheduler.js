@@ -4,8 +4,9 @@ const path = require('path');
 const { spawn } = require('child_process');
 
 class Scheduler {
-  constructor(configFile) {
-    this.configFile = configFile;
+  constructor(defaultConfigFile, runtimeConfigFile) {
+    this.defaultConfigFile = defaultConfigFile || path.join(__dirname, 'scheduler.json');
+    this.runtimeConfigFile = runtimeConfigFile || this.defaultConfigFile;
     this.jobs = new Map(); // Map<jobName, cronTask>
     this.configs = [];
     this.logs = [];
@@ -18,10 +19,31 @@ class Scheduler {
 
   loadConfig() {
     try {
-      if (fs.existsSync(this.configFile)) {
-        const data = fs.readFileSync(this.configFile, 'utf8');
+      // Check if runtime config exists
+      if (fs.existsSync(this.runtimeConfigFile)) {
+        try {
+          const data = fs.readFileSync(this.runtimeConfigFile, 'utf8');
+          this.configs = JSON.parse(data);
+          console.log(`📅 Scheduler loaded ${this.configs.length} jobs from runtime config.`);
+          return;
+        } catch (e) {
+          console.error('❌ Error loading runtime config, falling back to default:', e);
+        }
+      }
+
+      // Runtime config doesn't exist or failed to load, use default
+      if (fs.existsSync(this.defaultConfigFile)) {
+        const data = fs.readFileSync(this.defaultConfigFile, 'utf8');
         this.configs = JSON.parse(data);
-        console.log(`📅 Scheduler loaded ${this.configs.length} jobs from config.`);
+        console.log(`📅 Scheduler loaded ${this.configs.length} jobs from default config.`);
+
+        // Copy default to runtime location for future use
+        const runtimeDir = path.dirname(this.runtimeConfigFile);
+        if (!fs.existsSync(runtimeDir)) {
+          fs.mkdirSync(runtimeDir, { recursive: true });
+        }
+        fs.writeFileSync(this.runtimeConfigFile, JSON.stringify(this.configs, null, 2));
+        console.log(`📅 Copied default config to runtime location: ${this.runtimeConfigFile}`);
       } else {
         console.log('📅 No scheduler config found. Starting with empty list.');
         this.configs = [];
@@ -34,8 +56,15 @@ class Scheduler {
 
   saveConfig() {
     try {
-      fs.writeFileSync(this.configFile, JSON.stringify(this.configs, null, 2));
-      console.log('💾 Scheduler config saved.');
+      // Ensure runtime config directory exists
+      const runtimeDir = path.dirname(this.runtimeConfigFile);
+      if (!fs.existsSync(runtimeDir)) {
+        fs.mkdirSync(runtimeDir, { recursive: true });
+      }
+
+      // Always write to runtime config
+      fs.writeFileSync(this.runtimeConfigFile, JSON.stringify(this.configs, null, 2));
+      console.log('💾 Scheduler config saved to runtime location.');
     } catch (e) {
       console.error('❌ Error saving scheduler config:', e);
     }

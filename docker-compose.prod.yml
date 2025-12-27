@@ -11,6 +11,7 @@ services:
     ports:
       - "3001:3001"
     volumes:
+      - /opt/linking-coffee/config:/app/config
       - /opt/linking-coffee/logs:/app/logs
       - /opt/linking-coffee/backups:/app/backups
     environment:

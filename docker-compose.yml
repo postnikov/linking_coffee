@@ -11,6 +11,7 @@ services:
     ports:
       - "3001:3001"
     volumes:
+      - ./backend/config:/app/config
       - /opt/linking-coffee/logs:/app/logs
     environment:
       - NODE_ENV=production

@@ -131,7 +131,10 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 const otpStore = new Map();
 
 // Initialize Scheduler
-const scheduler = new Scheduler(path.join(__dirname, 'scheduler.json'));
+const scheduler = new Scheduler(
+  path.join(__dirname, 'scheduler.json'),        // default (from Git)
+  path.join(__dirname, 'config/scheduler.json')  // runtime (persistent)
+);
 scheduler.init();
 
 
