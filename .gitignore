@@ -47,3 +47,4 @@ Thumbs.db
 logs/*
 !logs/.gitkeep
 docs/client_secret_*.json
+backend/config/scheduler.json
