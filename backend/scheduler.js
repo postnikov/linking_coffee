@@ -108,30 +108,84 @@ class Scheduler {
       return;
     }
 
+    // Ensure logs/scripts directory exists
+    const logsDir = path.join(__dirname, 'logs', 'scripts');
+    if (!fs.existsSync(logsDir)) {
+      try {
+        fs.mkdirSync(logsDir, { recursive: true });
+      } catch (e) {
+        console.error('❌ Failed to create script logs directory:', e);
+      }
+    }
+
+    // Create log file stream
+    const scriptLogPath = path.join(logsDir, `${config.script}.log`);
+    let logStream = null;
+
+    try {
+      logStream = fs.createWriteStream(scriptLogPath, { flags: 'a' }); // append mode
+    } catch (e) {
+      console.error(`❌ Failed to create log stream for ${config.script}:`, e);
+      // Continue execution without file logging
+    }
+
+    const startTime = Date.now();
+
     // Spawn process
     const child = spawn('node', [scriptPath], {
-      cwd: path.join(__dirname), // Scripts run from backend root usually? Or backend/scripts? 
+      cwd: path.join(__dirname), // Scripts run from backend root usually? Or backend/scripts?
       // Existing scripts seem to expect running from backend root based on "node backend/scripts/..." usage in package.json
       // Let's assume we run them same as `node scripts/xxx.js` from backend dir.
       env: { ...process.env, FROM_SCHEDULER: 'true' }
     });
 
+    // Log execution start
+    const startLog = `[${new Date().toISOString()}] [INFO] [${child.pid}] Starting ${config.name}\n`;
+    if (logStream) {
+      logStream.write(startLog);
+    }
+    console.log(startLog.trim());
+
     child.stdout.on('data', (data) => {
-      console.log(`[${config.name}] ${data}`);
+      const lines = data.toString().split('\n').filter(line => line.trim());
+      lines.forEach(line => {
+        const logEntry = `[${new Date().toISOString()}] [INFO] [${child.pid}] ${line}\n`;
+        if (logStream) {
+          logStream.write(logEntry);
+        }
+        console.log(`[${config.name}] ${line}`);
+      });
     });
 
     child.stderr.on('data', (data) => {
-      console.error(`[${config.name}] ERROR: ${data}`);
+      const lines = data.toString().split('\n').filter(line => line.trim());
+      lines.forEach(line => {
+        const logEntry = `[${new Date().toISOString()}] [ERROR] [${child.pid}] ${line}\n`;
+        if (logStream) {
+          logStream.write(logEntry);
+        }
+        console.error(`[${config.name}] ERROR: ${line}`);
+      });
     });
 
     child.on('close', (code) => {
+      const duration = ((Date.now() - startTime) / 1000).toFixed(1);
+      const status = code === 0 ? 'SUCCESS' : 'FAILED';
+      const endLog = `[${new Date().toISOString()}] [INFO] [${child.pid}] Script completed in ${duration}s (exit code: ${code}) - ${status}\n`;
+
+      if (logStream) {
+        logStream.write(endLog);
+        logStream.end(); // Close stream
+      }
+
       console.log(`[${config.name}] finished with code ${code}`);
+
       config.lastRun = new Date().toISOString();
-      config.lastStatus = code === 0 ? 'Success' : 'Failed';
+      config.lastStatus = status;
       this.saveConfig(); // Persist last run status (optional, maybe too much IO?)
       // Actually modifying the config file on every run might be risky if concurrent edits happen.
-      // For now, let's keep runtime state in memory or separate status file? 
-      // The requirement says "modify cron", implies config editing. 
+      // For now, let's keep runtime state in memory or separate status file?
+      // The requirement says "modify cron", implies config editing.
       // Let's blindly save for now, but be aware.
     });
   }

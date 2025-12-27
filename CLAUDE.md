@@ -238,9 +238,32 @@ ANTHROPIC_API_KEY=        # For AI-generated match intros
 GOOGLE_AI_API_KEY=        # For match image generation (Gemini + Imagen)
 PORT=3001                 # Backend port
 BACKUP_DIR=               # Optional backup directory (default: backend/backups)
+
+# Script Logging (Optional)
+MAX_LOG_SIZE=10485760     # Max log file size in bytes (default: 10MB)
+MAX_ROTATIONS=5           # Number of rotated log files to keep (default: 5)
+LOG_RETENTION_DAYS=30     # Days to retain logs before deletion (default: 30)
+ENABLE_LOG_COMPRESSION=false  # Compress rotated logs to .gz (default: false)
 ```
 
 ## Important Implementation Details
+
+### Date Handling for Queries
+
+**CRITICAL**: When constructing 'YYYY-MM-DD' date strings for Airtable queries, always use local date components (`getFullYear()`, `getMonth()`, `getDate()`) instead of `.toISOString()`.
+
+```javascript
+// ✅ CORRECT
+const year = date.getFullYear();
+const month = String(date.getMonth() + 1).padStart(2, '0');
+const day = String(date.getDate()).padStart(2, '0');
+const dateStr = `${year}-${month}-${day}`;
+
+// ❌ WRONG - shifts date by -1 day in positive timezones
+const dateStr = date.toISOString().split('T')[0];
+```
+
+Using `.toISOString()` converts to UTC, which can shift the date by -1 day in positive timezones, causing data mismatches in match queries and scheduling logic.
 
 ### Authentication Flow
 1. User enters Telegram username → `POST /api/register`
@@ -283,6 +306,19 @@ BACKUP_DIR=               # Optional backup directory (default: backend/backups)
 - **Separate log files**: `auth.log`, `debug.log` in `/backend/logs/`
 - **Event tracking**: Event_Logs table for member activation/deactivation
 - **Admin endpoints**: `GET /api/admin/logs`, `GET /api/admin/logs/view`
+
+**Script Logging (NEW):**
+- **Persistent logs**: All scheduled script output automatically saved to `/backend/logs/scripts/`
+- **Log format**: `[TIMESTAMP] [LEVEL] [PID] Message`
+- **Metadata tracking**: Start time, duration, exit code, success/failure status
+- **Admin UI**: View, search, paginate, and download script logs via Admin Health dashboard
+- **API endpoints**:
+  - `GET /api/admin/logs/scripts` - List all script logs
+  - `GET /api/admin/logs/scripts/:name` - View log with pagination/search
+  - `GET /api/admin/logs/scripts/:name/tail` - Get last N lines
+  - `GET /api/admin/logs/scripts/:name/download` - Download log file
+- **Log rotation**: `backend/utils/logRotation.js` handles size-based rotation (10MB) and cleanup (30-day retention)
+- **Volume persistence**: Logs survive container rebuilds via `/opt/linking-coffee/logs` mount
 
 ### Performance Optimizations
 - Parallel Promise.all() for Airtable queries in profile endpoint

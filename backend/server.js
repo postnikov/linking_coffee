@@ -1015,6 +1015,144 @@ app.get('/api/admin/logs/view', checkAdmin, (req, res) => {
   }
 });
 
+// Script Logs Endpoints
+app.get('/api/admin/logs/scripts', checkAdmin, async (req, res) => {
+  try {
+    const logsDir = path.join(__dirname, 'logs', 'scripts');
+
+    if (!fs.existsSync(logsDir)) {
+      return res.json({ success: true, logs: [] });
+    }
+
+    const files = fs.readdirSync(logsDir);
+    const logs = files.map(file => {
+      const filePath = path.join(logsDir, file);
+      const stats = fs.statSync(filePath);
+
+      // Count lines efficiently
+      let lines = 0;
+      try {
+        const content = fs.readFileSync(filePath, 'utf8');
+        lines = content.split('\n').length;
+      } catch (e) {
+        lines = 0;
+      }
+
+      return {
+        script: file,
+        size: stats.size,
+        lastModified: stats.mtime.toISOString(),
+        lines: lines
+      };
+    });
+
+    // Sort by last modified, newest first
+    logs.sort((a, b) => new Date(b.lastModified) - new Date(a.lastModified));
+
+    res.json({ success: true, logs });
+  } catch (error) {
+    console.error('Error listing script logs:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+app.get('/api/admin/logs/scripts/:scriptName', checkAdmin, async (req, res) => {
+  try {
+    const { scriptName } = req.params;
+    const { offset = 0, limit = 100, search = '' } = req.query;
+
+    // Security: prevent directory traversal
+    if (scriptName.includes('..') || scriptName.includes('/')) {
+      return res.status(400).json({ success: false, message: 'Invalid script name' });
+    }
+
+    const logPath = path.join(__dirname, 'logs', 'scripts', scriptName);
+
+    if (!fs.existsSync(logPath)) {
+      return res.status(404).json({ success: false, message: 'Log file not found' });
+    }
+
+    const content = fs.readFileSync(logPath, 'utf8');
+    let lines = content.split('\n').filter(line => line.trim());
+
+    // Apply search filter
+    if (search) {
+      lines = lines.filter(line => line.includes(search));
+    }
+
+    const totalLines = lines.length;
+    const maxLimit = Math.min(parseInt(limit), 1000);
+    const pageLines = lines.slice(parseInt(offset), parseInt(offset) + maxLimit);
+
+    res.json({
+      success: true,
+      script: scriptName,
+      totalLines,
+      offset: parseInt(offset),
+      limit: maxLimit,
+      lines: pageLines,
+      hasMore: parseInt(offset) + pageLines.length < totalLines
+    });
+  } catch (error) {
+    console.error('Error reading script log:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+app.get('/api/admin/logs/scripts/:scriptName/tail', checkAdmin, async (req, res) => {
+  try {
+    const { scriptName } = req.params;
+    const { lines = 100 } = req.query;
+
+    // Security: prevent directory traversal
+    if (scriptName.includes('..') || scriptName.includes('/')) {
+      return res.status(400).json({ success: false, message: 'Invalid script name' });
+    }
+
+    const logPath = path.join(__dirname, 'logs', 'scripts', scriptName);
+
+    if (!fs.existsSync(logPath)) {
+      return res.status(404).json({ success: false, message: 'Log file not found' });
+    }
+
+    const content = fs.readFileSync(logPath, 'utf8');
+    const allLines = content.split('\n').filter(line => line.trim());
+    const maxLines = Math.min(parseInt(lines), 1000);
+    const tailLines = allLines.slice(-maxLines);
+
+    res.json({
+      success: true,
+      script: scriptName,
+      lines: tailLines
+    });
+  } catch (error) {
+    console.error('Error tailing script log:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+app.get('/api/admin/logs/scripts/:scriptName/download', checkAdmin, async (req, res) => {
+  try {
+    const { scriptName } = req.params;
+
+    // Security: prevent directory traversal
+    if (scriptName.includes('..') || scriptName.includes('/')) {
+      return res.status(400).json({ success: false, message: 'Invalid script name' });
+    }
+
+    const logPath = path.join(__dirname, 'logs', 'scripts', scriptName);
+
+    if (!fs.existsSync(logPath)) {
+      return res.status(404).json({ success: false, message: 'Log file not found' });
+    }
+
+    res.download(logPath, scriptName);
+  } catch (error) {
+    console.error('Error downloading script log:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 // Backups
 app.get('/api/admin/backups', checkAdmin, (req, res) => {
   // Use the same logic as initialization

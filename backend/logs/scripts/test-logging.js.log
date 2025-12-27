@@ -1,0 +1,12 @@
+[2025-12-27T12:45:44.030Z] [INFO] [84882] Starting Test Logging Job
+[2025-12-27T12:45:44.061Z] [INFO] [84882] Test script started
+[2025-12-27T12:45:44.062Z] [INFO] [84882] This is a normal log message
+[2025-12-27T12:45:44.062Z] [INFO] [84882] Testing multi-line output:
+[2025-12-27T12:45:44.062Z] [INFO] [84882]   Line 1
+[2025-12-27T12:45:44.062Z] [INFO] [84882]   Line 2
+[2025-12-27T12:45:44.062Z] [INFO] [84882]   Line 3
+[2025-12-27T12:45:44.081Z] [INFO] [84882] Calculation completed in 20ms
+[2025-12-27T12:45:44.082Z] [INFO] [84882] Sum: 499999500000
+[2025-12-27T12:45:44.082Z] [INFO] [84882] Test script completed successfully
+[2025-12-27T12:45:44.082Z] [ERROR] [84882] This is a test error message (not a real error)
+[2025-12-27T12:45:44.088Z] [INFO] [84882] Script completed in 0.1s (exit code: 0) - SUCCESS

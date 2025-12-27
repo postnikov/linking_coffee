@@ -79,8 +79,11 @@ const CronBuilder = ({ value, onChange }) => {
     <div className="cron-builder" style={{ marginTop: '10px', padding: '10px', background: '#f8fafc', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
       <div style={{ marginBottom: '10px', fontWeight: 'bold', color: '#4b5563' }}>
         {description}
+        <span style={{ marginLeft: '8px', fontSize: '0.85em', color: '#6b7280', fontWeight: 'normal' }}>
+          (UTC)
+        </span>
       </div>
-      
+
       <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
         <select value={mode} onChange={handleModeChange} style={{ padding: '5px' }}>
           <option value="custom">Custom (Advanced)</option>
@@ -127,18 +130,30 @@ const CronBuilder = ({ value, onChange }) => {
 const AdminHealth = ({ user, isAdmin }) => {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('logs');
-  
+
   // Data States
   const [logFiles, setLogFiles] = useState([]);
   const [activeLogFile, setActiveLogFile] = useState(null);
   const [logContent, setLogContent] = useState('');
-  
+
+  // Script Logs States
+  const [logType, setLogType] = useState('system'); // 'system' or 'scripts'
+  const [scriptLogs, setScriptLogs] = useState([]);
+  const [selectedScript, setSelectedScript] = useState('');
+  const [scriptLogContent, setScriptLogContent] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [autoRefresh, setAutoRefresh] = useState(false);
+  const [logOffset, setLogOffset] = useState(0);
+  const [logLimit] = useState(100);
+  const [totalLines, setTotalLines] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+
   const [cronJobs, setCronJobs] = useState([]);
   const [availableScripts, setAvailableScripts] = useState([]);
   const [showJobForm, setShowJobForm] = useState(false);
   const [isEditingJob, setIsEditingJob] = useState(false);
   const [jobForm, setJobForm] = useState({ name: '', script: '', cron: '', enabled: true });
-  
+
   const [backupFiles, setBackupFiles] = useState([]);
 
   const [loading, setLoading] = useState(false);
@@ -212,6 +227,76 @@ const AdminHealth = ({ user, isAdmin }) => {
     const data = await apiFetch(`/api/admin/logs/view?file=${file.path}`);
     if (data) setLogContent(data.content);
   };
+
+  // SCRIPT LOGS Handlers
+  const fetchScriptLogs = async () => {
+    const data = await apiFetch('/api/admin/logs/scripts');
+    if (data && data.logs) {
+      setScriptLogs(data.logs);
+      if (data.logs.length > 0 && !selectedScript) {
+        setSelectedScript(data.logs[0].script);
+        loadScriptLog(data.logs[0].script);
+      }
+    }
+  };
+
+  const loadScriptLog = async (scriptName, offset = 0) => {
+    if (!scriptName) return;
+    setSelectedScript(scriptName);
+    setLogOffset(offset);
+
+    const searchParam = searchTerm ? `&search=${encodeURIComponent(searchTerm)}` : '';
+    const data = await apiFetch(`/api/admin/logs/scripts/${scriptName}?offset=${offset}&limit=${logLimit}${searchParam}`);
+
+    if (data) {
+      setScriptLogContent(data.lines.join('\n'));
+      setTotalLines(data.totalLines);
+      setHasMore(data.hasMore);
+    }
+  };
+
+  const downloadScriptLog = async (scriptName) => {
+    if (!scriptName) return;
+    const API_URL = process.env.REACT_APP_API_URL || '';
+    const url = `${API_URL}/api/admin/logs/scripts/${scriptName}/download?requester=${user.tg_username}`;
+    window.open(url, '_blank');
+  };
+
+  const refreshScriptLog = () => {
+    if (selectedScript) {
+      loadScriptLog(selectedScript, logOffset);
+    }
+  };
+
+  const loadPreviousPage = () => {
+    if (logOffset >= logLimit) {
+      loadScriptLog(selectedScript, logOffset - logLimit);
+    }
+  };
+
+  const loadNextPage = () => {
+    if (hasMore) {
+      loadScriptLog(selectedScript, logOffset + logLimit);
+    }
+  };
+
+  // Auto-refresh effect for script logs
+  useEffect(() => {
+    if (autoRefresh && logType === 'scripts' && selectedScript) {
+      const interval = setInterval(() => {
+        refreshScriptLog();
+      }, 5000); // Refresh every 5 seconds
+
+      return () => clearInterval(interval);
+    }
+  }, [autoRefresh, logType, selectedScript, logOffset, searchTerm]);
+
+  // Update log type handler
+  useEffect(() => {
+    if (logType === 'scripts' && scriptLogs.length === 0) {
+      fetchScriptLogs();
+    }
+  }, [logType]);
 
   // CRON Handlers
   const fetchScheduler = async () => {
@@ -295,25 +380,205 @@ const AdminHealth = ({ user, isAdmin }) => {
         {/* LOGS TAB */}
         {activeTab === 'logs' && (
           <div className="logs-view">
-            <div className="logs-sidebar">
-              <h3>Log Files</h3>
-              <ul>
-                {logFiles.map(f => (
-                  <li key={f.name} onClick={() => loadLogContent(f)} className={activeLogFile?.name === f.name ? 'active' : ''}>
-                    {f.name} <small>({(f.size / 1024).toFixed(1)} KB)</small>
-                  </li>
-                ))}
-              </ul>
+            <div className="logs-tabs" style={{ marginBottom: '15px', display: 'flex', gap: '10px' }}>
+              <button
+                onClick={() => setLogType('system')}
+                className={logType === 'system' ? 'btn-primary' : 'btn-secondary'}
+                style={{ padding: '8px 16px' }}
+              >
+                System Logs
+              </button>
+              <button
+                onClick={() => setLogType('scripts')}
+                className={logType === 'scripts' ? 'btn-primary' : 'btn-secondary'}
+                style={{ padding: '8px 16px' }}
+              >
+                Script Logs
+              </button>
             </div>
-            <div className="logs-display">
-              <textarea readOnly value={logContent} placeholder="Select a log file to view..." />
-            </div>
+
+            {logType === 'system' && (
+              <div className="logs-view" style={{ display: 'flex', gap: '15px', height: '600px' }}>
+                <div className="logs-sidebar" style={{ width: '250px', borderRight: '1px solid #e5e7eb', paddingRight: '15px' }}>
+                  <h3>Log Files</h3>
+                  <ul style={{ listStyle: 'none', padding: 0 }}>
+                    {logFiles.map(f => (
+                      <li
+                        key={f.name}
+                        onClick={() => loadLogContent(f)}
+                        className={activeLogFile?.name === f.name ? 'active' : ''}
+                        style={{
+                          padding: '8px',
+                          cursor: 'pointer',
+                          borderRadius: '4px',
+                          marginBottom: '5px',
+                          background: activeLogFile?.name === f.name ? '#3b82f6' : '#f9fafb',
+                          color: activeLogFile?.name === f.name ? 'white' : 'black'
+                        }}
+                      >
+                        {f.name} <small>({(f.size / 1024).toFixed(1)} KB)</small>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="logs-display" style={{ flex: 1 }}>
+                  <textarea
+                    readOnly
+                    value={logContent}
+                    placeholder="Select a log file to view..."
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      fontFamily: 'monospace',
+                      padding: '10px',
+                      background: '#1f2937',
+                      color: '#f3f4f6',
+                      border: '1px solid #374151',
+                      borderRadius: '4px'
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {logType === 'scripts' && (
+              <div className="script-logs">
+                <div className="script-selector" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', marginBottom: '15px' }}>
+                  <select
+                    value={selectedScript}
+                    onChange={(e) => {
+                      setSearchTerm('');
+                      setLogOffset(0);
+                      loadScriptLog(e.target.value);
+                    }}
+                    style={{ flex: 1, padding: '8px', border: '1px solid #d1d5db', borderRadius: '4px' }}
+                  >
+                    <option value="">Select a script...</option>
+                    {scriptLogs.map(log => (
+                      <option key={log.script} value={log.script}>
+                        {log.script} ({(log.size / 1024).toFixed(1)} KB, {log.lines} lines)
+                      </option>
+                    ))}
+                  </select>
+
+                  <div className="log-actions" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                    <button
+                      onClick={() => downloadScriptLog(selectedScript)}
+                      disabled={!selectedScript}
+                      className="btn-secondary"
+                      style={{ padding: '8px 12px' }}
+                    >
+                      Download
+                    </button>
+                    <button
+                      onClick={refreshScriptLog}
+                      disabled={!selectedScript}
+                      className="btn-secondary"
+                      style={{ padding: '8px 12px' }}
+                    >
+                      Refresh
+                    </button>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                      <input
+                        type="checkbox"
+                        checked={autoRefresh}
+                        onChange={(e) => setAutoRefresh(e.target.checked)}
+                      />
+                      Auto-refresh (5s)
+                    </label>
+                  </div>
+                </div>
+
+                <div className="log-search" style={{ marginBottom: '15px' }}>
+                  <input
+                    type="text"
+                    placeholder="Search in log..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        setLogOffset(0);
+                        loadScriptLog(selectedScript, 0);
+                      }
+                    }}
+                    style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '4px' }}
+                  />
+                  <small style={{ color: '#6b7280', marginTop: '5px', display: 'block' }}>
+                    Press Enter to search
+                  </small>
+                </div>
+
+                <div className="log-content" style={{
+                  background: '#1f2937',
+                  color: '#f3f4f6',
+                  padding: '15px',
+                  borderRadius: '4px',
+                  maxHeight: '600px',
+                  overflowY: 'auto',
+                  fontFamily: 'monospace',
+                  fontSize: '12px',
+                  lineHeight: '1.5'
+                }}>
+                  <pre style={{ margin: 0, whiteSpace: 'pre-wrap', wordWrap: 'break-word' }}>
+                    {scriptLogContent || 'No log content available. Select a script to view logs.'}
+                  </pre>
+                </div>
+
+                {selectedScript && (
+                  <div className="log-pagination" style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginTop: '15px',
+                    padding: '10px',
+                    background: '#f9fafb',
+                    borderRadius: '4px'
+                  }}>
+                    <button
+                      onClick={loadPreviousPage}
+                      disabled={logOffset === 0}
+                      className="btn-secondary"
+                      style={{ padding: '6px 12px' }}
+                    >
+                      Previous
+                    </button>
+                    <span style={{ fontSize: '14px', color: '#6b7280' }}>
+                      Lines {logOffset + 1} - {Math.min(logOffset + logLimit, totalLines)} of {totalLines}
+                    </span>
+                    <button
+                      onClick={loadNextPage}
+                      disabled={!hasMore}
+                      className="btn-secondary"
+                      style={{ padding: '6px 12px' }}
+                    >
+                      Next
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
         {/* CRON TAB */}
         {activeTab === 'cron' && (
           <div className="cron-view">
+            {/* Timezone Info Banner */}
+            <div style={{
+              background: '#fef3c7',
+              border: '1px solid #fbbf24',
+              padding: '12px',
+              borderRadius: '6px',
+              marginBottom: '15px',
+              fontSize: '0.9em',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}>
+              <span style={{ fontSize: '1.2em' }}>ℹ️</span>
+              <span>All cron job times are in <strong>UTC</strong> timezone (server time).</span>
+            </div>
+
             <div className="cron-header">
               <h3>Scheduled Jobs</h3>
               <button className="btn-primary" onClick={() => { setIsEditingJob(false); setShowJobForm(true); setJobForm({ name: '', script: availableScripts[0] || '', cron: '* * * * *', enabled: true }) }}>
