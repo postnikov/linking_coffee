@@ -240,15 +240,15 @@ async function sendToMember(matchId, role, memberTgId, memberId, partnerUsername
     const message = `${messagePrefix}${t.greeting}
 ${t.question(partnerName, cleanPartnerHandle, partnerLink)}`;
 
-    // 4 Options
+    // 4 Options - include language in callback data for localized follow-up
     const keyboard = Markup.inlineKeyboard([
         [
-            Markup.button.callback(t.btn_met, `fb_stat:${matchId}:${role}:Met`),
-            Markup.button.callback(t.btn_scheduled, `fb_stat:${matchId}:${role}:Scheduled`)
+            Markup.button.callback(t.btn_met, `fb_stat:${matchId}:${role}:Met:${language}`),
+            Markup.button.callback(t.btn_scheduled, `fb_stat:${matchId}:${role}:Scheduled:${language}`)
         ],
         [
-            Markup.button.callback(t.btn_not_met, `fb_stat:${matchId}:${role}:No`),
-            Markup.button.callback(t.btn_fail, `fb_stat:${matchId}:${role}:Fail`)
+            Markup.button.callback(t.btn_not_met, `fb_stat:${matchId}:${role}:No:${language}`),
+            Markup.button.callback(t.btn_fail, `fb_stat:${matchId}:${role}:Fail:${language}`)
         ]
     ]);
 

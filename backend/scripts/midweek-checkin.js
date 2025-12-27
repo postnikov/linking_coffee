@@ -125,12 +125,12 @@ async function sendFeedbackRequests() {
 
         for (const match of matches) {
             if (processedCount >= MAX_MATCHES_TO_PROCESS) {
-                 console.log(`🛑 Limit of ${MAX_MATCHES_TO_PROCESS} reached.`);
-                 break;
+                console.log(`🛑 Limit of ${MAX_MATCHES_TO_PROCESS} reached.`);
+                break;
             }
 
             const matchId = match.id;
-            
+
             // Fetch member details
             const m1TgId = match.fields['Tg_ID (from Member1)'] ? match.fields['Tg_ID (from Member1)'][0] : null;
             const m1Username = match.fields['Tg_Username (from Member1)'] ? match.fields['Tg_Username (from Member1)'][0] : null;
@@ -166,9 +166,9 @@ async function sendFeedbackRequests() {
                     console.error(`Failed to mark match ${matchId} as checked in:`, err);
                 }
             } else if (IS_TEST_MODE) {
-                 console.log(`[TEST] Would mark match ${matchId} as checked in (Skipped)`);
+                console.log(`[TEST] Would mark match ${matchId} as checked in (Skipped)`);
             }
-            
+
             processedCount++;
         }
 
@@ -193,7 +193,7 @@ async function sendToMember(matchId, role, memberTgId, memberId, partnerUsername
 
     let messagePrefix = '';
     let targetId = memberTgId;
-    
+
     if (IS_TEST_MODE) {
         targetId = ADMIN_CHAT_ID;
         messagePrefix = `[TEST MODE - Original Reicipient: ${memberTgId} (${language})]\n\n`;
@@ -203,13 +203,14 @@ async function sendToMember(matchId, role, memberTgId, memberId, partnerUsername
 
 ${t.body(partnerLink)}`;
 
+    // Include language in callback data for localized follow-up messages
     const keyboard = Markup.inlineKeyboard([
         [
-            Markup.button.callback(t.btn_met, `fb_stat:${matchId}:${role}:Met`),
-            Markup.button.callback(t.btn_scheduled, `fb_stat:${matchId}:${role}:Scheduled`)
+            Markup.button.callback(t.btn_met, `fb_stat:${matchId}:${role}:Met:${language}`),
+            Markup.button.callback(t.btn_scheduled, `fb_stat:${matchId}:${role}:Scheduled:${language}`)
         ],
         [
-            Markup.button.callback(t.btn_fail, `fb_stat:${matchId}:${role}:Fail`)
+            Markup.button.callback(t.btn_fail, `fb_stat:${matchId}:${role}:Fail:${language}`)
         ]
     ]);
 

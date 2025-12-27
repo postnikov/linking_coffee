@@ -288,14 +288,37 @@ bot.action('participate_no', async (ctx) => {
   }
 });
 
+// Localized feedback messages
+const FEEDBACK_MESSAGES = {
+  En: {
+    thankYou: "Thank you! 🙏",
+    ratingPrompt: "❤️ Wow! Awesome! ❤️\nSo how was your Linked Coffee experience?\nDid it go well?",
+    btn_awful: '😡 awful',
+    btn_boring: '😐 boring',
+    btn_ok: '🙂 ok',
+    btn_wonderful: '😃 wonderful'
+  },
+  Ru: {
+    thankYou: "Спасибо! 🙏",
+    ratingPrompt: "❤️ Вау! Потрясающе! ❤️\nНу как прошла твоя встреча Linked Coffee?\nВсё хорошо?",
+    btn_awful: '😡 ужасно',
+    btn_boring: '😐 скучно',
+    btn_ok: '🙂 норм',
+    btn_wonderful: '😃 чудесно'
+  }
+};
+
 // Handle Midweek Feedback Status
-bot.action(/^fb_stat:(.+):(\d+):(.+)$/, async (ctx) => {
+// Callback format: fb_stat:matchId:role:status or fb_stat:matchId:role:status:lang
+bot.action(/^fb_stat:(.+):(\d+):([^:]+)(?::([A-Za-z]{2}))?$/, async (ctx) => {
   const matchId = ctx.match[1];
   const role = parseInt(ctx.match[2]);
   const status = ctx.match[3];
+  const language = ctx.match[4] || 'En'; // Default to English if no language specified
 
-  console.log(`🤖 Received fb_stat: Match=${matchId}, Role=${role}, Status=${status}`);
+  console.log(`🤖 Received fb_stat: Match=${matchId}, Role=${role}, Status=${status}, Lang=${language}`);
   const fieldName = role === 1 ? 'We_Met_1' : 'We_Met_2';
+  const t = FEEDBACK_MESSAGES[language] || FEEDBACK_MESSAGES.En;
 
   try {
     await base('tblx2OEN5sSR1xFI2').update([{
@@ -307,24 +330,23 @@ bot.action(/^fb_stat:(.+):(\d+):(.+)$/, async (ctx) => {
 
     await ctx.answerCbQuery('Status updated!');
 
-    // Append "Thank you!" to the original message
+    // Append localized "Thank you!" to the original message
     const originalText = ctx.callbackQuery.message.text;
-    await ctx.editMessageText(originalText + "\n\nThank you! 🙏");
+    await ctx.editMessageText(originalText + "\n\n" + t.thankYou);
 
-    // If 'Met', send follow-up rating message
+    // If 'Met', send follow-up rating message in the same language
     if (status === 'Met') {
-      const ratingMessage = "❤️ Wow! Awesome! ❤️\nSo how was your Linked Coffee experience?\nDid it go well?";
       const ratingKeyboard = Markup.inlineKeyboard([
         [
-          Markup.button.callback('😡 awful', `fb_rate:${matchId}:${role}:1`),
-          Markup.button.callback('😐 boring', `fb_rate:${matchId}:${role}:2`)
+          Markup.button.callback(t.btn_awful, `fb_rate:${matchId}:${role}:1:${language}`),
+          Markup.button.callback(t.btn_boring, `fb_rate:${matchId}:${role}:2:${language}`)
         ],
         [
-          Markup.button.callback('🙂 ok', `fb_rate:${matchId}:${role}:3`),
-          Markup.button.callback('😃 wonderful', `fb_rate:${matchId}:${role}:4`)
+          Markup.button.callback(t.btn_ok, `fb_rate:${matchId}:${role}:3:${language}`),
+          Markup.button.callback(t.btn_wonderful, `fb_rate:${matchId}:${role}:4:${language}`)
         ]
       ]);
-      await ctx.reply(ratingMessage, ratingKeyboard);
+      await ctx.reply(t.ratingPrompt, ratingKeyboard);
     }
 
   } catch (error) {
@@ -334,13 +356,16 @@ bot.action(/^fb_stat:(.+):(\d+):(.+)$/, async (ctx) => {
 });
 
 // Handle Midweek Feedback Rating
-bot.action(/^fb_rate:(.+):(\d+):(\d+)$/, async (ctx) => {
+// Callback format: fb_rate:matchId:role:rating or fb_rate:matchId:role:rating:lang
+bot.action(/^fb_rate:(.+):(\d+):(\d+)(?::([A-Za-z]{2}))?$/, async (ctx) => {
   const matchId = ctx.match[1];
   const role = parseInt(ctx.match[2]);
   const rating = parseInt(ctx.match[3]);
+  const language = ctx.match[4] || 'En';
 
-  console.log(`🤖 Received fb_rate: Match=${matchId}, Role=${role}, Rating=${rating}`);
+  console.log(`🤖 Received fb_rate: Match=${matchId}, Role=${role}, Rating=${rating}, Lang=${language}`);
   const fieldName = role === 1 ? 'Feedback1' : 'Feedback2';
+  const t = FEEDBACK_MESSAGES[language] || FEEDBACK_MESSAGES.En;
 
   try {
     await base('tblx2OEN5sSR1xFI2').update([{
@@ -353,7 +378,7 @@ bot.action(/^fb_rate:(.+):(\d+):(\d+)$/, async (ctx) => {
     await ctx.answerCbQuery('Feedback received!');
 
     const originalText = ctx.callbackQuery.message.text;
-    await ctx.editMessageText(originalText + "\n\nThank you! 🙏");
+    await ctx.editMessageText(originalText + "\n\n" + t.thankYou);
 
   } catch (error) {
     console.error('Error handling fb_rate:', error);

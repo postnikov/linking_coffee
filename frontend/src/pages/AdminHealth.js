@@ -17,7 +17,7 @@ const CronBuilder = ({ value, onChange }) => {
       setMode('custom');
       return;
     }
-    
+
     // Check if Daily: M H * * *
     if (parts[2] === '*' && parts[3] === '*' && parts[4] === '*') {
       setMode('daily');
@@ -33,7 +33,8 @@ const CronBuilder = ({ value, onChange }) => {
     } else {
       setMode('custom');
     }
-  }, []); // Run once on mount (or when value prop changes if you want bidirectional sync, but careful of loops)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run once on mount only - intentionally not syncing with value prop to avoid loops
 
   const updateCron = (newMode, h, m, d) => {
     let cron = value;
@@ -100,7 +101,7 @@ const CronBuilder = ({ value, onChange }) => {
               ))}
             </select>
             <span>:</span>
-             <select value={minute} onChange={(e) => handleTimeChange('minute', e.target.value)} style={{ padding: '5px' }}>
+            <select value={minute} onChange={(e) => handleTimeChange('minute', e.target.value)} style={{ padding: '5px' }}>
               {Array.from({ length: 12 }, (_, i) => (
                 <option key={i * 5} value={(i * 5).toString().padStart(2, '0')}>{(i * 5).toString().padStart(2, '0')}</option>
               ))}
@@ -128,7 +129,7 @@ const CronBuilder = ({ value, onChange }) => {
 };
 
 const AdminHealth = ({ user, isAdmin }) => {
-  const { t } = useTranslation();
+  useTranslation(); // Keep for potential future i18n usage
   const [activeTab, setActiveTab] = useState('logs');
 
   // Data States
@@ -148,6 +149,12 @@ const AdminHealth = ({ user, isAdmin }) => {
   const [totalLines, setTotalLines] = useState(0);
   const [hasMore, setHasMore] = useState(false);
 
+  // UX Enhancement States
+  const [quickFilter, setQuickFilter] = useState('all');
+  const [toast, setToast] = useState(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const searchInputRef = React.useRef(null);
+
   const [cronJobs, setCronJobs] = useState([]);
   const [availableScripts, setAvailableScripts] = useState([]);
   const [showJobForm, setShowJobForm] = useState(false);
@@ -162,7 +169,7 @@ const AdminHealth = ({ user, isAdmin }) => {
   // Initial Data Fetch
   useEffect(() => {
     if (!isAdmin) return;
-    
+
     // Fetch initial data based on tab
     return () => {
       // clean up
@@ -173,7 +180,118 @@ const AdminHealth = ({ user, isAdmin }) => {
     if (activeTab === 'logs') fetchLogFiles();
     if (activeTab === 'cron') { fetchScheduler(); fetchScripts(); }
     if (activeTab === 'backups') fetchBackups();
-  }, [activeTab]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]); // Functions are stable, only re-run when tab changes
+
+  // ============================================
+  // UX HELPER FUNCTIONS
+  // ============================================
+
+  // Parse log line to determine severity level
+  const parseLogSeverity = (line) => {
+    const patterns = {
+      error: /\[ERROR\]|\bERROR\b|❌|Failed|Exception|ENOENT|Error:/i,
+      warn: /\[WARN\]|\bWARN\b|⚠️|Warning/i,
+      success: /\[SUCCESS\]|✅|Completed|SUCCESS|Script completed/i,
+      info: /\[INFO\]|\bINFO\b|ℹ️|Starting|Sending|Found|Fetched/i
+    };
+
+    for (const [level, regex] of Object.entries(patterns)) {
+      if (regex.test(line)) return level;
+    }
+    return 'default';
+  };
+
+  // Toast notification system
+  const showToast = (message, type = 'info') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  // Highlight search terms in text
+  const highlightSearchTerm = (text, term) => {
+    if (!term || term.length < 2) return text;
+    try {
+      const escapedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const parts = text.split(new RegExp(`(${escapedTerm})`, 'gi'));
+      return parts.map((part, i) =>
+        part.toLowerCase() === term.toLowerCase()
+          ? <mark key={i} className="search-highlight">{part}</mark>
+          : part
+      );
+    } catch {
+      return text;
+    }
+  };
+
+  // Copy line to clipboard
+  const handleCopyLine = (line) => {
+    navigator.clipboard.writeText(line).then(() => {
+      showToast('📋 Copied to clipboard!', 'info');
+    });
+  };
+
+  // Filter chips configuration
+  const filterChips = [
+    { id: 'all', label: 'All', icon: '📋' },
+    { id: 'error', label: 'Errors', icon: '❌' },
+    { id: 'warn', label: 'Warnings', icon: '⚠️' },
+    { id: 'success', label: 'Success', icon: '✅' },
+  ];
+
+  // Get filtered and parsed log lines
+  const getProcessedLogLines = (content) => {
+    if (!content) return [];
+    const lines = content.split('\n').filter(line => line.trim());
+
+    return lines.map((line, index) => ({
+      number: index + 1,
+      content: line,
+      severity: parseLogSeverity(line)
+    })).filter(line => {
+      if (quickFilter === 'all') return true;
+      return line.severity === quickFilter;
+    });
+  };
+
+  // Count logs by severity
+  const getLogCounts = (content) => {
+    if (!content) return { all: 0, error: 0, warn: 0, success: 0 };
+    const lines = content.split('\n').filter(line => line.trim());
+    const counts = { all: lines.length, error: 0, warn: 0, success: 0 };
+
+    lines.forEach(line => {
+      const severity = parseLogSeverity(line);
+      if (counts[severity] !== undefined) counts[severity]++;
+    });
+
+    return counts;
+  };
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Don't trigger if typing in an input
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+      if (e.key === '/' && activeTab === 'logs') {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+      if (e.key === 'Escape') {
+        setSearchTerm('');
+        searchInputRef.current?.blur();
+      }
+      if (e.key === 'r' && activeTab === 'logs' && logType === 'scripts') {
+        e.preventDefault();
+        refreshScriptLog();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, logType, selectedScript]); // refreshScriptLog uses these deps internally
 
   // API Helpers
   const apiFetch = async (endpoint, options = {}) => {
@@ -185,20 +303,20 @@ const AdminHealth = ({ user, isAdmin }) => {
         'Content-Type': 'application/json',
         'x-admin-user': user.tg_username // Custom header for auth check
       };
-      
+
       const separator = endpoint.includes('?') ? '&' : '?';
       const res = await fetch(`${API_URL}${endpoint}${separator}requester=${user.tg_username}`, {
         ...options,
         headers: { ...headers, ...options.headers }
       });
-      
+
       // Handle non-JSON response (e.g., HTML 404/500)
       const contentType = res.headers.get("content-type");
       if (!contentType || !contentType.includes("application/json")) {
-        const text = await res.text();
+        await res.text(); // Consume the response body
         throw new Error(`Server response was not JSON. Status: ${res.status}`);
       }
-      
+
       const data = await res.json();
       if (!data.success) throw new Error(data.message);
       return data;
@@ -262,9 +380,12 @@ const AdminHealth = ({ user, isAdmin }) => {
     window.open(url, '_blank');
   };
 
-  const refreshScriptLog = () => {
+  const refreshScriptLog = async () => {
     if (selectedScript) {
-      loadScriptLog(selectedScript, logOffset);
+      setIsRefreshing(true);
+      await loadScriptLog(selectedScript, logOffset);
+      setIsRefreshing(false);
+      showToast('🔄 Logs refreshed', 'info');
     }
   };
 
@@ -289,14 +410,16 @@ const AdminHealth = ({ user, isAdmin }) => {
 
       return () => clearInterval(interval);
     }
-  }, [autoRefresh, logType, selectedScript, logOffset, searchTerm]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoRefresh, logType, selectedScript, logOffset, searchTerm]); // refreshScriptLog uses these deps
 
   // Update log type handler
   useEffect(() => {
     if (logType === 'scripts' && scriptLogs.length === 0) {
       fetchScriptLogs();
     }
-  }, [logType]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [logType]); // Only trigger on logType change, scriptLogs check is just a guard
 
   // CRON Handlers
   const fetchScheduler = async () => {
@@ -324,7 +447,7 @@ const AdminHealth = ({ user, isAdmin }) => {
   };
 
   const handleDeleteJob = async (name) => {
-    if(!window.confirm(`Delete job ${name}?`)) return;
+    if (!window.confirm(`Delete job ${name}?`)) return;
     const data = await apiFetch('/api/admin/scheduler', {
       method: 'POST',
       body: JSON.stringify({ action: 'delete', job: { name } })
@@ -333,11 +456,13 @@ const AdminHealth = ({ user, isAdmin }) => {
   };
 
   const handleRunJob = async (name) => {
-    await apiFetch('/api/admin/scheduler/run', {
+    const data = await apiFetch('/api/admin/scheduler/run', {
       method: 'POST',
       body: JSON.stringify({ name })
     });
-    alert(`Job ${name} triggered! Check logs.`);
+    if (data) {
+      showToast(`🚀 Job "${name}" triggered! Check logs.`, 'success');
+    }
   };
 
   const handleToggleJob = async (job) => {
@@ -358,7 +483,7 @@ const AdminHealth = ({ user, isAdmin }) => {
   const handleTestBot = async () => {
     const data = await apiFetch('/api/admin/bot/test', { method: 'POST' });
     if (data) {
-      alert(`${data.message}\nBot Name: @${data.bot?.username}`);
+      showToast(`✅ ${data.message} - Bot: @${data.bot?.username}`, 'success');
     }
   };
 
@@ -370,72 +495,58 @@ const AdminHealth = ({ user, isAdmin }) => {
         <button className={activeTab === 'logs' ? 'active' : ''} onClick={() => setActiveTab('logs')}>Logs</button>
         <button className={activeTab === 'cron' ? 'active' : ''} onClick={() => setActiveTab('cron')}>Cron Scheduler</button>
         <button className={activeTab === 'backups' ? 'active' : ''} onClick={() => setActiveTab('backups')}>Backups</button>
-        <button className="btn-secondary" style={{marginLeft: 'auto'}} onClick={handleTestBot}>Check Bot Health 🤖</button>
+        <button className="btn-secondary" style={{ marginLeft: 'auto' }} onClick={handleTestBot}>Check Bot Health 🤖</button>
       </div>
 
       <div className="tab-content">
-        {loading && <div className="loader">Loading...</div>}
-        {error && <div className="error-msg">{error}</div>}
+        {loading && (
+          <div className="loading-overlay">
+            <div className="spinner" />
+            <span>Loading...</span>
+          </div>
+        )}
+        {error && <div className="error-msg">⚠️ {error}</div>}
 
         {/* LOGS TAB */}
         {activeTab === 'logs' && (
           <div className="logs-view">
-            <div className="logs-tabs" style={{ marginBottom: '15px', display: 'flex', gap: '10px' }}>
+            <div className="logs-tabs">
               <button
                 onClick={() => setLogType('system')}
                 className={logType === 'system' ? 'btn-primary' : 'btn-secondary'}
-                style={{ padding: '8px 16px' }}
               >
-                System Logs
+                📁 System Logs
               </button>
               <button
                 onClick={() => setLogType('scripts')}
                 className={logType === 'scripts' ? 'btn-primary' : 'btn-secondary'}
-                style={{ padding: '8px 16px' }}
               >
-                Script Logs
+                📜 Script Logs
               </button>
             </div>
 
             {logType === 'system' && (
-              <div className="logs-view" style={{ display: 'flex', gap: '15px', height: '600px' }}>
-                <div className="logs-sidebar" style={{ width: '250px', borderRight: '1px solid #e5e7eb', paddingRight: '15px' }}>
-                  <h3>Log Files</h3>
-                  <ul style={{ listStyle: 'none', padding: 0 }}>
+              <div className="system-logs-container">
+                <div className="system-logs-sidebar">
+                  <h3>📁 Log Files</h3>
+                  <ul>
                     {logFiles.map(f => (
                       <li
                         key={f.name}
                         onClick={() => loadLogContent(f)}
                         className={activeLogFile?.name === f.name ? 'active' : ''}
-                        style={{
-                          padding: '8px',
-                          cursor: 'pointer',
-                          borderRadius: '4px',
-                          marginBottom: '5px',
-                          background: activeLogFile?.name === f.name ? '#3b82f6' : '#f9fafb',
-                          color: activeLogFile?.name === f.name ? 'white' : 'black'
-                        }}
                       >
-                        {f.name} <small>({(f.size / 1024).toFixed(1)} KB)</small>
+                        <span>{f.name}</span>
+                        <small>{(f.size / 1024).toFixed(1)} KB</small>
                       </li>
                     ))}
                   </ul>
                 </div>
-                <div className="logs-display" style={{ flex: 1 }}>
+                <div className="system-logs-content">
                   <textarea
                     readOnly
                     value={logContent}
                     placeholder="Select a log file to view..."
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      fontFamily: 'monospace',
-                      padding: '10px',
-                      background: '#1f2937',
-                      color: '#f3f4f6',
-                      border: '1px solid #374151',
-                      borderRadius: '4px'
-                    }}
                   />
                 </div>
               </div>
@@ -443,15 +554,17 @@ const AdminHealth = ({ user, isAdmin }) => {
 
             {logType === 'scripts' && (
               <div className="script-logs">
-                <div className="script-selector" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', marginBottom: '15px' }}>
+                {/* Script Selector Row */}
+                <div className="log-controls">
                   <select
                     value={selectedScript}
                     onChange={(e) => {
                       setSearchTerm('');
                       setLogOffset(0);
+                      setQuickFilter('all');
                       loadScriptLog(e.target.value);
                     }}
-                    style={{ flex: 1, padding: '8px', border: '1px solid #d1d5db', borderRadius: '4px' }}
+                    style={{ flex: 1, padding: '10px', border: '1px solid #4b5563', borderRadius: '6px', background: '#374151', color: '#e5e7eb', maxWidth: '400px' }}
                   >
                     <option value="">Select a script...</option>
                     {scriptLogs.map(log => (
@@ -461,38 +574,39 @@ const AdminHealth = ({ user, isAdmin }) => {
                     ))}
                   </select>
 
-                  <div className="log-actions" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                  <div className="log-actions">
                     <button
                       onClick={() => downloadScriptLog(selectedScript)}
                       disabled={!selectedScript}
                       className="btn-secondary"
-                      style={{ padding: '8px 12px' }}
                     >
-                      Download
+                      📥 Download
                     </button>
                     <button
                       onClick={refreshScriptLog}
-                      disabled={!selectedScript}
+                      disabled={!selectedScript || isRefreshing}
                       className="btn-secondary"
-                      style={{ padding: '8px 12px' }}
                     >
-                      Refresh
+                      {isRefreshing ? <span className="spinner-small" /> : '🔄'} Refresh
                     </button>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#9ca3af', fontSize: '13px' }}>
                       <input
                         type="checkbox"
                         checked={autoRefresh}
                         onChange={(e) => setAutoRefresh(e.target.checked)}
                       />
-                      Auto-refresh (5s)
+                      Auto-refresh
+                      {autoRefresh && <span className="pulse-dot" title="Auto-refresh active" />}
                     </label>
                   </div>
                 </div>
 
-                <div className="log-search" style={{ marginBottom: '15px' }}>
+                {/* Search Bar */}
+                <div className="log-search" style={{ marginBottom: '12px' }}>
                   <input
+                    ref={searchInputRef}
                     type="text"
-                    placeholder="Search in log..."
+                    placeholder="🔍 Search in log... (press / to focus)"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     onKeyPress={(e) => {
@@ -501,57 +615,102 @@ const AdminHealth = ({ user, isAdmin }) => {
                         loadScriptLog(selectedScript, 0);
                       }
                     }}
-                    style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '4px' }}
+                    style={{
+                      width: '100%',
+                      padding: '10px 14px',
+                      border: '1px solid #4b5563',
+                      borderRadius: '6px',
+                      background: '#374151',
+                      color: '#e5e7eb',
+                      fontSize: '14px'
+                    }}
                   />
-                  <small style={{ color: '#6b7280', marginTop: '5px', display: 'block' }}>
-                    Press Enter to search
-                  </small>
                 </div>
 
-                <div className="log-content" style={{
-                  background: '#1f2937',
-                  color: '#f3f4f6',
-                  padding: '15px',
-                  borderRadius: '4px',
-                  maxHeight: '600px',
-                  overflowY: 'auto',
-                  fontFamily: 'monospace',
-                  fontSize: '12px',
-                  lineHeight: '1.5'
-                }}>
-                  <pre style={{ margin: 0, whiteSpace: 'pre-wrap', wordWrap: 'break-word' }}>
-                    {scriptLogContent || 'No log content available. Select a script to view logs.'}
-                  </pre>
+                {/* Quick Filter Chips */}
+                {scriptLogContent && (
+                  <div className="quick-filters">
+                    {filterChips.map(chip => {
+                      const counts = getLogCounts(scriptLogContent);
+                      return (
+                        <button
+                          key={chip.id}
+                          className={`filter-chip ${quickFilter === chip.id ? 'active' : ''}`}
+                          onClick={() => setQuickFilter(chip.id)}
+                        >
+                          {chip.icon} {chip.label}
+                          <span className="count">{counts[chip.id] || 0}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Enhanced Log Content */}
+                <div className="log-lines-container">
+                  {!scriptLogContent ? (
+                    <div className="log-empty-state">
+                      <div className="icon">📋</div>
+                      <p>No log content available.</p>
+                      <p>Select a script to view logs.</p>
+                    </div>
+                  ) : (
+                    getProcessedLogLines(scriptLogContent).map((line) => (
+                      <div
+                        key={line.number}
+                        className={`log-line ${line.severity}`}
+                        onClick={() => handleCopyLine(line.content)}
+                        title="Click to copy"
+                      >
+                        <span className="log-line-number">{line.number}</span>
+                        <span className="log-line-content">
+                          {highlightSearchTerm(line.content, searchTerm)}
+                        </span>
+                      </div>
+                    ))
+                  )}
+                  {scriptLogContent && getProcessedLogLines(scriptLogContent).length === 0 && (
+                    <div className="log-empty-state">
+                      <div className="icon">🔍</div>
+                      <p>No logs match the current filter.</p>
+                      <button
+                        className="btn-secondary"
+                        onClick={() => setQuickFilter('all')}
+                        style={{ marginTop: '12px' }}
+                      >
+                        Show All Logs
+                      </button>
+                    </div>
+                  )}
                 </div>
 
+                {/* Pagination */}
                 {selectedScript && (
                   <div className="log-pagination" style={{
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
                     marginTop: '15px',
-                    padding: '10px',
-                    background: '#f9fafb',
-                    borderRadius: '4px'
+                    padding: '12px',
+                    background: '#374151',
+                    borderRadius: '6px'
                   }}>
                     <button
                       onClick={loadPreviousPage}
                       disabled={logOffset === 0}
                       className="btn-secondary"
-                      style={{ padding: '6px 12px' }}
                     >
-                      Previous
+                      ← Previous
                     </button>
-                    <span style={{ fontSize: '14px', color: '#6b7280' }}>
+                    <span style={{ fontSize: '14px', color: '#9ca3af' }}>
                       Lines {logOffset + 1} - {Math.min(logOffset + logLimit, totalLines)} of {totalLines}
                     </span>
                     <button
                       onClick={loadNextPage}
                       disabled={!hasMore}
                       className="btn-secondary"
-                      style={{ padding: '6px 12px' }}
                     >
-                      Next
+                      Next →
                     </button>
                   </div>
                 )}
@@ -585,23 +744,23 @@ const AdminHealth = ({ user, isAdmin }) => {
                 + Add Job
               </button>
             </div>
-            
+
             {/* Job Form */}
             {showJobForm && (
-               <div className="job-form">
-                 <input placeholder="Job Name" value={jobForm.name} onChange={e => setJobForm({...jobForm, name: e.target.value})} disabled={isEditingJob} />
-                 <select value={jobForm.script} onChange={e => setJobForm({...jobForm, script: e.target.value})}>
-                   <option value="">Select Script</option>
-                   {availableScripts.map(s => <option key={s} value={s}>{s}</option>)}
-                 </select>
-                 <input placeholder="Cron Expression (e.g. 0 10 * * 1)" value={jobForm.cron} onChange={e => setJobForm({...jobForm, cron: e.target.value})} />
-                 <CronBuilder value={jobForm.cron} onChange={(newCron) => setJobForm({ ...jobForm, cron: newCron })} />
-                 <label>
-                   <input type="checkbox" checked={jobForm.enabled} onChange={e => setJobForm({...jobForm, enabled: e.target.checked})} /> Enabled
-                 </label>
-                 <button onClick={handleSaveJob}>Save</button>
-                 <button onClick={() => { setShowJobForm(false); setJobForm({ name: '', script: '', cron: '', enabled: true }); }}>Cancel</button>
-               </div>
+              <div className="job-form">
+                <input placeholder="Job Name" value={jobForm.name} onChange={e => setJobForm({ ...jobForm, name: e.target.value })} disabled={isEditingJob} />
+                <select value={jobForm.script} onChange={e => setJobForm({ ...jobForm, script: e.target.value })}>
+                  <option value="">Select Script</option>
+                  {availableScripts.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+                <input placeholder="Cron Expression (e.g. 0 10 * * 1)" value={jobForm.cron} onChange={e => setJobForm({ ...jobForm, cron: e.target.value })} />
+                <CronBuilder value={jobForm.cron} onChange={(newCron) => setJobForm({ ...jobForm, cron: newCron })} />
+                <label>
+                  <input type="checkbox" checked={jobForm.enabled} onChange={e => setJobForm({ ...jobForm, enabled: e.target.checked })} /> Enabled
+                </label>
+                <button onClick={handleSaveJob}>Save</button>
+                <button onClick={() => { setShowJobForm(false); setJobForm({ name: '', script: '', cron: '', enabled: true }); }}>Cancel</button>
+              </div>
             )}
 
             <table className="cron-table">
@@ -643,28 +802,37 @@ const AdminHealth = ({ user, isAdmin }) => {
         {/* BACKUPS TAB */}
         {activeTab === 'backups' && (
           <div className="backups-view">
-             <h3>Backup Files</h3>
-             <table className="backups-table">
-               <thead>
-                 <tr>
-                   <th>Filename</th>
-                   <th>Size</th>
-                   <th>Created</th>
-                 </tr>
-               </thead>
-               <tbody>
-                  {backupFiles.map(f => (
-                    <tr key={f.name}>
-                      <td>{f.name}</td>
-                      <td>{(f.size / 1024 / 1024).toFixed(2)} MB</td>
-                      <td>{new Date(f.created).toLocaleString()}</td>
-                    </tr>
-                  ))}
-               </tbody>
-             </table>
+            <h3>Backup Files</h3>
+            <table className="backups-table">
+              <thead>
+                <tr>
+                  <th>Filename</th>
+                  <th>Size</th>
+                  <th>Created</th>
+                </tr>
+              </thead>
+              <tbody>
+                {backupFiles.map(f => (
+                  <tr key={f.name}>
+                    <td>{f.name}</td>
+                    <td>{(f.size / 1024 / 1024).toFixed(2)} MB</td>
+                    <td>{new Date(f.created).toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
+
+      {/* Toast Notifications */}
+      {toast && (
+        <div className="toast-container">
+          <div className={`toast toast-${toast.type}`}>
+            {toast.message}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
