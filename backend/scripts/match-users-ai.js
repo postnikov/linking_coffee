@@ -24,7 +24,18 @@ const crypto = require('crypto');
 require('dotenv').config({ path: path.join(__dirname, '../../.env') });
 const Airtable = require('airtable');
 const { GoogleGenerativeAI } = require("@google/generative-ai");
-const config = require('../../linking-coffee.config.js');
+// Load Config
+let config = {};
+try {
+    config = require('../../linking-coffee.config.js'); // Local dev path
+} catch (e) {
+    try {
+        config = require('../linking-coffee.config.js'); // Docker path
+    } catch (e2) {
+        console.warn("⚠️ Could not load linking-coffee.config.js, using defaults.");
+        config = { ai: { matchingModel: 'gemini-3-pro-preview' } };
+    }
+}
 
 // Configuration
 const MEMBERS_TABLE = process.env.AIRTABLE_MEMBERS_TABLE;
