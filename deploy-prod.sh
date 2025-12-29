@@ -9,6 +9,18 @@ SERVER_DIR="/opt/linking-coffee"
 
 echo "🚀 Starting production deployment..."
 
+# 0. Safety Check: Verify Backend Dependencies
+echo "🔍 Checking backend dependencies..."
+cd backend
+npx --yes depcheck
+if [ $? -ne 0 ]; then
+  echo "❌ Dependency check failed in backend/. Aborting deployment."
+  echo "👉 Run 'cd backend && npx depcheck' to investigate."
+  exit 1
+fi
+cd ..
+echo "✅ Dependencies look good."
+
 # 1. Check for uncommitted changes
 if [[ -n $(git status -s) ]]; then
   echo "⚠️  You have uncommitted changes:"
