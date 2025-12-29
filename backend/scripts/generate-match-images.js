@@ -105,11 +105,10 @@ async function generateScenePrompt(m1, m2, sharedIntro) {
     Create a visual description for a creative digital space or virtual background that represents the intersection of their worlds.
     The goal is to create a cool, personalized "shared virtual room".
     The style should be "Digital Art, vibrant, warm, minimal, high quality, 4k".
-    IMPORANT: The center of the image should be relatively empty or clean, as we will overlay characters there.
     Keep it under 40 words. 
     Examples:
-    - "A cozy futuristic UI interface floating in clouds with code holograms and coffee icons, open center"
-    - "Abstract digital portal merging a forest and a server room, soft neon lighting, clean middle ground"
+    - "A cozy futuristic UI interface floating in clouds with code holograms and coffee icons"
+    - "Abstract digital portal merging a forest and a server room, soft neon lighting"
     
     Output just the prompt text.
     `;
@@ -118,18 +117,49 @@ async function generateScenePrompt(m1, m2, sharedIntro) {
     return result.response.text().trim();
 }
 
-// Generate Image using Gemini (Background Only)
-async function generateBackgroundImage(prompt) {
+// Generate Full Image using Gemini (Background + Avatars)
+async function generateFullImage(prompt, avatar1Buffer, avatar2Buffer) {
     console.log(`   🎨 Generative Prompt: "${prompt}"`);
 
     // Initialize the specific image generation model
     const imageModel = genAI.getGenerativeModel({ model: IMAGE_MODEL_NAME });
 
     try {
-        // We do NOT pass avatars to the model anymore. We want a clean background.
         const parts = [
-            { text: `${prompt}\n\nIMPORTANT: Create a single high-quality BACKGROUND IMAGE. Style: Digital Art, 3D Render, Abstract, No Text. Leave center empty.` }
+            {
+                text: `Create a high-quality 3D digital art poster featuring TWO characters based on the provided input images.
+
+THE SCENE:
+${prompt}
+
+INSTRUCTIONS:
+1. CAST: You MUST include the two people from the input images as the main subjects.
+2. COMPOSITION: Place them side-by-side in the center, waist-up, facing the viewer.
+3. STYLE: Premium Concept Art, Unreal Engine 5, Volumetric Lighting, Cinematic.
+4. TRANSFORMATION: Stylize the characters to match the scene's aesthetic (e.g., matching lighting and texture) while preserving their key facial features and identity.
+5. FOCUS: The characters are the heroes of this image. Do not generate an empty room.
+6. FORMAT: Square (1:1 aspect ratio).
+
+Output a single square image.` }
         ];
+
+        // Add avatars
+        if (avatar1Buffer) {
+            parts.push({
+                inlineData: {
+                    data: avatar1Buffer.toString('base64'),
+                    mimeType: 'image/jpeg'
+                }
+            });
+        }
+        if (avatar2Buffer) {
+            parts.push({
+                inlineData: {
+                    data: avatar2Buffer.toString('base64'),
+                    mimeType: 'image/jpeg'
+                }
+            });
+        }
 
         // Request image generation
         const result = await imageModel.generateContent({
@@ -137,21 +167,14 @@ async function generateBackgroundImage(prompt) {
         });
         const response = await result.response;
 
-        // --- Cost Calculation ---
+        // Cost logging
         if (response.usageMetadata) {
             const usage = response.usageMetadata;
             const inputTokens = usage.promptTokenCount || 0;
             const outputTokens = usage.candidatesTokenCount || 0;
-
-            // Pricing (Estimated for Flash Tier - adjust as needed)
-            // Input: $0.075 per 1M tokens
-            // Output: $0.30 per 1M tokens
-            // Note: Images in prompt contribute to input tokens significantly (~258 tokens per image typically)
             const inputCost = (inputTokens / 1000000) * 0.075;
             const outputCost = (outputTokens / 1000000) * 0.30;
-            const totalCost = inputCost + outputCost;
-
-            console.log(`   💰 Usage: ${inputTokens} in / ${outputTokens} out | Est. Cost: $${totalCost.toFixed(6)}`);
+            console.log(`   💰 Usage: ${inputTokens} in / ${outputTokens} out | Est. Cost: $${(inputCost + outputCost).toFixed(6)}`);
         }
 
         // Check content
@@ -159,7 +182,7 @@ async function generateBackgroundImage(prompt) {
         if (candidates && candidates[0] && candidates[0].content && candidates[0].content.parts) {
             for (const part of candidates[0].content.parts) {
                 if (part.inlineData && part.inlineData.data) {
-                    console.log(`   ✅ Received background image (Mime: ${part.inlineData.mimeType})`);
+                    console.log(`   ✅ Received full image (Mime: ${part.inlineData.mimeType})`);
                     return Buffer.from(part.inlineData.data, 'base64');
                 }
             }
@@ -168,11 +191,11 @@ async function generateBackgroundImage(prompt) {
         const text = response.text();
         console.warn(`   ⚠️  Model returned text instead of image: "${text.substring(0, 50)}..."`);
 
-        // Retry with safe prompt
+        // Retry with safe prompt if failed, but without avatars to be safe if identity was the blocker
         if (!prompt.includes("SAFE_FALLBACK")) {
-            console.log("   🔄 Retrying with SAFE Abstract Fallback prompt...");
-            const SAFE_PROMPT = "SAFE_FALLBACK: A beautiful abstract digital art composition representing connection and synergy, geometric shapes, warm lighting, 3D render, minimalist, high resolution, empty center.";
-            return await generateBackgroundImage(SAFE_PROMPT);
+            console.log("   🔄 Retrying with SAFE Abstract Fallback prompt (No Avatars)...");
+            const SAFE_PROMPT = "SAFE_FALLBACK: A beautiful abstract digital art composition representing connection and synergy, geometric shapes, warm lighting, 3D render, minimalist, high resolution square image.";
+            return await generateFullImage(SAFE_PROMPT, null, null);
         }
 
         return null;
@@ -181,112 +204,6 @@ async function generateBackgroundImage(prompt) {
         console.error('   ⚠️  Image Generation failed:', error.message);
         return null;
     }
-}
-
-// Generate Initials SVG Buffer
-function getInitialsSVG(name, size) {
-    const initials = name
-        ? name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
-        : '??';
-    const color = '#6366f1'; // Indigo-500
-
-    return Buffer.from(`
-        <svg width="${size}" height="${size}">
-            <rect x="0" y="0" width="${size}" height="${size}" fill="${color}"/>
-            <text x="50%" y="50%" font-family="Arial, sans-serif" font-size="${size * 0.5}" 
-                  fill="white" text-anchor="middle" dy=".3em" font-weight="bold">${initials}</text>
-        </svg>
-    `);
-}
-
-// Helper: Create Circular Avatar with Border
-async function prepareAvatar(buffer, size, borderColor = 'white', borderWidth = 8, nameForFallback = 'User') {
-    let inputBuffer = buffer;
-
-    // Fallback if no buffer
-    if (!inputBuffer) {
-        inputBuffer = getInitialsSVG(nameForFallback, size);
-    }
-
-    // Resize and Crop to Circle
-    const circleShape = Buffer.from(`<svg><circle cx="${size / 2}" cy="${size / 2}" r="${size / 2}" /></svg>`);
-
-    // Create the image clipped to circle
-    const avatar = await sharp(inputBuffer)
-        .resize(size, size, { fit: 'cover' })
-        .composite([{ input: circleShape, blend: 'dest-in' }])
-        .png() // Ensure alpha channel
-        .toBuffer();
-
-    // Create a larger circle for the border
-    const totalSize = size + (borderWidth * 2);
-    const borderSvg = Buffer.from(`
-        <svg width="${totalSize}" height="${totalSize}">
-            <circle cx="${totalSize / 2}" cy="${totalSize / 2}" r="${size / 2 + borderWidth / 2}" 
-                    fill="none" stroke="${borderColor}" stroke-width="${borderWidth}"/>
-        </svg>
-    `);
-
-    // Composite avatar onto centered transparent canvas then add border? 
-    // Easier: Composite avatar onto a solid color circle (border) 
-    // OR just overlay border ring on top.
-
-    return sharp({
-        create: {
-            width: totalSize,
-            height: totalSize,
-            channels: 4,
-            background: { r: 0, g: 0, b: 0, alpha: 0 }
-        }
-    })
-        .composite([
-            { input: avatar, top: borderWidth, left: borderWidth }, // Center the avatar
-            { input: borderSvg, top: 0, left: 0 } // Overlay border
-        ])
-        .png()
-        .toBuffer();
-}
-
-// Composite Images
-async function compositeSocialCard(bgBuffer, avatar1Buffer, avatar2Buffer, name1, name2) {
-    const WIDTH = 1200;
-    const HEIGHT = 630;
-    const AVATAR_SIZE = 240; // Size of the photo itself
-    const BORDER = 8;
-
-    // 1. Prepare Background
-    const background = await sharp(bgBuffer)
-        .resize(WIDTH, HEIGHT, { fit: 'cover' })
-        .blur(8) // Blur background to make avatars pop
-        .modulate({ brightness: 0.8 }) // Darken slightly
-        .toBuffer();
-
-    // 2. Prepare Avatars
-    const av1 = await prepareAvatar(avatar1Buffer, AVATAR_SIZE, '#ffffff', BORDER, name1);
-    const av2 = await prepareAvatar(avatar2Buffer, AVATAR_SIZE, '#ffffff', BORDER, name2);
-
-    // 3. Composite
-    // Positions: Centered vertically. 
-    // Spacing: 
-    const centerY = (HEIGHT - (AVATAR_SIZE + BORDER * 2)) / 2;
-    const centerX = WIDTH / 2;
-    const offset = 180; // Distance from center
-
-    const card = await sharp(background)
-        .composite([
-            { input: av1, top: Math.floor(centerY), left: Math.floor(centerX - offset - (AVATAR_SIZE + BORDER * 2)) },
-            { input: av2, top: Math.floor(centerY), left: Math.floor(centerX + offset) },
-            // Add a "Link" icon or "+" in the middle
-            {
-                input: Buffer.from(`<svg width="100" height="100"><circle cx="50" cy="50" r="40" fill="white" opacity="0.2"/><text x="50" y="50" font-family="Arial" font-size="40" fill="white" text-anchor="middle" dy=".35em" font-weight="bold">&amp;</text></svg>`),
-                top: Math.floor(HEIGHT / 2 - 50),
-                left: Math.floor(WIDTH / 2 - 50)
-            }
-        ])
-        .png()
-        .toBuffer();
-
-    return card;
 }
 
 // --- Main ---
@@ -360,8 +277,11 @@ async function main() {
             // Check Avatars
             const av1Url = m1.fields.Avatar && m1.fields.Avatar[0] ? m1.fields.Avatar[0].url : null;
             const av2Url = m2.fields.Avatar && m2.fields.Avatar[0] ? m2.fields.Avatar[0].url : null;
-            const name1 = m1.fields.Name || 'Member 1';
-            const name2 = m2.fields.Name || 'Member 2';
+
+            if (!av1Url || !av2Url) {
+                console.log(`   ⚠️  Missing avatars for ${m1.fields.Name} or ${m2.fields.Name}. Skipping.`);
+                continue;
+            }
 
             // 1. Download Avatars (Robust)
             console.log('   ⬇️  Downloading avatars...');
@@ -372,17 +292,13 @@ async function main() {
             console.log('   🤖 Generatings scene prompt...');
             const scenePrompt = await generateScenePrompt(m1, m2, sharedIntro);
 
-            // 3. Generate Background Only
-            const bgBuffer = await generateBackgroundImage(scenePrompt);
+            // 3. Generate Full Image (AI does compositing)
+            const finalImageBuffer = await generateFullImage(scenePrompt, av1Buffer, av2Buffer);
 
-            if (!bgBuffer) {
-                console.log('   ❌ Failed to generate background. Skipping.');
+            if (!finalImageBuffer) {
+                console.log('   ❌ Failed to generate AI image. Skipping.');
                 continue;
             }
-
-            // 4. Composite
-            console.log('   🔨 Compositing social card...');
-            const finalImageBuffer = await compositeSocialCard(bgBuffer, av1Buffer, av2Buffer, name1, name2);
 
             // 5. Upload/Save
             if (!DRY_RUN) {
@@ -430,12 +346,13 @@ async function main() {
 
 async function generateMatchImage(member1, member2, sharedIntro) {
     try {
-        const name1 = member1.fields.Name || 'Member 1';
-        const name2 = member2.fields.Name || 'Member 2';
-
         // Check Avatars
         const av1Url = member1.fields.Avatar && member1.fields.Avatar[0] ? member1.fields.Avatar[0].url : null;
         const av2Url = member2.fields.Avatar && member2.fields.Avatar[0] ? member2.fields.Avatar[0].url : null;
+
+        if (!av1Url || !av2Url) {
+            return { success: false, reason: 'missing_avatars' };
+        }
 
         // 1. Download
         const av1Buffer = await downloadImage(av1Url);
@@ -444,17 +361,14 @@ async function generateMatchImage(member1, member2, sharedIntro) {
         // 2. Prompt
         const scenePrompt = await generateScenePrompt(member1, member2, sharedIntro);
 
-        // 3. Generate Background
-        const bgBuffer = await generateBackgroundImage(scenePrompt);
+        // 3. Generate
+        const finalImageBuffer = await generateFullImage(scenePrompt, av1Buffer, av2Buffer);
 
-        if (!bgBuffer) {
-            return { success: false, reason: 'background_generation_failed' };
+        if (!finalImageBuffer) {
+            return { success: false, reason: 'generation_failed' };
         }
 
-        // 4. Composite
-        const finalImageBuffer = await compositeSocialCard(bgBuffer, av1Buffer, av2Buffer, name1, name2);
-
-        // 5. Save
+        // 4. Save
         const filename = `match_${member1.id}_${member2.id}_${Date.now()}.png`;
         const relativeUploadPath = '../uploads/generated_match_images';
         const outPath = path.join(__dirname, relativeUploadPath, filename);
