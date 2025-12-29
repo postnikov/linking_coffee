@@ -389,4 +389,59 @@ async function main() {
     }
 }
 
-main();
+// --- Exported Logic ---
+
+async function generateMatchImage(member1, member2, sharedIntro) {
+    try {
+        // Check Avatars
+        const av1Url = member1.fields.Avatar && member1.fields.Avatar[0] ? member1.fields.Avatar[0].url : null;
+        const av2Url = member2.fields.Avatar && member2.fields.Avatar[0] ? member2.fields.Avatar[0].url : null;
+
+        if (!av1Url || !av2Url) {
+            console.log(`   ⚠️  Missing avatars for ${member1.fields.Name} or ${member2.fields.Name}. Skipping image.`);
+            return { success: false, reason: 'missing_avatars' };
+        }
+
+        // 1. Download
+        const av1Buffer = await downloadImage(av1Url);
+        const av2Buffer = await downloadImage(av2Url);
+
+        // 2. Prompt
+        const scenePrompt = await generateScenePrompt(member1, member2, sharedIntro);
+
+        // 3. Generate
+        const finalImageBuffer = await generateBackgroundImage(scenePrompt, av1Buffer, av2Buffer);
+
+        if (!finalImageBuffer) {
+            return { success: false, reason: 'generation_failed' };
+        }
+
+        // 4. Save
+        const filename = `match_${member1.id}_${member2.id}_${Date.now()}.png`;
+        const relativeUploadPath = '../uploads/generated_match_images';
+        const outPath = path.join(__dirname, relativeUploadPath, filename);
+        // Ensure dir exists
+        fs.mkdirSync(path.dirname(outPath), { recursive: true });
+        fs.writeFileSync(outPath, finalImageBuffer);
+
+        const publicUrl = `https://linked.coffee/uploads/generated_match_images/${filename}`;
+
+        return {
+            success: true,
+            publicUrl: publicUrl,
+            localPath: outPath
+        };
+
+    } catch (error) {
+        console.error('   ❌ Error generating match image:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+
+
+if (require.main === module) {
+    main();
+}
+
+module.exports = { generateMatchImage };

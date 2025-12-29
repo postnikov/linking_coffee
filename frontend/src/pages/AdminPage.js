@@ -15,6 +15,49 @@ const AdminPage = () => {
     const [activeTab, setActiveTab] = useState('users');
     const [error, setError] = useState(null);
 
+    // Matching State
+    const [matcherOptions, setMatcherOptions] = useState({ dryRun: true, model: 'gemini-3-pro-preview' });
+    const [matchingRunning, setMatchingRunning] = useState(false);
+    const [matchLogs, setMatchLogs] = useState([]);
+    const logsEndRef = React.useRef(null);
+
+    const startMatching = () => {
+        setMatchingRunning(true);
+        setMatchLogs([{ type: 'info', message: '🚀 Initializing connection...' }]);
+
+        const params = new URLSearchParams({
+            dryRun: matcherOptions.dryRun,
+            model: matcherOptions.model
+        });
+
+        const eventSource = new EventSource(`${API_URL}/api/admin/run-matching?${params}`);
+
+        eventSource.onmessage = (event) => {
+            const log = JSON.parse(event.data);
+            if (log.type === 'done') {
+                setMatchLogs(prev => [...prev, { type: 'info', message: `✅ Process finished with code ${log.code}` }]);
+                eventSource.close();
+                setMatchingRunning(false);
+            } else {
+                setMatchLogs(prev => [...prev, log]);
+            }
+        };
+
+        eventSource.onerror = (err) => {
+            console.error('SSE Error:', err);
+            setMatchLogs(prev => [...prev, { type: 'error', message: '❌ Connection lost.' }]);
+            eventSource.close();
+            setMatchingRunning(false);
+        };
+    };
+
+    // Auto-scroll logs
+    useEffect(() => {
+        if (logsEndRef.current) {
+            logsEndRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+    }, [matchLogs]);
+
     useEffect(() => {
         const fetchAdminData = async () => {
             const storedUser = localStorage.getItem('user');
@@ -74,13 +117,13 @@ const AdminPage = () => {
                         Admin Dashboard
                     </h1>
                     <div style={{ display: 'flex', gap: '1rem' }}>
-                        <button 
+                        <button
                             onClick={() => navigate('/')}
                             style={{ padding: '0.5rem 1rem', border: '1px solid #d1d5db', background: 'white', borderRadius: '0.375rem', cursor: 'pointer' }}
                         >
                             Back to App
                         </button>
-                        <button 
+                        <button
                             onClick={() => {
                                 localStorage.removeItem('user');
                                 navigate('/');
@@ -123,18 +166,32 @@ const AdminPage = () => {
                             Current Matches ({data.matches.length})
                         </button>
                         <button
-                             onClick={() => setActiveTab('health')}
-                             style={{
-                                 background: 'none',
-                                 border: 'none',
-                                 fontSize: '1.1rem',
-                                 fontWeight: activeTab === 'health' ? 'bold' : 'normal',
-                                 color: activeTab === 'health' ? '#6366f1' : '#4b5563',
-                                 cursor: 'pointer',
-                                 padding: '0.5rem 1rem'
-                             }}
+                            onClick={() => setActiveTab('health')}
+                            style={{
+                                background: 'none',
+                                border: 'none',
+                                fontSize: '1.1rem',
+                                fontWeight: activeTab === 'health' ? 'bold' : 'normal',
+                                color: activeTab === 'health' ? '#6366f1' : '#4b5563',
+                                cursor: 'pointer',
+                                padding: '0.5rem 1rem'
+                            }}
                         >
                             System Health
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('matcher')}
+                            style={{
+                                background: 'none',
+                                border: 'none',
+                                fontSize: '1.1rem',
+                                fontWeight: activeTab === 'matcher' ? 'bold' : 'normal',
+                                color: activeTab === 'matcher' ? '#6366f1' : '#4b5563',
+                                cursor: 'pointer',
+                                padding: '0.5rem 1rem'
+                            }}
+                        >
+                            AI Matcher
                         </button>
                     </div>
 
@@ -220,6 +277,67 @@ const AdminPage = () => {
                                     )}
                                 </tbody>
                             </table>
+                        </div>
+                    )}
+
+                    {activeTab === 'matcher' && (
+                        <div>
+                            <h3>AI Matching Orchestrator</h3>
+                            <div style={{ marginBottom: '1rem', padding: '1rem', background: '#f3f4f6', borderRadius: '8px' }}>
+                                <label style={{ marginRight: '1rem' }}>
+                                    <input
+                                        type="checkbox"
+                                        checked={matcherOptions.dryRun}
+                                        onChange={e => setMatcherOptions({ ...matcherOptions, dryRun: e.target.checked })}
+                                    />
+                                    Dry Run (Simulation)
+                                </label>
+                                <label style={{ marginRight: '1rem' }}>
+                                    Model:
+                                    <select
+                                        value={matcherOptions.model}
+                                        onChange={e => setMatcherOptions({ ...matcherOptions, model: e.target.value })}
+                                        style={{ marginLeft: '0.5rem', padding: '0.25rem' }}
+                                    >
+                                        <option value="gemini-3-pro-preview">Gemini 3 Pro (Default)</option>
+                                        <option value="gemini-1.5-pro-002">Gemini 1.5 Pro</option>
+                                    </select>
+                                </label>
+                                <button
+                                    onClick={startMatching}
+                                    disabled={matchingRunning}
+                                    style={{
+                                        background: matchingRunning ? '#9ca3af' : '#2563eb',
+                                        color: 'white',
+                                        border: 'none',
+                                        padding: '0.5rem 1rem',
+                                        borderRadius: '4px',
+                                        cursor: matchingRunning ? 'not-allowed' : 'pointer',
+                                        fontWeight: 'bold'
+                                    }}
+                                >
+                                    {matchingRunning ? 'Running...' : '🚀 Start Matching Engine'}
+                                </button>
+                            </div>
+
+                            <div style={{
+                                background: '#1e1e1e',
+                                color: '#d4d4d4',
+                                padding: '1rem',
+                                borderRadius: '8px',
+                                fontFamily: 'monospace',
+                                height: '400px',
+                                overflowY: 'auto',
+                                whiteSpace: 'pre-wrap'
+                            }}>
+                                {matchLogs.length === 0 ? <span style={{ color: '#6b7280' }}>(Logs will appear here...)</span> : null}
+                                {matchLogs.map((log, i) => (
+                                    <div key={i} style={{ color: log.type === 'error' ? '#ef4444' : '#d4d4d4' }}>
+                                        {log.message}
+                                    </div>
+                                ))}
+                                <div ref={logsEndRef} />
+                            </div>
                         </div>
                     )}
 

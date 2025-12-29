@@ -11,16 +11,22 @@ const getMatchLanguage = (member1, member2) => {
   const langs1 = member1.Languages || ['English'];
   const langs2 = member2.Languages || ['English'];
   const shared = langs1.filter(l => langs2.includes(l));
-  
+
   // Prefer Russian if both speak it, otherwise English
   if (shared.includes('Russian')) return 'Russian';
   return 'English';
 };
 
-const generateMatchIntros = async (member1, member2) => {
+const generateMatchIntros = async (member1, member2, matchReason = "") => {
   const language = getMatchLanguage(member1, member2);
 
+  let contextInjection = "";
+  if (matchReason) {
+    contextInjection = `\n\nCORE MATCH REASON (Use this to frame the connection): "${matchReason}"`;
+  }
+
   const systemPrompt = `You are a warm, insightful matchmaker for Linked.Coffee — a random coffee platform for tech professionals. 
+  ${contextInjection}
 
 Your job: Write TWO personalized introductions — one for each person — explaining why meeting the other person could be interesting FOR THEM specifically. Also identify what they share in common.
 
@@ -51,6 +57,7 @@ Output format — respond with valid JSON only, no markdown:
 
 Rules:
 - shared_ground: Focus on genuine overlap — interests, experience level, goals, location, challenges
+- If a 'CORE MATCH REASON' is provided, you MUST trust it and build your narrative around it.
 - Each personal intro must feel written specifically for that person
 - Focus on what the OTHER person can offer THEM
 - Reference specific details from profiles — profession, interests, goals
@@ -95,14 +102,14 @@ Write for_member2 as a message TO ${member2.Name} about why meeting ${member1.Na
     });
 
     let content = response.content[0].text.trim();
-    
+
     // Sanitize: Remove markdown code blocks if present
     if (content.startsWith('```')) {
       content = content.replace(/^```json\s*/, '').replace(/^```\s*/, '').replace(/\s*```$/, '');
     }
 
     const result = JSON.parse(content);
-    
+
     return {
       success: true,
       language,

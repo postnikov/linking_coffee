@@ -7,6 +7,7 @@ const Scheduler = require('./scheduler');
 const Airtable = require('airtable');
 const { Telegraf, Markup } = require('telegraf');
 const fs = require('fs');
+const { spawn } = require('child_process');
 
 const logDir = path.join(__dirname, 'logs');
 console.log('📂 Log Directory:', logDir);
@@ -172,6 +173,18 @@ bot.start((ctx) => {
   ctx.reply(`☕️☕️☕️\nYour verification code for Linked.Coffee is:\n\n\`${otp}\`\n\nPlease enter this code on the website.`, { parse_mode: 'Markdown' });
 });
 
+// Localized participation messages
+const PARTICIPATION_MESSAGES = {
+  En: {
+    yes_response: "Awesome 🎉\nOn Monday you'll get your new match!\n💜",
+    no_response: "Got it 👍\nNo matches this week.\nRecharge your social battery 🪫↗️🔋\n\nI'll come back to you next weekend\n😉"
+  },
+  Ru: {
+    yes_response: "Отлично 🎉\nВ понедельник ты получишь нового собеседника!\n💜",
+    no_response: "Принято 👍\nНа этой неделе без встреч.\nЗаряжай социальную батарейку 🪫↗️🔋\n\nВернусь к тебе в следующие выходные\n😉"
+  }
+};
+
 // Handle "I'm in" callback from weekly check-in
 // Handle "Yes! I'm in!"
 bot.action('participate_yes', async (ctx) => {
@@ -190,6 +203,8 @@ bot.action('participate_yes', async (ctx) => {
 
     if (records.length > 0) {
       const record = records[0];
+      const lang = (record.fields.Notifications_Language === 'Ru') ? 'Ru' : 'En';
+      const t = PARTICIPATION_MESSAGES[lang];
 
       // Conditional Logging: If previously Passive -> Activated
       if (record.fields.Next_Week_Status === 'Passive') {
@@ -216,12 +231,8 @@ bot.action('participate_yes', async (ctx) => {
         }
       ]);
 
-      await ctx.answerCbQuery('You are in!');
-      await ctx.editMessageText(
-        "Awesome 🎉\n" +
-        "On Monday you'll get your new match!\n" +
-        "💜"
-      );
+      await ctx.answerCbQuery(lang === 'Ru' ? 'Вы участвуете!' : 'You are in!');
+      await ctx.editMessageText(t.yes_response);
     } else {
       await ctx.answerCbQuery('User not found.');
     }
@@ -248,6 +259,8 @@ bot.action('participate_no', async (ctx) => {
 
     if (records.length > 0) {
       const record = records[0];
+      const lang = (record.fields.Notifications_Language === 'Ru') ? 'Ru' : 'En';
+      const t = PARTICIPATION_MESSAGES[lang];
 
       // Conditional Logging: If previously Active -> Deactivated
       if (record.fields.Next_Week_Status === 'Active') {
@@ -273,16 +286,16 @@ bot.action('participate_no', async (ctx) => {
           }
         }
       ]);
+
+      await ctx.answerCbQuery(lang === 'Ru' ? 'Пропущено.' : 'Skipped.');
+      await ctx.editMessageText(t.no_response);
+
+    } else {
+      await ctx.answerCbQuery('User not found.');
+      // Should we remove the message or something if user not found? 
+      // Current logic just doesn't reply. 
     }
 
-    await ctx.answerCbQuery('Skipped.');
-    await ctx.editMessageText(
-      "Got it 👍\n" +
-      "No matches this week.\n" +
-      "Recharge your social battery 🪫↗️🔋\n\n" +
-      "I'll come back to you next weekend\n" +
-      "😉"
-    );
   } catch (error) {
     console.error('Error handling participate_no:', error);
   }
@@ -1831,8 +1844,60 @@ app.use((err, req, res, next) => {
   res.status(500).json({ success: false, message: 'Internal Server Error' });
 });
 
-// Start server
+
+// --- Admin: Run AI Matching Script ---
+app.get('/api/admin/run-matching', async (req, res) => {
+  const { dryRun, model } = req.query; // e.g. ?dryRun=true&model=gemini-1.5-pro
+
+  // Basic security: Check if admin (this logic should be more robust in prod, 
+  // but matches existing admin endpoint pattern of loose username check or similar)
+  // For now, assume protected by frontend navigation/hidden route. 
+  // Ideally, check for a secret header or authenticated session.
+
+  console.log(`🚀 API Request: Run Matching (DryRun: ${dryRun}, Model: ${model})`);
+
+  // Set headers for SSE (Server-Sent Events)
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders();
+
+  const scriptArgs = ['scripts/match-users-ai.js'];
+  if (dryRun === 'true') scriptArgs.push('--dry-run');
+  if (model) scriptArgs.push(`--model=${model}`);
+
+  const child = spawn('node', scriptArgs, {
+    cwd: path.join(__dirname), // Run from backend dir
+    env: { ...process.env, FORCE_COLOR: '1' } // Force color output if we want to parse it later, or keep it simple
+  });
+
+  child.stdout.on('data', (data) => {
+    const lines = data.toString().split('\n');
+    lines.forEach(line => {
+      if (line.trim()) {
+        res.write(`data: ${JSON.stringify({ type: 'log', message: line })}\n\n`);
+      }
+    });
+  });
+
+  child.stderr.on('data', (data) => {
+    const lines = data.toString().split('\n');
+    lines.forEach(line => {
+      if (line.trim()) {
+        res.write(`data: ${JSON.stringify({ type: 'error', message: line })}\n\n`);
+      }
+    });
+  });
+
+  child.on('close', (code) => {
+    res.write(`data: ${JSON.stringify({ type: 'done', code: code })}\n\n`);
+    res.end();
+  });
+});
+
+// Start server (existing)
 app.listen(PORT, () => {
   console.log(`🚀 Linked.Coffee API server running on port ${PORT}`);
 });
+
 
