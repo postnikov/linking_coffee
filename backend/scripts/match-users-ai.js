@@ -36,6 +36,8 @@ try {
         config = { ai: { matchingModel: 'gemini-3-pro-preview' } };
     }
 }
+// Validate Env
+if (config.checkRequiredEnv) config.checkRequiredEnv();
 
 // Configuration
 const MEMBERS_TABLE = process.env.AIRTABLE_MEMBERS_TABLE;
@@ -474,7 +476,7 @@ Your goal is to pair these users to maximize meaningful connections.
                         'Sent_Status': 'Sent',
                         'Message_Content': `🤖 AI Matching Run Completed.\nModel: ${MODEL_NAME}\nMatches Created: ${records.length}\nNote: Intros generated successfully.`
                     }
-                }]);
+                }], { typecast: true });
                 console.log('📝 System log created in Airtable.');
             } catch (logErr) {
                 console.error('⚠️ Failed to create system log:', logErr);

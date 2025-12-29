@@ -21,5 +21,19 @@ module.exports = {
 
         // Minimum score or logic thresholds can go here
         minTimezoneDiff: 6, // Hours
+    },
+
+    /**
+     * Runtime Check: Verifies that critical environment variables are set.
+     * Call this at application startup or script initialization.
+     */
+    checkRequiredEnv: () => {
+        const required = ['GOOGLE_AI_API_KEY', 'ANTHROPIC_API_KEY'];
+        const missing = required.filter(key => !process.env[key]);
+
+        if (missing.length > 0) {
+            console.warn(`⚠️  WARNING: Missing critical AI environment variables: ${missing.join(', ')}`);
+            console.warn(`   AI features (Matching/Intros) will likely fail. Check docker-compose or .env.`);
+        }
     }
 };
