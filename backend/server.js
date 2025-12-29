@@ -1925,36 +1925,38 @@ app.get('/api/admin/run-matching', async (req, res) => {
 // --- Admin: Regenerate Match Image ---
 app.post('/api/admin/regenerate-image', async (req, res) => {
   const { matchId } = req.body;
-  if (!matchId) return res.status(400).json({ success: false, message: 'Missing matchId' });
+  if (!matchId) {
+    return res.status(400).json({ success: false, message: 'Missing matchId' });
+  }
 
-  console.log(`🎨 Triggering image regeneration for match ${matchId}...`);
+  console.log(`♻️  Regenerating image for match ${matchId}...`);
 
-  // Path to script
+  // Set headers for streaming text
+  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+  res.setHeader('Transfer-Encoding', 'chunked');
+
   const scriptPath = path.join(__dirname, 'scripts', 'generate-match-images.js');
 
-  // Spawn process
-  const child = spawn('node', [scriptPath, `--match-id=${matchId}`, '--force']);
+  // Spawn the generation script
+  const child = spawn('node', [scriptPath, '--match-id=' + matchId, '--force']);
 
-  let output = '';
-  let errorOutput = '';
-
+  // Pipe outputs to response
   child.stdout.on('data', (data) => {
-    output += data.toString();
-    // Determine success from logs is hard, but we can look for "Saved locally" or "Public URL"
+    res.write(data);
   });
 
   child.stderr.on('data', (data) => {
-    errorOutput += data.toString();
-    console.error(`[ImageGen Error] ${data}`);
+    res.write(data);
   });
 
   child.on('close', (code) => {
-    console.log(`Image script exited with code ${code}`);
-    if (code === 0) {
-      res.json({ success: true, message: 'Image regeneration completed', logs: output });
-    } else {
-      res.status(500).json({ success: false, message: 'Image regeneration failed', logs: output + errorOutput });
-    }
+    res.write(`\n--- Process exited with code ${code} ---`);
+    res.end();
+  });
+
+  child.on('error', (err) => {
+    res.write(`\n❌ Error spawning process: ${err.message}`);
+    res.end();
   });
 });
 
