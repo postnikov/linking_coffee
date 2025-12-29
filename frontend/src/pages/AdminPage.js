@@ -68,11 +68,27 @@ const AdminPage = () => {
             const user = JSON.parse(storedUser);
 
             try {
+                // Fetch Data
                 const response = await fetch(`${API_URL}/api/admin/data?requester=${user.username}`);
                 const result = await response.json();
 
+                // Fetch Config
+                const configRes = await fetch(`${API_URL}/api/admin/config`);
+                const configResult = await configRes.json();
+
                 if (result.success) {
                     setData({ users: result.users, matches: result.matches });
+
+                    if (configResult.success && configResult.config?.ai) {
+                        const aiConfig = configResult.config.ai;
+                        setMatcherOptions(prev => ({
+                            ...prev,
+                            // Use backend default if available
+                            model: aiConfig.matchingModel || prev.model,
+                            // Store available models for UI
+                            allowedModels: aiConfig.allowedMatchingModels || []
+                        }));
+                    }
                 } else {
                     setError(result.message);
                     if (response.status === 403) {
@@ -299,8 +315,16 @@ const AdminPage = () => {
                                         onChange={e => setMatcherOptions({ ...matcherOptions, model: e.target.value })}
                                         style={{ marginLeft: '0.5rem', padding: '0.25rem' }}
                                     >
-                                        <option value="gemini-3-pro-preview">Gemini 3 Pro (Default)</option>
-                                        <option value="gemini-1.5-pro-002">Gemini 1.5 Pro</option>
+                                        {matcherOptions.allowedModels && matcherOptions.allowedModels.length > 0 ? (
+                                            matcherOptions.allowedModels.map(m => (
+                                                <option key={m} value={m}>{m}</option>
+                                            ))
+                                        ) : (
+                                            <>
+                                                <option value="gemini-3-pro-preview">Gemini 3 Pro (Fallback)</option>
+                                                <option value="gemini-1.5-pro-002">Gemini 1.5 Pro</option>
+                                            </>
+                                        )}
                                     </select>
                                 </label>
                                 <button

@@ -8,6 +8,12 @@ module.exports = {
         // Options: 'gemini-3-pro-preview', 'gemini-3-flash-preview' (if available)
         matchingModel: "gemini-3-flash-preview",
 
+        // Allowed models for UI selection
+        allowedMatchingModels: [
+            "gemini-3-flash-preview",
+            "gemini-3-pro-preview"
+        ],
+
         // Model used for generating intro descriptions (Anthropic Claude)
         introModel: "claude-haiku-4-5-20251001",
 

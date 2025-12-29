@@ -20,6 +20,18 @@ if (!fs.existsSync(logDir)) {
     console.error('❌ Failed to create logs directory:', e);
   }
 }
+
+// Load Project Config (Robust Path Handing)
+let projectConfig = {};
+try {
+  projectConfig = require('../linking-coffee.config.js'); // Local dev path
+} catch (e) {
+  try {
+    projectConfig = require('./linking-coffee.config.js'); // Docker path
+  } catch (e2) {
+    console.warn("⚠️ Could not load linking-coffee.config.js in server.js");
+  }
+}
 const debugLogFile = path.join(logDir, 'debug.log');
 const authLogFile = path.join(logDir, 'auth.log');
 
@@ -1842,6 +1854,13 @@ app.use((err, req, res, next) => {
 
   // Handle other errors
   res.status(500).json({ success: false, message: 'Internal Server Error' });
+});
+
+
+// --- Admin: Get Config ---
+app.get('/api/admin/config', (req, res) => {
+  // Basic security check (same as run-matching)
+  res.json({ success: true, config: projectConfig });
 });
 
 
