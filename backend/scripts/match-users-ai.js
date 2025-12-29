@@ -374,8 +374,11 @@ Your goal is to pair these users to maximize meaningful connections.
                 // 1. Generate Text Intros
                 console.log(`   📝 Generating intro for ${p.u1.fields.Name} & ${p.u2.fields.Name}...`);
                 try {
-                    // Call the generator with the Gemini Reason
-                    const introResult = await generateMatchIntros(p.u1.fields, p.u2.fields, p.reason);
+                    // Call the generator with the Gemini Reason AND configured model/tokens
+                    const introModelName = (config.ai && config.ai.introModel) || "claude-haiku-4-5-20251001";
+                    const maxTokens = (config.ai && config.ai.maxTokens) || 2000;
+
+                    const introResult = await generateMatchIntros(p.u1.fields, p.u2.fields, p.reason, introModelName, maxTokens);
 
                     if (introResult.success) {
                         // Map internal intro objects to strings if needed, or store JSON?

@@ -17,7 +17,7 @@ const getMatchLanguage = (member1, member2) => {
   return 'English';
 };
 
-const generateMatchIntros = async (member1, member2, matchReason = "") => {
+const generateMatchIntros = async (member1, member2, matchReason = "", modelName = "claude-3-5-haiku-latest", maxTokens = 2000) => {
   const language = getMatchLanguage(member1, member2);
 
   let contextInjection = "";
@@ -93,8 +93,8 @@ Write for_member2 as a message TO ${member2.Name} about why meeting ${member1.Na
 
   try {
     const response = await anthropic.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 800,
+      model: modelName,
+      max_tokens: maxTokens,
       system: systemPrompt,
       messages: [
         { role: 'user', content: userPrompt }
@@ -108,7 +108,15 @@ Write for_member2 as a message TO ${member2.Name} about why meeting ${member1.Na
       content = content.replace(/^```json\s*/, '').replace(/^```\s*/, '').replace(/\s*```$/, '');
     }
 
-    const result = JSON.parse(content);
+    console.log(`🔍 [Debug] Raw Claude Response for ${member1.Name} & ${member2.Name}:\n`, content);
+
+    let result;
+    try {
+      result = JSON.parse(content);
+    } catch (parseErr) {
+      console.error("❌ JSON Parse Error. Content was:", content);
+      throw parseErr;
+    }
 
     return {
       success: true,
