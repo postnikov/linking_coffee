@@ -1871,6 +1871,11 @@ app.get('/api/admin/run-matching', async (req, res) => {
     env: { ...process.env, FORCE_COLOR: '1' } // Force color output if we want to parse it later, or keep it simple
   });
 
+  // Heartbeat to keep connection alive during long AI waits
+  const heartbeat = setInterval(() => {
+    res.write(': keep-alive\n\n');
+  }, 15000); // Ping every 15s
+
   child.stdout.on('data', (data) => {
     const lines = data.toString().split('\n');
     lines.forEach(line => {
@@ -1890,6 +1895,7 @@ app.get('/api/admin/run-matching', async (req, res) => {
   });
 
   child.on('close', (code) => {
+    clearInterval(heartbeat);
     res.write(`data: ${JSON.stringify({ type: 'done', code: code })}\n\n`);
     res.end();
   });
