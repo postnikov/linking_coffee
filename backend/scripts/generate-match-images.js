@@ -35,6 +35,21 @@ const MATCHES_TABLE = process.env.AIRTABLE_MATCHES_TABLE || 'tblx2OEN5sSR1xFI2';
 const MEMBERS_TABLE = process.env.AIRTABLE_MEMBERS_TABLE || 'tblCrnbDupkzWUx9P';
 const API_KEY = process.env.GOOGLE_AI_API_KEY; // Google AI Studio Key
 
+// Load Project Config
+let config = {};
+try {
+    config = require('../../linking-coffee.config.js');
+} catch (e) {
+    try {
+        config = require('../linking-coffee.config.js'); // Docker path usually
+    } catch (e2) {
+        config = { ai: { promptModel: "gemini-3-flash-preview", imageModel: "imagen-3.0-generate-001" } };
+    }
+}
+const PROMPT_MODEL_NAME = (config.ai && config.ai.promptModel) || "gemini-3-flash-preview";
+const IMAGE_MODEL_NAME = (config.ai && config.ai.imageModel) || "imagen-3.0-generate-001";
+
+
 // --- Arguments ---
 const args = process.argv.slice(2);
 const DRY_RUN = args.includes('--dry-run');
@@ -56,7 +71,7 @@ const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY }).base(process
 
 // Initialize Gemini (Text)
 const genAI = new GoogleGenerativeAI(API_KEY);
-const textModel = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" }); // Use a fast model for prompts
+const textModel = genAI.getGenerativeModel({ model: PROMPT_MODEL_NAME }); // Use configurable model
 
 // --- Utils ---
 
@@ -97,11 +112,11 @@ async function generateBackgroundImage(prompt, avatar1Buffer, avatar2Buffer) {
     console.log(`   🎨 Generative Prompt: "${prompt}"`);
 
     // Initialize the specific image generation model
-    const imageModel = genAI.getGenerativeModel({ model: "models/gemini-2.5-flash-image-preview" });
+    const imageModel = genAI.getGenerativeModel({ model: IMAGE_MODEL_NAME });
 
     try {
         const parts = [
-            { text: `${prompt}\n\nIMPORTANT: Create a single high-quality IMAGE. Do NOT output text.\nUse the attached reference images as inspiration for characters, but STYLIZE them into pretty fictional digital avatars/cartoons to fit the scene. Do NOT generate realistic faces or deepfakes. The characters should look like illustrated/3D versions in a virtual world.` }
+            { text: `${prompt}\n\nIMPORTANT: Create a single high-quality IMAGE based on this description. Do NOT output text. Style: Digital Art, 3D Render, Abstract, No Text.` }
         ];
 
         if (avatar1Buffer) {
@@ -158,13 +173,20 @@ async function generateBackgroundImage(prompt, avatar1Buffer, avatar2Buffer) {
         // If we got here, maybe we only got text?
         const text = response.text();
         console.warn(`   ⚠️  Model returned text instead of image: "${text.substring(0, 50)}..."`);
+
+        // --- RETRY LOGIC (Safety Fallback) ---
+        // If the model refused the prompt (likely due to safety filters on people), try a SAFE abstract prompt.
+        if (!prompt.includes("SAFE_FALLBACK")) {
+            console.log("   🔄 Retrying with SAFE Abstract Fallback prompt...");
+            const SAFE_PROMPT = "SAFE_FALLBACK: A beautiful abstract digital art composition representing connection and synergy, geometric shapes, warm lighting, 3D render, minimalist, high resolution.";
+            // Recursive call (one-time)
+            return await generateBackgroundImage(SAFE_PROMPT, null, null); // Don't send avatars on fallback to be safe
+        }
+
         return null;
 
     } catch (error) {
         console.error('   ⚠️  Image Generation failed:', error.message);
-        if (error.response) {
-            console.error('       Details:', JSON.stringify(error.response, null, 2));
-        }
         return null;
     }
 }

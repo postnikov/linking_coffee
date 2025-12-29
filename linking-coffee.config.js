@@ -17,6 +17,11 @@ module.exports = {
         // Model used for generating intro descriptions (Anthropic Claude)
         introModel: "claude-haiku-4-5-20251001",
 
+        // Model used for Image Generation
+        imageModel: "gemini-2.5-flash-image",
+        // Helper model for generating the scene prompt
+        promptModel: "gemini-3-flash-preview",
+
         // Default parameters
         temperature: 0.2,
     },
