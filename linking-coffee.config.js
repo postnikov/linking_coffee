@@ -5,8 +5,8 @@
 module.exports = {
     ai: {
         // Model used for the advanced matching algorithm (Google Gemini)
-        // Options: 'gemini-1.5-pro-002', 'gemini-1.5-flash-002', 'gemini-3-pro' (if available)
-        matchingModel: "gemini-3-pro-preview",
+        // Options: 'gemini-3-pro-preview', 'gemini-3-flash-preview' (if available)
+        matchingModel: "gemini-3-flash-preview",
 
         // Model used for generating intro descriptions (Anthropic Claude)
         introModel: "claude-haiku-4-5-20251001",
