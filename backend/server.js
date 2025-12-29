@@ -913,13 +913,13 @@ app.get('/api/admin/data', async (req, res) => {
       username: r.fields.Tg_Username
     }));
 
-    // 3. Fetch Recent Matches (Last 50)
+    // 3. Fetch Recent Matches (Last 500)
     // Instead of strict "current week" filtering which is timezone-fragile, we fetch the latest matches.
     // The frontend can display the 'Week_Start' to clarify which week it is.
     const matchesRecords = await base('tblx2OEN5sSR1xFI2')
       .select({
         sort: [{ field: 'Week_Start', direction: 'desc' }],
-        maxRecords: 50
+        maxRecords: 500
       })
       .all();
 
@@ -933,6 +933,8 @@ app.get('/api/admin/data', async (req, res) => {
 
       return {
         id: m.id,
+        weekStart: m.fields.Week_Start,
+        introImage: m.fields.Intro_Image && m.fields.Intro_Image.length > 0 ? m.fields.Intro_Image[0].url : null,
         member1: {
           name: u1 ? u1.fields.Name : 'Unknown',
           username: u1 ? u1.fields.Tg_Username : ''
@@ -1917,6 +1919,42 @@ app.get('/api/admin/run-matching', async (req, res) => {
     clearInterval(heartbeat);
     res.write(`data: ${JSON.stringify({ type: 'done', code: code })}\n\n`);
     res.end();
+  });
+});
+
+// --- Admin: Regenerate Match Image ---
+app.post('/api/admin/regenerate-image', async (req, res) => {
+  const { matchId } = req.body;
+  if (!matchId) return res.status(400).json({ success: false, message: 'Missing matchId' });
+
+  console.log(`🎨 Triggering image regeneration for match ${matchId}...`);
+
+  // Path to script
+  const scriptPath = path.join(__dirname, 'scripts', 'generate-match-images.js');
+
+  // Spawn process
+  const child = spawn('node', [scriptPath, `--match-id=${matchId}`, '--force']);
+
+  let output = '';
+  let errorOutput = '';
+
+  child.stdout.on('data', (data) => {
+    output += data.toString();
+    // Determine success from logs is hard, but we can look for "Saved locally" or "Public URL"
+  });
+
+  child.stderr.on('data', (data) => {
+    errorOutput += data.toString();
+    console.error(`[ImageGen Error] ${data}`);
+  });
+
+  child.on('close', (code) => {
+    console.log(`Image script exited with code ${code}`);
+    if (code === 0) {
+      res.json({ success: true, message: 'Image regeneration completed', logs: output });
+    } else {
+      res.status(500).json({ success: false, message: 'Image regeneration failed', logs: output + errorOutput });
+    }
   });
 });
 

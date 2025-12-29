@@ -21,6 +21,44 @@ const AdminPage = () => {
     const [matchLogs, setMatchLogs] = useState([]);
     const logsEndRef = React.useRef(null);
 
+    // Filter State
+    const [selectedWeek, setSelectedWeek] = useState('All');
+    const [regeneratingId, setRegeneratingId] = useState(null);
+
+    // Compute Weeks
+    const uniqueWeeks = React.useMemo(() => {
+        const weeks = new Set(data.matches.map(m => m.weekStart).filter(Boolean));
+        return Array.from(weeks).sort().reverse();
+    }, [data.matches]);
+
+    const filteredMatches = React.useMemo(() => {
+        if (selectedWeek === 'All') return data.matches;
+        return data.matches.filter(m => m.weekStart === selectedWeek);
+    }, [data.matches, selectedWeek]);
+
+    const handleRegenerateImage = async (matchId) => {
+        if (!window.confirm('Regenerate image for this match? This will override existing image.')) return;
+        setRegeneratingId(matchId);
+        try {
+            const res = await fetch(`${API_URL}/api/admin/regenerate-image`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ matchId })
+            });
+            const json = await res.json();
+            if (json.success) {
+                alert('Image regeneration started! Check logs or refresh in a moment.');
+            } else {
+                alert('Failed: ' + json.message);
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Error triggering regeneration');
+        } finally {
+            setRegeneratingId(null);
+        }
+    };
+
     const startMatching = () => {
         setMatchingRunning(true);
         setMatchLogs([{ type: 'info', message: '🚀 Initializing connection...' }]);
@@ -252,17 +290,50 @@ const AdminPage = () => {
 
                     {activeTab === 'matches' && (
                         <div style={{ overflowX: 'auto' }}>
+                            <div style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center' }}>
+                                <label style={{ marginRight: '0.5rem', fontWeight: 'bold' }}>Filter by Week:</label>
+                                <select
+                                    value={selectedWeek}
+                                    onChange={e => setSelectedWeek(e.target.value)}
+                                    style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #d1d5db' }}
+                                >
+                                    <option value="All">All Weeks</option>
+                                    {uniqueWeeks.map(w => (
+                                        <option key={w} value={w}>{w}</option>
+                                    ))}
+                                </select>
+                            </div>
+
                             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                                 <thead>
                                     <tr style={{ borderBottom: '2px solid #e5e7eb' }}>
+                                        <th style={{ padding: '1rem' }}>Week</th>
+                                        <th style={{ padding: '1rem' }}>Image</th>
                                         <th style={{ padding: '1rem' }}>Member 1</th>
                                         <th style={{ padding: '1rem' }}>Member 2</th>
                                         <th style={{ padding: '1rem' }}>Status</th>
+                                        <th style={{ padding: '1rem' }}>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {data.matches.map(match => (
+                                    {filteredMatches.map(match => (
                                         <tr key={match.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                                            <td style={{ padding: '1rem', fontSize: '0.9rem', color: '#6b7280' }}>
+                                                {match.weekStart || 'N/A'}
+                                            </td>
+                                            <td style={{ padding: '1rem' }}>
+                                                {match.introImage ? (
+                                                    <a href={match.introImage} target="_blank" rel="noreferrer">
+                                                        <img
+                                                            src={match.introImage}
+                                                            alt="Match Intro"
+                                                            style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '4px' }}
+                                                        />
+                                                    </a>
+                                                ) : (
+                                                    <span style={{ color: '#9ca3af', fontSize: '0.8rem' }}>No Image</span>
+                                                )}
+                                            </td>
                                             <td style={{ padding: '1rem' }}>
                                                 <div style={{ fontWeight: 'bold' }}>{match.member1.name}</div>
                                                 <div style={{ fontSize: '0.85rem', color: '#6b7280' }}>@{match.member1.username}</div>
@@ -282,12 +353,28 @@ const AdminPage = () => {
                                                     {match.status}
                                                 </span>
                                             </td>
+                                            <td style={{ padding: '1rem' }}>
+                                                <button
+                                                    onClick={() => handleRegenerateImage(match.id)}
+                                                    disabled={regeneratingId === match.id}
+                                                    style={{
+                                                        padding: '0.25rem 0.5rem',
+                                                        fontSize: '0.8rem',
+                                                        border: '1px solid #d1d5db',
+                                                        borderRadius: '4px',
+                                                        background: regeneratingId === match.id ? '#f3f4f6' : 'white',
+                                                        cursor: regeneratingId === match.id ? 'wait' : 'pointer'
+                                                    }}
+                                                >
+                                                    {regeneratingId === match.id ? 'Generating...' : 'Regenerate Img'}
+                                                </button>
+                                            </td>
                                         </tr>
                                     ))}
-                                    {data.matches.length === 0 && (
+                                    {filteredMatches.length === 0 && (
                                         <tr>
-                                            <td colSpan="3" style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>
-                                                No matches found for this week.
+                                            <td colSpan="6" style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>
+                                                No matches found for this selection.
                                             </td>
                                         </tr>
                                     )}
