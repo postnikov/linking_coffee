@@ -19,6 +19,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.33.1",
     "@google/generative-ai": "^0.24.1",
     "airtable": "^0.12.2",
     "axios": "^1.13.2",
