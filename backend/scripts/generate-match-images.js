@@ -134,9 +134,9 @@ ${prompt}
 
 INSTRUCTIONS:
 1. CAST: You MUST include the two people from the input images as the main subjects.
-2. COMPOSITION: Place them side-by-side in the center, waist-up, facing the viewer.
-3. STYLE: Premium Concept Art, Unreal Engine 5, Volumetric Lighting, Cinematic.
-4. TRANSFORMATION: Stylize the characters to match the scene's aesthetic (e.g., matching lighting and texture) while preserving their key facial features and identity.
+2. COMPOSITION: Place them side-by-side in the center, waist-up, facing the viewer. IMPORTANT: Leave distinct space between them; they should NOT touch or overlap.
+3. STYLE: Vibrant Comic Book Style, Modern Graphic Novel Art, Cel-shaded, Expressive and Colorful.
+4. TRANSFORMATION: Stylize the characters to look like heroes in a comic book (bold lines, stylized coloring) while strictly preserving their key facial features and identity.
 5. FOCUS: The characters are the heroes of this image. Do not generate an empty room.
 6. FORMAT: Square (1:1 aspect ratio).
 
