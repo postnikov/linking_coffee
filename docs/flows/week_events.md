@@ -62,9 +62,47 @@ Path: backend/scripts/match-users-ai.js
 ### Status
 - Manually run by admin locally
 
+### Time: 08:00 UTC on Monday
+
 ### Logic:
 - **Internal Cleanup**: Automatically resets `Current_Week_Status` to empty for ALL users before matching (unless `--resume`).
 - Uses Google Gemini (gemini-3-flash-preview) to intelligently match users based on profiles, interests, and history.
 
 ### Result
 - New matches are created for the week
+- With all the texts and images
+
+
+## Monday Afternoon
+
+### Goal: Matches notification
+
+### Script: notify-matches.js
+Path: backend/scripts/notify-matches.js
+
+### Status
+- Manually run by admin locally
+
+### Time: 12:00 UTC on Monday
+
+### Logic:
+- This script fetches pending matches from the 'Matches' table (where Notifications="Pending")
+- and sends a notification message to both matched members via Telegram.
+
+### Result
+- Notifications are sent to both matched members via Telegram.
+
+
+## Wednesday
+
+### Goal: Feedback
+- In the middle of the week send "Have you met yet?" feedback notifications to all matched users for the current week.
+- Get the information from the feedback and update the matched record.
+
+### Script: midweek-feedback.js
+Path: backend/scripts/midweek-feedback.js
+
+### Status
+- Automatically runs on cron on the server
+
+### Time: 16:00 UTC on Wednesday
