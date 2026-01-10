@@ -1,15 +1,16 @@
 /**
  * Match Users AI Script
  * 
- * Uses Google Gemini (gemini-1.5-pro) to intelligently match users based on profiles,
+ * Uses Google Gemini (gemini-3-flash-preview) to intelligently match users based on profiles,
  * interests, and history.
  * 
  * Usage:
  *   node backend/scripts/match-users-ai.js [flags]
+ *   node backend/scripts/match-users-ai.js
  * 
  * Flags:
  *   --dry-run   : Run without creating matches in Airtable.
- *   --model=X   : Override model name (default: gemini-1.5-pro-002)
+ *   --model=X   : Override model name (default: gemini-3-flash-preview)
  * 
  * Environment Variables:
  *   - GOOGLE_API_KEY

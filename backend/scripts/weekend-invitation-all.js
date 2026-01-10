@@ -43,6 +43,7 @@ const IS_TEST_MODE = process.argv.includes('--test');
 const args = process.argv.slice(2);
 const maxArg = args.find(arg => arg.startsWith('--max-notifications='));
 const MAX_MESSAGES_TO_PROCESS = maxArg ? parseInt(maxArg.split('=')[1]) : Infinity;
+const IS_RESUME = args.includes('--resume');
 
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID;
 
@@ -72,6 +73,11 @@ async function run() {
     console.log(`   Mode: ${IS_DRY_RUN ? 'DRY RUN' : 'LIVE'}`);
     console.log(`   Test Mode: ${IS_TEST_MODE ? `ON (All to Admin ${ADMIN_CHAT_ID})` : 'OFF'}`);
     if (MAX_MESSAGES_TO_PROCESS !== Infinity) console.log(`   Limit: ${MAX_MESSAGES_TO_PROCESS} messages`);
+
+    if (MAX_MESSAGES_TO_PROCESS !== Infinity) console.log(`   Limit: ${MAX_MESSAGES_TO_PROCESS} messages`);
+
+    // --- STEP 0: RESET FLAGS (New Week Start) ---
+    await resetWeekFlags();
 
     try {
         console.log('📡 Fetching users from Airtable...');
@@ -194,6 +200,56 @@ async function run() {
 
     } catch (error) {
         console.error('❌ Script Error:', error);
+    }
+}
+
+// Helper: Clear flags for new week
+async function resetWeekFlags() {
+    if (IS_RESUME) {
+        console.log('⏩ [RESUME MODE] Skipping flag reset. Continuing from where we left off...');
+        return;
+    }
+
+    if (IS_TEST_MODE) {
+        console.log('⚠️ [TEST MODE] Skipping flag reset to preserve production data.');
+        return;
+    }
+
+    console.log('🔄 Checking for existing "Weekend_Notification_Sent" flags to clear...');
+
+    try {
+        const records = await base(process.env.AIRTABLE_MEMBERS_TABLE).select({
+            filterByFormula: "{Weekend_Notification_Sent}",
+            fields: [] // Only need IDs
+        }).all();
+
+        if (records.length === 0) {
+            console.log('   No flags found. Clean slate. ✨');
+            return;
+        }
+
+        if (IS_DRY_RUN) {
+            console.log(`   [DRY RUN] Would clear flags for ${records.length} users.`);
+            return;
+        }
+
+        console.log(`   🧹 Clearing flags for ${records.length} users...`);
+
+        const updates = records.map(r => ({
+            id: r.id,
+            fields: { 'Weekend_Notification_Sent': false }
+        }));
+
+        // Batch Update (Airtable allows 10 per request)
+        for (let i = 0; i < updates.length; i += 10) {
+            const batch = updates.slice(i, i + 10);
+            await base(process.env.AIRTABLE_MEMBERS_TABLE).update(batch);
+        }
+        console.log('   ✅ Flags cleared.');
+
+    } catch (error) {
+        console.error('   ❌ Error clearing flags:', error);
+        throw error; // Stop execution if reset fails
     }
 }
 

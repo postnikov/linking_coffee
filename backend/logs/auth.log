@@ -374,3 +374,16 @@
 [2025-12-29T14:45:07.600Z] Server Initialized
 [2025-12-29T14:45:37.108Z] Server Initialized
 [2025-12-29T14:46:38.396Z] Server Initialized
+[2026-01-10T14:05:48.291Z] Server Initialized
+[2026-01-10T14:06:00.449Z] API Register request for: max_postnikov
+[2026-01-10T14:06:41.005Z] Server Initialized
+[2026-01-10T14:06:59.132Z] API Register request for: max_postnikov
+[2026-01-10T14:06:59.879Z] Proactive OTP successfully sent to max_postnikov (379053)
+[2026-01-10T14:07:17.843Z] API Verify attempt: User=max_postnikov, OTP=205292
+[2026-01-10T14:07:17.844Z] Verify Success for max_postnikov. OTP matches.
+[2026-01-10T14:35:18.999Z] Server Initialized
+[2026-01-10T14:35:21.471Z] Server Initialized
+[2026-01-10T14:45:21.076Z] Server Initialized
+[2026-01-10T14:45:22.676Z] Server Initialized
+[2026-01-10T14:47:40.449Z] Server Initialized
+[2026-01-10T14:47:42.361Z] Server Initialized
