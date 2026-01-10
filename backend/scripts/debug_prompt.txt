@@ -1,0 +1,504 @@
+You are an expert matchmaker for Linked Coffee.
+Your goal is to pair these users to maximize meaningful connections.
+
+**HARD RULES (Violation = INVALID Match):**
+1. **Language**: Partners MUST share at least one language.
+2. **Timezone**: Absolute difference in 'timezone_offset' MUST be <= 6.
+3. **History**: Do NOT pair users if their IDs appear in the 'previous_matches' list.
+4. **Uniqueness**: Each user can strictly be in only ONE pair.
+
+**Optimization Strategy:**
+- Maximize overlap in Professional and Personal Interests.
+- Align specific 'Goals' (e.g. Professional Chat vs Casual).
+- Explain your REASONING for each pair.
+- If some users cannot be matched validly, list them in 'leftovers'.
+
+**Output Format (STRICT JSON):**
+{
+  "matches": [
+    {
+      "user1_id": "recXXXXXXXX",
+      "user2_id": "recYYYYYYYY",
+      "reasoning": "Explanation..."
+    }
+  ],
+  "leftovers": ["recZZZZZZZZ"]
+}
+
+---
+
+{
+  "candidates": [
+    {
+      "id": "rec5WllGJYpZjHoMD",
+      "name": "Artem",
+      "username": "artemasmith",
+      "languages": [
+        "English",
+        "Russian"
+      ],
+      "timezone_offset": 5.5,
+      "profession": "CTO/Developer/Enterpreneur",
+      "professional_interests": [
+        "Freelance & Consulting",
+        "Starting a Startup",
+        "Monetizing Side Projects",
+        "Indie Hacking & Micro-SaaS",
+        "AI Automation",
+        "Path to Management",
+        "Work-life Balance"
+      ],
+      "personal_interests": [
+        "Theater & Stand-up",
+        "Cooking",
+        "Minimalism",
+        "Parenting",
+        "Travel",
+        "Psychology & Self-improvement",
+        "Personal Finance",
+        "CrossFit",
+        "Investing"
+      ],
+      "goals": [
+        "Professional Chat"
+      ],
+      "bio": "Hi, I’m Artem Kuznetsov.\n\nI have 15 years of experience in IT. I’ve worked as a lead engineer at unicorns (and one centaur) — Republic, Workato, and Instructure. I’ve served as a CTO in both a Skolkovo-based startup and an oilfield services company. I’m a certified project manager, a guest lecturer at HSE University, and a mentor on getmentor.dev.\n\nI’ve spoken at the Worldwide Business Forum (worldwidebusinessforum.com), Google Developer Group, RubyRussia, and AISummit. I’ve led projects with budgets exceeding $1M and founded a full-cycle AI agency: https://smartresort.ru.\nMy projects span from the US West Coast to Japan — literally, one of my clients was based in Japan.\n\nSelected achievements:\n\t•\tLaunched a hierarchical data browser product in San Francisco under tight deadlines and severe budget constraints, including a live demo booth at the Elastic{ON} conference.\n\t•\tAfter nearly facing a multi-million-dollar penalty on a project with one of the largest oil producers, I completed formal training in project management at Stratoplan and fundamentally rebuilt project delivery processes in the company.\n\t•\tTaught HSE University students how to design solid system architectures as a guest expert.\n\t•\tLived in Turkey for a year with small children and traveled extensively across Europe.\n\t•\tCo-founded an AI agency, identified a viable business model, built scalable processes, brought it to stable revenue, and then exited the partnership.\n\t•\tSaved a non-technical product founder $120K and approximately six to twelve months of work in a single 1.5-hour consulting session.\n\t•\tDesigned and delivered to production the integration layer for one of the largest crowdfunding platforms.\n\t•\tHave consulted (and continue to consult) US startups on system architecture, rapid MVP development, and hypothesis validation.\n\t•\tStarted selling — and realized that my core product is clarity.\n\t•\tCo-created a world record for the longest-running business conference: https://worldwidebusinessforum.com/\n\t•\tRun a small Telegram channel about AI and IT.\n\nhttps://t.me/artemainsider\n\nHow I can be useful to others:\n\t•\tCreate clarity around IT products, processes, architectures, feasibility, and investment attractiveness.\n\t•\tCalculate real-world impact, applicability, and ROI of AI adoption in business processes.\n\t•\tTranslate complex and confusing AI/IT concepts into clear business language and numbers.\n\t•\tQuickly analyze situations, explain what to do, build a concrete automation plan, review vendors, audit or write technical specifications when there is no in-house CTO/CPO.\n\t•\tImplement AI with a clear economic outcome — or advise against it when no real value exists. I'm quite optimistic and intellectually curious person."
+    },
+    {
+      "id": "rec8R1cttUlclQt2k",
+      "name": "Dima",
+      "username": "dmitrismirnov",
+      "languages": [
+        "Russian",
+        "English"
+      ],
+      "timezone_offset": 0,
+      "profession": "Product manager",
+      "professional_interests": [],
+      "personal_interests": [],
+      "goals": [
+        "Professional Chat",
+        "Casual Chat"
+      ],
+      "bio": "Fintech, Saas, MarTech, HrTech, Social network. "
+    },
+    {
+      "id": "recAW8FHOAN1yyX2H",
+      "name": "Kristina",
+      "username": "kris_shoo",
+      "languages": [
+        "English",
+        "Russian"
+      ],
+      "timezone_offset": 0,
+      "profession": "HR",
+      "professional_interests": [
+        "AI Career Impact",
+        "Burnout Prevention",
+        "Path to Management",
+        "Remote-first Career",
+        "Team Building & Hiring",
+        "Work-life Balance",
+        "Salary Negotiation",
+        "BigTech Career",
+        "Public Speaking"
+      ],
+      "personal_interests": [
+        "Languages",
+        "Music (listening)",
+        "Philosophy",
+        "Cooking",
+        "DIY & Making",
+        "Minimalism",
+        "Parenting",
+        "Psychology & Self-improvement",
+        "Travel",
+        "Chess",
+        "Podcasts"
+      ],
+      "goals": [
+        "Casual Chat",
+        "Professional Chat"
+      ],
+      "bio": " "
+    },
+    {
+      "id": "recAXmsHQx5t56R5Z",
+      "name": "Sergei",
+      "username": "ivin_sergei",
+      "languages": [
+        "English",
+        "Russian"
+      ],
+      "timezone_offset": 0,
+      "profession": "CIO",
+      "professional_interests": [],
+      "personal_interests": [],
+      "goals": [
+        "Casual Chat",
+        "Professional Chat"
+      ],
+      "bio": " "
+    },
+    {
+      "id": "recCFAJFWvVsyhMJd",
+      "name": "Alexey",
+      "username": "alxivanv",
+      "languages": [
+        "Russian",
+        "English"
+      ],
+      "timezone_offset": 3,
+      "profession": "E-commerce / Product owner",
+      "professional_interests": [
+        "Remote-first Career",
+        "Work-life Balance",
+        "E-commerce",
+        "Freelance & Consulting"
+      ],
+      "personal_interests": [
+        "Skiing/Snowboarding",
+        "Hiking & Trekking",
+        "Photography",
+        "Travel",
+        "Specialty Coffee"
+      ],
+      "goals": [
+        "Casual Chat",
+        "Professional Chat"
+      ],
+      "bio": "Руководил электронной коммерцией в российском Tele2, до этого работал в Промсвязьбанке и Почта Банке, Aero, Adv web-engineering co. и Soundkey Раньше профессионально фотографировал концерты, сейчас тоже иногда, но уже ради фана. Люблю хайкинг, горные лыжи (фрирайд + могул), Формулу-1."
+    },
+    {
+      "id": "recDDkVYeWGvVuXsv",
+      "name": "Sergei",
+      "username": "serzz",
+      "languages": [
+        "English",
+        "Russian"
+      ],
+      "timezone_offset": 2,
+      "profession": "Project Manager",
+      "professional_interests": [],
+      "personal_interests": [],
+      "goals": [
+        "Casual Chat"
+      ],
+      "bio": " "
+    },
+    {
+      "id": "recEk12mB5JPwNvWf",
+      "name": "Tomofei",
+      "username": "d27ff176",
+      "languages": [
+        "Russian"
+      ],
+      "timezone_offset": 0,
+      "profession": "Software Engineer ",
+      "professional_interests": [
+        "AI/ML Engineering",
+        "AR/VR Development",
+        "Backend Development",
+        "Cloud Architecture",
+        "Databases & Data Engineering",
+        "Game Development",
+        "Open Source",
+        "System Design",
+        "Dev to Product Transition",
+        "Starting a Startup",
+        "Startup Career",
+        "Path to Tech Lead/Architect",
+        "Developer Relations",
+        "Public Speaking",
+        "Tech Blogging",
+        "Technical Writing",
+        "E-commerce",
+        "Gaming Industry",
+        "Fintech",
+        "Edtech"
+      ],
+      "personal_interests": [
+        "Cycling",
+        "Hiking & Trekking",
+        "Playing Music",
+        "Wine/Craft Beer",
+        "Travel",
+        "Specialty Coffee",
+        "Astronomy",
+        "Popular Science",
+        "Smart Home",
+        "Poker",
+        "Sci-fi & Fantasy",
+        "Video Games",
+        "Investing",
+        "Personal Finance"
+      ],
+      "goals": [
+        "Casual Chat",
+        "Professional Chat"
+      ],
+      "bio": "Пишу код. Готов пообщаться на разные темы."
+    },
+    {
+      "id": "recFSd9ugmpR0OdTC",
+      "name": "Ksenia",
+      "username": "aksenias",
+      "languages": [
+        "Russian",
+        "English"
+      ],
+      "timezone_offset": 3,
+      "profession": "Бизнес-трекер, коммерческий директор ООО Глабикс - сервиса асинхронных видеосообщений (российский Loom)",
+      "professional_interests": [],
+      "personal_interests": [
+        "Спорт (любой! Бег, бокс, большой теннис, кольцевые гонки), тачки, путешествия, книги"
+      ],
+      "goals": [
+        "Professional Chat",
+        "Casual Chat"
+      ],
+      "bio": "Сертифицированный бизнес-трекер. Смотрю на бизнес как бы сверху, как на единую систему. Работаю с метриками и ограничениями, а не с мышлением или ощущениями. А ещё - правильно сформулированные гипотезы - наше всё!\n\nТакже являюсь частью восхитительной команды ещё более офигенного сервиса glabix.com. Залезли в самый сложный рынок аномалий в каждой компании - в зону коммуникаций.\n\nОбожаю то, чем занимаюсь! Интроверт, спортсмен, жадный до путешествий и всего нового. Всю жизнь учусь. Люблю изучать новые сферы бизнеса. А ещё очень люблю юмор в любом его проявлении!"
+    },
+    {
+      "id": "recJeaXawR3S1F6LV",
+      "name": "Maxim",
+      "username": "danilovmy",
+      "languages": [
+        "Russian",
+        "German",
+        "English"
+      ],
+      "timezone_offset": 1,
+      "profession": "DevRel, Developer ",
+      "professional_interests": [
+        "Backend Development",
+        "Frontend Development",
+        "Starting a Startup",
+        "Startup Career",
+        "Developer Relations",
+        "Public Speaking",
+        "Tech YouTube/Podcast",
+        "Technical Writing",
+        "E-commerce",
+        "Healthtech"
+      ],
+      "personal_interests": [
+        "Dancing",
+        "Skiing/Snowboarding",
+        "Running",
+        "Gardening",
+        "Pets",
+        "Parenting"
+      ],
+      "goals": [
+        "Professional Chat",
+        "Casual Chat"
+      ],
+      "bio": " "
+    },
+    {
+      "id": "recKOAA3UZDq8Ftnx",
+      "name": "Evgenii",
+      "username": "pointofno",
+      "languages": [
+        "Russian"
+      ],
+      "timezone_offset": 0,
+      "professional_interests": [],
+      "personal_interests": [],
+      "goals": [],
+      "bio": " "
+    },
+    {
+      "id": "recMPf8yecIoC8AhY",
+      "name": "Ekaterina",
+      "username": "eketitova",
+      "languages": [
+        "English",
+        "Russian"
+      ],
+      "timezone_offset": 1,
+      "profession": "Growth Product Manager",
+      "professional_interests": [
+        "Freelance & Consulting"
+      ],
+      "personal_interests": [
+        "Cooking",
+        "Travel",
+        "Non-fiction & Business Books",
+        "Languages"
+      ],
+      "goals": [
+        "Professional Chat",
+        "Casual Chat"
+      ],
+      "bio": " "
+    },
+    {
+      "id": "recP9Hgwz80memolV",
+      "name": "Alexander",
+      "username": "fillab",
+      "languages": [
+        "Russian",
+        "English"
+      ],
+      "timezone_offset": 0,
+      "professional_interests": [],
+      "personal_interests": [],
+      "goals": [],
+      "bio": " "
+    },
+    {
+      "id": "receY6iYI2EvdJbas",
+      "name": "Юлия",
+      "username": "juliyamakutu",
+      "languages": [
+        "Russian",
+        "English"
+      ],
+      "timezone_offset": 1,
+      "profession": "Python backend developer",
+      "professional_interests": [],
+      "personal_interests": [],
+      "goals": [
+        "Casual Chat",
+        "Professional Chat"
+      ],
+      "bio": " "
+    },
+    {
+      "id": "recoqBYpTAWH9RY8H",
+      "name": "Georgy",
+      "username": "georgy_martirosov",
+      "languages": [
+        "Russian",
+        "English"
+      ],
+      "timezone_offset": 3,
+      "professional_interests": [],
+      "personal_interests": [],
+      "goals": [
+        "Casual Chat",
+        "Professional Chat"
+      ],
+      "bio": " "
+    },
+    {
+      "id": "recqhDYv5lbaQm8JZ",
+      "name": "Ivan",
+      "username": "murrimay",
+      "languages": [
+        "English",
+        "Russian"
+      ],
+      "timezone_offset": 0,
+      "profession": "Scrum Master / Agile Coach / Delivery Manager",
+      "professional_interests": [],
+      "personal_interests": [],
+      "goals": [
+        "Professional Chat",
+        "Casual Chat"
+      ],
+      "bio": " "
+    },
+    {
+      "id": "rectLqetbzVpfcMAr",
+      "name": "Ольга",
+      "username": "susperia",
+      "languages": [
+        "English",
+        "Russian"
+      ],
+      "timezone_offset": 0,
+      "profession": "Support&Moderation Lead",
+      "professional_interests": [],
+      "personal_interests": [],
+      "goals": [
+        "Casual Chat",
+        "Professional Chat"
+      ],
+      "bio": "Неожиданно для себя перешла из HR-проектов в Поддержку и модерацию) "
+    },
+    {
+      "id": "rectsvcJ7M2AAioNs",
+      "name": "Maxim",
+      "username": "max_postnikov",
+      "languages": [
+        "English",
+        "Russian",
+        "Spanish"
+      ],
+      "timezone_offset": 0,
+      "profession": "Vibe-Founder",
+      "professional_interests": [
+        "Backend",
+        "Product Management",
+        "Entrepreneurship",
+        "Consulting",
+        "JavaScript",
+        "Public Speaking",
+        "Edtech",
+        "Gaming Industry"
+      ],
+      "personal_interests": [
+        "Cycling",
+        "Gym",
+        "Reading",
+        "Gadgets",
+        "Gaming",
+        "Languages",
+        "Hiking & Trekking",
+        "Smart Home",
+        "Popular Science",
+        "Sci-fi & Fantasy"
+      ],
+      "goals": [
+        "Casual Chat"
+      ],
+      "bio": "I am a tech entrepreneur and a creator of Linked.Coffee.\n\nI’ve been to different places and played different roles. Full-stack developer, founder, game dev amateur, entrepreneur, consultant, product manager, startup coach, public speaker, speechwriter, community builder. In all these roles I had my ups and downs and I am still having those every once in a while.\n\nLived in Barcelona, Moscow, Tallinn, Stockholm, Krasnoyarsk, Vilnius, and Andorra. I dance boogie-woogie and play video games.\nI love cycling, hiking and snowboarding.\nI read lots of science-fiction and fantasy as well as modern literature and classics.\nLove dogs."
+    }
+  ],
+  "previous_matches": [
+    "recmfuBmAvjqmXFnS:rectsvcJ7M2AAioNs",
+    "recAXmsHQx5t56R5Z:recEk12mB5JPwNvWf",
+    "recP9Hgwz80memolV:reckSl4OOniyTwdOz",
+    "recEk12mB5JPwNvWf:rectsvcJ7M2AAioNs",
+    "rec5WllGJYpZjHoMD:recFSd9ugmpR0OdTC",
+    "recHrqfe2bmOtnzj9:reczM8jbWyP9ScaOM",
+    "recJeaXawR3S1F6LV:recjSA11LrKj3xScd",
+    "receY6iYI2EvdJbas:rectLqetbzVpfcMAr",
+    "recAXmsHQx5t56R5Z:recqhDYv5lbaQm8JZ",
+    "rec909ek4mpWBKTgF:recUvHYlS2yYshz6t",
+    "recq2zqlGVrfV3V5f:rectLqetbzVpfcMAr",
+    "recCFAJFWvVsyhMJd:recMPf8yecIoC8AhY",
+    "recAXmsHQx5t56R5Z:recoqBYpTAWH9RY8H",
+    "rec0QP0WYKgOmzmnn:recHrqfe2bmOtnzj9",
+    "recQD0DjkBeHpLlhX:recpZy1GaLlCrPm8m",
+    "recJeaXawR3S1F6LV:recoqBYpTAWH9RY8H",
+    "recDDkVYeWGvVuXsv:recoqBYpTAWH9RY8H",
+    "rec8R1cttUlclQt2k:recrVD9Lo0QF9GWgh",
+    "recAW8FHOAN1yyX2H:recqhDYv5lbaQm8JZ",
+    "recFSd9ugmpR0OdTC:recms0EM3YHqKFNdG",
+    "recEk12mB5JPwNvWf:recVUHdv1voiL962m",
+    "rec8jQ1nJWSiaSqlC:recnD1lVxJS7Zs0xp",
+    "recpZy1GaLlCrPm8m:rectevj6kL9CDqvyZ",
+    "recKOAA3UZDq8Ftnx:rectsvcJ7M2AAioNs",
+    "recTMO7HnBeBLGIvs:receY6iYI2EvdJbas",
+    "recAXmsHQx5t56R5Z:recmfuBmAvjqmXFnS",
+    "recDAEgsCgNkOO3po:recqhDYv5lbaQm8JZ",
+    "rec8jQ1nJWSiaSqlC:recjRy871pPh62n3C",
+    "recms0EM3YHqKFNdG:reczY9saEW6TEoRVF",
+    "rec5WllGJYpZjHoMD:recKOAA3UZDq8Ftnx",
+    "recJeaXawR3S1F6LV:recMPf8yecIoC8AhY",
+    "recJeaXawR3S1F6LV:recQD0DjkBeHpLlhX",
+    "recVUHdv1voiL962m:recbokW3nNzbDT0Mp",
+    "recjRy871pPh62n3C:recmfuBmAvjqmXFnS",
+    "rec909ek4mpWBKTgF:reczY9saEW6TEoRVF",
+    "recAW8FHOAN1yyX2H:reczM8jbWyP9ScaOM",
+    "rec8R1cttUlclQt2k:recoqBYpTAWH9RY8H",
+    "recKOAA3UZDq8Ftnx:recP9Hgwz80memolV",
+    "recCFAJFWvVsyhMJd:recjSA11LrKj3xScd",
+    "rec0QP0WYKgOmzmnn:recDAEgsCgNkOO3po",
+    "recDDkVYeWGvVuXsv:recnD1lVxJS7Zs0xp"
+  ]
+}

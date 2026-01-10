@@ -1,5 +1,8 @@
 # Week Events Flow
 
+Date: 2026-01-10
+Version: 1.0
+
 ## Saturday
 
 ### Goal: Feedback
@@ -15,13 +18,14 @@ Path: backend/scripts/weekend-feedback.js
 ### Time: 13:00 UTC on Saturday
 
 ### Logic:
-- Target matches where Weekend_Checkin != Checked AND (Feedback1 is empty OR Feedback2 is empty).
+- Targets: Users where `Next_Week_Status` = 'Active' AND `Consent_GDPR` = true.
+- Matches them using AI or Algorithm.
 - Sends 4 options: 'We met ✅', 'We scheduled 📆', 'We have not met ⭕️', 'Something went wrong 😔'.
 - 'We have not met ⭕️' -> 'No'
 - 'Something went wrong 😔' -> 'Fail'
 - Marks Weekend_Checkin = Checked.
 
-### Result 
+### Result
 - Feedback1 and Feedback2 are updated with the user's response.
 
 ## Sunday
@@ -59,6 +63,7 @@ Path: backend/scripts/match-users-ai.js
 - Manually run by admin locally
 
 ### Logic:
+- **Internal Cleanup**: Automatically resets `Current_Week_Status` to empty for ALL users before matching (unless `--resume`).
 - Uses Google Gemini (gemini-3-flash-preview) to intelligently match users based on profiles, interests, and history.
 
 ### Result

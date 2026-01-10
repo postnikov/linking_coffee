@@ -12,6 +12,11 @@
  *   --dry-run   : Run without creating matches in Airtable.
  *   --model=X   : Override model name (default: gemini-3-flash-preview)
  * 
+ * Example:
+ * docker exec -it linking-coffee-backend node scripts/match-users-ai.js --dry-run
+ * docker exec -it linking-coffee-backend node scripts/match-users-ai.js --resume
+ * docker exec -it linking-coffee-backend node scripts/match-users-ai.js --model=gemini-3-pro-preview
+ * 
  * Environment Variables:
  *   - GOOGLE_API_KEY
  *   - AIRTABLE_API_KEY
@@ -25,6 +30,7 @@ const crypto = require('crypto');
 require('dotenv').config({ path: path.join(__dirname, '../../.env') });
 const Airtable = require('airtable');
 const { GoogleGenerativeAI } = require("@google/generative-ai");
+const axios = require('axios');
 // Load Config
 let config = {};
 try {
@@ -94,30 +100,114 @@ function getTzOffset(tzStr) {
 }
 
 // ---------------------------------------------------------
-// Gemini API Client (Using official library)
+// Gemini API Client (Direct Axios Implementation)
 // ---------------------------------------------------------
+const https = require('https');
+
+const agent = new https.Agent({
+    keepAlive: true,
+    timeout: 300000
+});
+
+async function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 async function callGemini(systemPrompt, userPrompt) {
-    try {
-        const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY);
-        const model = genAI.getGenerativeModel({
-            model: MODEL_NAME,
-            systemInstruction: systemPrompt,
-            generationConfig: {
-                responseMimeType: "application/json",
-                temperature: 0.2,
+    return await callGeminiWithModel(MODEL_NAME, systemPrompt, userPrompt);
+}
+
+async function callGeminiWithModel(targetModel, systemPrompt, userPrompt) {
+    console.log(`📡 Preparing Gemini API call (via Axios)...`);
+    console.log(`   - Model: ${targetModel}`);
+
+    // Combined Prompt
+    const combinedPrompt = systemPrompt + "\n\nIMPORTANT: Return ONLY valid JSON. No markdown formatting. No code blocks. \n\n" + userPrompt;
+    console.log(`   - Payload Length: ${combinedPrompt.length} chars`);
+
+    // Use direct REST API
+    // Note: Model name in URL
+    const MAX_RETRIES = 3;
+
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+        try {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent?key=${process.env.GOOGLE_AI_API_KEY}`;
+            console.log(`🚀 Sending request to ${targetModel} (Attempt ${attempt}/${MAX_RETRIES})...`);
+
+            const startTime = Date.now();
+            const response = await axios.post(url, {
+                contents: [{
+                    role: "user",
+                    parts: [{ text: combinedPrompt }]
+                }],
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    temperature: 0.2
+                }
+            }, {
+                timeout: 300000, // 5 minutes
+                maxBodyLength: Infinity,
+                maxContentLength: Infinity,
+                headers: { 'Content-Type': 'application/json' },
+                httpsAgent: agent
+            });
+
+            const duration = Date.now() - startTime;
+            console.log(`⏱️  Gemini payload received in ${duration}ms`);
+
+            if (!response.data || !response.data.candidates || !response.data.candidates[0]) {
+                throw new Error(`Invalid API Response Structure: ${JSON.stringify(response.data)}`);
             }
-        });
 
-        const result = await model.generateContent(userPrompt);
-        const response = await result.response;
-        const text = response.text();
+            const candidate = response.data.candidates[0];
+            let text = candidate.content.parts[0].text;
+            console.log(`📥 Raw AI Response (${text.length} chars):`);
+            console.log(text.substring(0, 500) + (text.length > 500 ? "..." : ""));
 
-        return JSON.parse(text);
+            // Cleanup Markdown
+            if (text.includes('```json')) {
+                text = text.replace(/```json\n?/g, '').replace(/```/g, '');
+            } else if (text.includes('```')) {
+                text = text.replace(/```\n?/g, '').replace(/```/g, '');
+            }
 
-    } catch (error) {
-        console.error("Gemini AI Call Failed:", error);
-        return null;
+            return JSON.parse(text);
+
+        } catch (error) {
+            console.error(`❌ Attempt ${attempt} Failed!`);
+
+            if (error.response) {
+                console.error(`   - Status: ${error.response.status}`);
+                // console.error(`   - Data: ${JSON.stringify(error.response.data, null, 2)}`);
+            } else {
+                console.error(`   - Error: ${error.message}`);
+            }
+
+            if (attempt < MAX_RETRIES) {
+                const waitTime = 2000 * attempt;
+                console.log(`   ⏳ Waiting ${waitTime}ms before retry...`);
+                await delay(waitTime);
+            }
+        }
     }
+
+    // Fallback Logic
+    let nextFallback = null;
+
+    if (targetModel === 'gemini-3-pro-preview') {
+        nextFallback = 'gemini-2.5-flash';
+    } else if (targetModel === 'gemini-2.5-flash') {
+        nextFallback = 'gemini-3-flash-preview';
+    }
+    // If 3-flash fails, we stop (avoid infinite loops or using dead 1.5 models)
+
+    if (nextFallback) {
+        console.warn(`⚠️  Model ${targetModel} failed after ${MAX_RETRIES} attempts.`);
+        console.warn(`🔄  Switching to FALLBACK model: ${nextFallback}...`);
+        return await callGeminiWithModel(nextFallback, systemPrompt, userPrompt);
+    }
+
+    return null;
 }
 
 // ---------------------------------------------------------
@@ -173,7 +263,34 @@ async function main() {
     const weekStartStr = formatDate(mondayDate);
     console.log(`📅 Matching for Week Starting: ${weekStartStr}`);
 
+    const IS_RESUME = process.argv.includes('--resume');
+
     try {
+        // 0. Reset Current Week Status (Clean Slate)
+        // -----------------------------------------------------
+        if (!IS_RESUME && !DRY_RUN) {
+            console.log('🔄 resetting Current_Week_Status for all users...');
+            // Fetch everyone who has a status
+            const usersWithStatus = await base(MEMBERS_TABLE).select({
+                filterByFormula: "NOT({Current_Week_Status} = '')",
+                fields: []
+            }).all();
+
+            if (usersWithStatus.length > 0) {
+                console.log(`   🧹 Clearing status for ${usersWithStatus.length} users...`);
+                const updates = usersWithStatus.map(r => ({ id: r.id, fields: { 'Current_Week_Status': null } }));
+
+                for (let i = 0; i < updates.length; i += 10) {
+                    await base(MEMBERS_TABLE).update(updates.slice(i, i + 10));
+                }
+                console.log('   ✅ Statuses cleared.');
+            } else {
+                console.log('   ✨ No statuses to clear.');
+            }
+        } else if (IS_RESUME) {
+            console.log('⏩ [RESUME MODE] Skipping status reset.');
+        }
+
         // 1. Fetch Active Members
         // -----------------------------------------------------
         console.log(`🔍 Fetching members with Next_Week_Status = 'Active'...`);

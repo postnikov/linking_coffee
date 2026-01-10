@@ -30,3 +30,9 @@ Or `node backend/scripts/update-schema-docs.js\`
 ## 4. Coding Patterns
 
 - **Date Handling**: When working with dates (especially for 'YYYY-MM-DD' query strings), **ALWAYS** use local date components (`getFullYear()`, `getMonth()`, `getDate()`) instead of `.toISOString()`. `toISOString()` converts to UTC, which can shift the date by -1 day in positive timezones, causing data mismatches.
+
+## 5. AI Configuration
+
+- **Valid Models**:
+  - \`gemini-3-flash-preview\` is a valid existing model.
+  - \`gemini-3-pro-preview\` is a valid existing model.

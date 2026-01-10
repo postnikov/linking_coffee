@@ -6,12 +6,13 @@ module.exports = {
     ai: {
         // Model used for the advanced matching algorithm (Google Gemini)
         // Options: 'gemini-3-pro-preview', 'gemini-3-flash-preview' (if available)
-        matchingModel: "gemini-3-flash-preview",
+        matchingModel: "gemini-3-pro-preview",
 
         // Allowed models for UI selection
         allowedMatchingModels: [
             "gemini-3-flash-preview",
-            "gemini-3-pro-preview"
+            "gemini-3-pro-preview",
+            "gemini-2.5-flash"
         ],
 
         // Model used for generating intro descriptions (Anthropic Claude)

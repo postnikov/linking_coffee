@@ -77,6 +77,28 @@ async function main() {
     console.log(`📅 Matching for Week Starting: ${weekStartStr}`);
 
     try {
+        const IS_RESUME = process.argv.includes('--resume');
+
+        // 1.5 Reset Current Week Status (Clean Slate)
+        if (!IS_RESUME && !DRY_RUN) {
+            console.log('🔄 resetting Current_Week_Status for all users...');
+            const usersWithStatus = await base(MEMBERS_TABLE).select({
+                filterByFormula: "NOT({Current_Week_Status} = '')",
+                fields: []
+            }).all();
+
+            if (usersWithStatus.length > 0) {
+                console.log(`   🧹 Clearing status for ${usersWithStatus.length} users...`);
+                const updates = usersWithStatus.map(r => ({ id: r.id, fields: { 'Current_Week_Status': null } }));
+                for (let i = 0; i < updates.length; i += 10) {
+                    await base(MEMBERS_TABLE).update(updates.slice(i, i + 10));
+                }
+                console.log('   ✅ Statuses cleared.');
+            }
+        } else if (IS_RESUME) {
+            console.log('⏩ [RESUME MODE] Skipping status reset.');
+        }
+
         // 2. Fetch Existing Matches for this week
         console.log(`🔍 Checking existing matches for ${weekStartStr}...`);
         const existingMatches = await base(MATCHES_TABLE).select({
@@ -168,7 +190,7 @@ async function main() {
         const MAX_MATCHES = maxMatchesArg ? parseInt(maxMatchesArg.split('=')[1]) : Infinity;
 
         if (MAX_MATCHES !== Infinity) {
-             console.log(`⚠️  Matches Limited to: ${MAX_MATCHES}`);
+            console.log(`⚠️  Matches Limited to: ${MAX_MATCHES}`);
         }
 
         while (pool.length > 1 && pairs.length < MAX_MATCHES) {
@@ -194,9 +216,9 @@ async function main() {
             for (let i = 0; i < pool.length; i++) {
                 const potential = pool[i];
                 let score = 0;
-                
+
                 // --- HARD FILTERS (Penalty Based) ---
-                
+
                 // 1. Language Check (-10000)
                 const poLangs = potential.fields.Languages || [];
                 const commonLangs = caLangs.filter(l => poLangs.includes(l));
@@ -236,7 +258,7 @@ async function main() {
                 if (commonGoals.length > 0) score += 100;
 
                 // --- HISTORY SCORE ---
-                
+
                 // Check history
                 if (history.has(candidate.id) && history.get(candidate.id).has(potential.id)) {
                     const lastMet = history.get(candidate.id).get(potential.id);
@@ -257,20 +279,20 @@ async function main() {
             // Pick a random winner from ties to maintain serendipity
             const winnerIdx = candidates[Math.floor(Math.random() * candidates.length)];
             const partner = pool.splice(winnerIdx, 1)[0];
-            
+
             // Metadata for logging
-            const lastMetDate = (history.has(candidate.id) && history.get(candidate.id).has(partner.id)) 
-                ? history.get(candidate.id).get(partner.id) 
+            const lastMetDate = (history.has(candidate.id) && history.get(candidate.id).has(partner.id))
+                ? history.get(candidate.id).get(partner.id)
                 : null;
-            
+
             // Recalculate properties for logging final match details
             const poTz = getTzOffset(partner.fields.Time_Zone) || 0;
             const tzDiff = Math.abs(caTz - poTz);
             const commonLangs = (candidate.fields.Languages || []).filter(l => (partner.fields.Languages || []).includes(l));
-            
+
             const poDays = partner.fields.Best_Meetings_Days || [];
             const commonDays = caDays.filter(d => poDays.includes(d));
-            
+
             const poProfInt = [...(partner.fields.Professional_Interests || []), partner.fields.Other_Professional_Interests].filter(Boolean);
             const commonProf = caProfInt.filter(x => poProfInt.includes(x));
 
@@ -309,25 +331,25 @@ async function main() {
             console.log(`⚠️  ${count} user(s) left without a match: ${names.join(', ')}${suffix}`);
         }
 
-// 7. Process Matches (Create Records + Update Status)
+        // 7. Process Matches (Create Records + Update Status)
         const GENERATE_DESCRIPTIONS = process.argv.includes('--get_descriptions');
         const { generateMatchIntros } = require('../prompts/get_match_description');
 
         if (DRY_RUN) {
             console.log('\n👀 DRY RUN - No changes will be made.');
             console.log('Proposed Matches:');
-            
+
             for (let idx = 0; idx < pairs.length; idx++) {
                 const p = pairs[idx];
                 const m1 = p.u1.fields;
                 const m2 = p.u2.fields;
-                const historyStr = p.metBefore 
-                    ? `(⚠️ Met ${p.weeksAgo} wks ago)` 
+                const historyStr = p.metBefore
+                    ? `(⚠️ Met ${p.weeksAgo} wks ago)`
                     : `(✨ New)`;
-                
+
                 const langStr = p.commonLangs.length > 0 ? '' : '🔴 LANG';
                 const tzStr = p.tzDiff > 6 ? `🔴 TZ(${p.tzDiff}h)` : '';
-                
+
                 // Show match quality stats
                 const stats = [];
                 if (p.stats.days > 0) stats.push(`📅 ${p.stats.days}d`);
@@ -345,12 +367,12 @@ async function main() {
                         if (intro.success) {
                             console.log(`    ✅ Personal Intros (${intro.language}):`);
                             console.log(`       🤝 Shared: "${intro.sharedCombined}"`);
-                            
+
                             const i1 = intro.introFor[m1.Tg_ID];
                             console.log(`       👋 For ${m1.Name}: "${i1.greeting}"`);
                             console.log(`          Why: ${i1.why_interesting}`);
                             console.log(`          Ask: ${i1.conversation_starters.join(' | ')}`);
-                            
+
                             const i2 = intro.introFor[m2.Tg_ID];
                             console.log(`       👋 For ${m2.Name}: "${i2.greeting}"`);
                             console.log(`          Why: ${i2.why_interesting}`);
@@ -360,7 +382,7 @@ async function main() {
                             console.log(`    ❌ Failed to generate intro: ${intro.error}`);
                         }
                     } catch (e) {
-                         console.log(`    ❌ Error calling API: ${e.message}`);
+                        console.log(`    ❌ Error calling API: ${e.message}`);
                     }
                     console.log(''); // spacer
                 }
@@ -370,11 +392,11 @@ async function main() {
 
             // Create Matches with Descriptions
             const matchRecordsToCreate = [];
-            
+
             // Process sequentially to respect rate limits if needed, or parallel?
             // Anthropic rate limits might apply. Let's do batches corresponding to Airtable batches (10).
             // Or just iterate all since pairs count is likely < 100 for now.
-            
+
             // We need to fetch descriptions for ALL pairs in production if we want them.
             // Assuming we ALWAYS want them in production?
             // "After we've created a match We want to generate a text... store... in Matches table"
@@ -389,9 +411,9 @@ async function main() {
             // I'll assume we run it for all in live mode.
 
             console.log(`🤖 Generatings AI intros for ${pairs.length} pairs...`);
-            
+
             const processedPairs = [];
-             // Process in chunks of 5 to avoid rate limits?
+            // Process in chunks of 5 to avoid rate limits?
             const chunkSize = 5;
             for (let i = 0; i < pairs.length; i += chunkSize) {
                 const chunk = pairs.slice(i, i + chunkSize);
@@ -401,14 +423,14 @@ async function main() {
                     let intro1 = null;
                     let intro2 = null;
                     let sharedIntro = null;
-                    
+
                     try {
                         const intro = await generateMatchIntros(m1, m2);
                         if (intro.success) {
                             // intro.introFor is keyed by Tg_ID. We need to map it to Member1/Member2 correctly.
                             // m1 is Member1 fields. m2 is Member2 fields.
                             // introFor[m1.Tg_ID] holds intro FOR Member 1.
-                            
+
                             intro1 = JSON.stringify(intro.introFor[m1.Tg_ID]);
                             intro2 = JSON.stringify(intro.introFor[m2.Tg_ID]);
                             sharedIntro = intro.sharedCombined;
@@ -416,7 +438,7 @@ async function main() {
                     } catch (e) {
                         console.error(`Failed intro for ${m1.Name}-${m2.Name}:`, e.message);
                     }
-                    
+
                     return {
                         fields: {
                             'Week_Start': weekStartStr,
@@ -435,7 +457,7 @@ async function main() {
                 processedPairs.push(...results);
                 console.log(`   - Generated ${Math.min(processedPairs.length, pairs.length)}/${pairs.length}...`);
             }
-            
+
             // Batch create in Airtable
             for (let i = 0; i < processedPairs.length; i += 10) {
                 const batch = processedPairs.slice(i, i + 10);
