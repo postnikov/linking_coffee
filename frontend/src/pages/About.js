@@ -121,7 +121,7 @@ const About = () => {
                                             <Trans
                                                 i18nKey={`pages.about.how_it_works_steps.${index}`}
                                                 components={{
-                                                    1: <a href="https://t.me/Linked_Coffee_Bot" target="_blank" rel="noopener noreferrer" style={{ color: '#6366f1', textDecoration: 'underline' }} />
+                                                    1: <a href="https://t.me/Linked_Coffee_Bot" target="_blank" rel="noopener noreferrer" style={{ color: '#6366f1', textDecoration: 'underline' }}>link</a>
                                                 }}
                                             />
                                         </span>

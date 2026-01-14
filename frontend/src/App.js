@@ -11,6 +11,7 @@ import Dashboard from './pages/Dashboard';
 import PublicProfile from './pages/PublicProfile';
 import AdminPage from './pages/AdminPage';
 import TokenProfile from './pages/TokenProfile';
+import LinkedinCallback from './pages/LinkedinCallback';
 // import AdminHealth from './pages/AdminHealth'; // Now integrated
 
 
@@ -44,7 +45,7 @@ function App() {
     const MainLayout = ({ children }) => {
         const location = useLocation();
         const isFullWidth = location.pathname === '/' || location.pathname.startsWith('/profile');
-        
+
         return (
             <div className="app-container">
                 <div className="background-decoration">
@@ -76,6 +77,7 @@ function App() {
                         <Routes>
                             <Route path="/" element={user ? <Dashboard /> : <Home onLogin={handleLogin} />} />
                             <Route path="/view/:token" element={<TokenProfile />} />
+                            <Route path="/auth/linkedin/callback" element={<LinkedinCallback onLogin={handleLogin} />} />
                             <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
                             <Route path="/about" element={<About />} />
                             <Route path="/rules" element={<Rules />} />

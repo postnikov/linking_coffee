@@ -421,3 +421,174 @@
 [2026-01-10T16:07:33.275Z] Server Initialized
 [2026-01-10T16:09:55.998Z] Server Initialized
 [2026-01-10T17:01:29.701Z] Server Initialized
+[2026-01-12T18:39:32.431Z] Server Initialized
+[2026-01-12T18:44:21.611Z] Server Initialized
+[2026-01-12T18:45:52.425Z] API Register request for: max_postnikov
+[2026-01-12T18:45:53.493Z] Proactive OTP successfully sent to max_postnikov (379053)
+[2026-01-12T18:46:20.350Z] API Verify attempt: User=max_postnikov, OTP=401936
+[2026-01-12T18:46:20.351Z] Verify Success for max_postnikov. OTP matches.
+[2026-01-13T21:34:52.159Z] Server Initialized
+[2026-01-13T21:35:12.474Z] Server Initialized
+[2026-01-13T21:43:41.936Z] Server Initialized
+[2026-01-13T21:45:22.765Z] Server Initialized
+[2026-01-13T21:47:58.445Z] Server Initialized
+[2026-01-13T21:50:25.302Z] Server Initialized
+[2026-01-13T21:50:25.302Z] Server Initialized
+[2026-01-13T21:50:44.723Z] Server Initialized
+[2026-01-13T22:53:22.207Z] Server Initialized
+[2026-01-13T22:53:22.207Z] Server Initialized
+[2026-01-13T23:03:22.589Z] Server Initialized
+[2026-01-13T23:04:09.058Z] API Register request for: max_postnikov
+[2026-01-13T23:04:09.826Z] Proactive OTP successfully sent to max_postnikov (379053)
+[2026-01-13T23:04:26.658Z] API Verify attempt: User=max_postnikov, OTP=968744
+[2026-01-13T23:04:26.661Z] Verify Success for max_postnikov. OTP matches.
+[2026-01-13T23:23:22.390Z] Server Initialized
+[2026-01-13T23:24:00.703Z] Server Initialized
+[2026-01-13T23:27:43.775Z] Server Initialized
+[2026-01-13T23:30:59.370Z] Server Initialized
+[2026-01-13T23:33:44.270Z] Server Initialized
+[2026-01-13T23:36:03.440Z] Server Initialized
+[2026-01-13T23:36:15.930Z] Server Initialized
+[2026-01-13T23:49:01.902Z] Bot /start received from: kisodrakon (ID: 7769456432)
+[2026-01-13T23:49:01.910Z] Generated OTP for kisodrakon: 657513
+[2026-01-13T23:57:28.519Z] API Register request for: kisodrakon
+[2026-01-13T23:57:31.142Z] Proactive OTP successfully sent to kisodrakon (7769456432)
+[2026-01-14T20:16:33.217Z] Server Initialized
+[2026-01-14T21:00:33.810Z] Server Initialized
+[2026-01-14T21:00:34.078Z] Bot /start received from: kisodrakon (ID: 7769456432)
+[2026-01-14T21:00:34.078Z] Generated OTP for kisodrakon: 426293
+[2026-01-14T21:00:34.079Z] Bot /start received from: kisodrakon (ID: 7769456432)
+[2026-01-14T21:00:34.079Z] Generated OTP for kisodrakon: 569411
+[2026-01-14T21:00:34.079Z] Bot /start received from: kisodrakon (ID: 7769456432)
+[2026-01-14T21:00:34.080Z] Generated OTP for kisodrakon: 381816
+[2026-01-14T21:00:54.183Z] Bot /start received from: kisodrakon (ID: 7769456432)
+[2026-01-14T21:00:54.184Z] Generated OTP for kisodrakon: 396380
+[2026-01-14T21:04:19.902Z] Server Initialized
+[2026-01-14T21:04:45.079Z] Server Initialized
+[2026-01-14T21:10:35.992Z] Bot /start received from: max_postnikov (ID: 379053)
+[2026-01-14T21:10:35.994Z] Generated OTP for max_postnikov: 662426
+[2026-01-14T21:16:26.635Z] Server Initialized
+[2026-01-14T21:18:55.985Z] Bot /start received from: max_postnikov (ID: 379053)
+[2026-01-14T21:18:55.987Z] Generated OTP for max_postnikov: 923294
+[2026-01-14T21:24:46.294Z] Bot /start received from: max_postnikov (ID: 379053)
+[2026-01-14T21:24:46.296Z] Generated OTP for max_postnikov: 378671
+[2026-01-14T21:26:41.122Z] Bot /start received from: max_postnikov (ID: 379053)
+[2026-01-14T21:26:41.123Z] Generated OTP for max_postnikov: 421225
+[2026-01-14T21:27:58.362Z] Server Initialized
+[2026-01-14T21:28:33.872Z] Bot /start received from: max_postnikov (ID: 379053)
+[2026-01-14T21:28:33.875Z] Generated OTP for max_postnikov: 923390
+[2026-01-14T21:34:00.124Z] Bot /start received from: max_postnikov (ID: 379053)
+[2026-01-14T21:34:00.125Z] Generated OTP for max_postnikov: 570812
+[2026-01-14T21:36:42.108Z] API Register request for: kisodrakon
+[2026-01-14T21:40:27.119Z] Server Initialized
+[2026-01-14T21:40:49.225Z] Server Initialized
+[2026-01-14T21:41:10.110Z] API Register request for: kisodrakon
+[2026-01-14T21:41:29.084Z] Bot connect received from: kisodrakon (ID: 7769456432)
+[2026-01-14T21:41:29.086Z] Generated OTP for kisodrakon: 251201
+[2026-01-14T21:41:38.123Z] API Verify attempt: User=kisodrakon, OTP=251201
+[2026-01-14T21:41:38.123Z] Verify Success for kisodrakon. OTP matches.
+[2026-01-14T21:43:04.881Z] API Register request for: kisodrakon
+[2026-01-14T21:43:05.480Z] Proactive OTP successfully sent to kisodrakon (7769456432)
+[2026-01-14T21:44:51.152Z] API Register request for: kisodrakon
+[2026-01-14T21:44:51.390Z] Proactive OTP successfully sent to kisodrakon (7769456432)
+[2026-01-14T21:45:09.122Z] API Register request for: kisodrakon
+[2026-01-14T21:45:09.369Z] Proactive OTP successfully sent to kisodrakon (7769456432)
+[2026-01-14T21:45:41.875Z] Bot connect received from: kisodrakon (ID: 7769456432)
+[2026-01-14T21:45:41.877Z] Generated OTP for kisodrakon: 741715
+[2026-01-14T21:45:46.267Z] API Verify attempt: User=kisodrakon, OTP=741715
+[2026-01-14T21:45:46.267Z] Verify Success for kisodrakon. OTP matches.
+[2026-01-14T21:52:12.564Z] Bot connect received from: max_postnikov (ID: 379053)
+[2026-01-14T21:52:12.565Z] Generated OTP for max_postnikov: 997430
+[2026-01-14T21:56:46.181Z] Server Initialized
+[2026-01-14T21:56:57.679Z] Server Initialized
+[2026-01-14T21:57:16.048Z] Server Initialized
+[2026-01-14T21:57:31.817Z] Server Initialized
+[2026-01-14T21:57:51.818Z] Server Initialized
+[2026-01-14T21:59:29.069Z] Server Initialized
+[2026-01-14T21:59:59.945Z] Server Initialized
+[2026-01-14T22:00:34.815Z] [AUTH] ATTEMPT: Attempt to unlink Google account from Telegram @max_postnikov
+[2026-01-14T22:00:35.666Z] [AUTH] SUCCESS: Successfully unlinked Google account from Telegram @max_postnikov (ID: rectsvcJ7M2AAioNs)
+[2026-01-14T22:01:40.880Z] [AUTH] ATTEMPT: Attempt to link Google account m.postnikov@gmail.com to Telegram @max_postnikov
+[2026-01-14T22:01:41.837Z] [AUTH] SUCCESS: Successfully linked m.postnikov@gmail.com to Telegram @max_postnikov (ID: rectsvcJ7M2AAioNs)
+[2026-01-14T22:03:32.150Z] [AUTH] ATTEMPT: Attempt to disconnect Telegram for user m.postnikov@gmail.com
+[2026-01-14T22:03:33.152Z] [AUTH] SUCCESS: Successfully disconnected Telegram @max_postnikov from m.postnikov@gmail.com
+[2026-01-14T22:04:12.761Z] [AUTH] INFO: Bot connect received from: max_postnikov (ID: 379053)
+[2026-01-14T22:04:12.762Z] [AUTH] INFO: Generated OTP for max_postnikov: 610294
+[2026-01-14T22:04:24.133Z] [AUTH] ATTEMPT: Attempt to connect @max_postnikov to Google account m.postnikov@gmail.com
+[2026-01-14T22:04:24.134Z] [AUTH] SUCCESS: OTP verified successfully for @max_postnikov
+[2026-01-14T22:04:28.204Z] [AUTH] ATTEMPT: Attempt to connect @max_postnikov to Google account m.postnikov@gmail.com
+[2026-01-14T22:04:34.384Z] [AUTH] SUCCESS: Successfully linked Telegram @max_postnikov to Google account m.postnikov@gmail.com (ID: rectsvcJ7M2AAioNs)
+[2026-01-14T22:04:35.460Z] [AUTH] INFO: Bot connect received from: max_postnikov (ID: 379053)
+[2026-01-14T22:04:35.460Z] [AUTH] INFO: Generated OTP for max_postnikov: 253631
+[2026-01-14T22:07:09.141Z] [AUTH] ATTEMPT: Telegram OTP request for @kisodrakon
+[2026-01-14T22:07:09.646Z] [AUTH] SUCCESS: Proactive OTP successfully sent to @kisodrakon (7769456432)
+[2026-01-14T22:07:21.214Z] [AUTH] INFO: Bot connect received from: kisodrakon (ID: 7769456432)
+[2026-01-14T22:07:21.216Z] [AUTH] INFO: Generated OTP for kisodrakon: 150612
+[2026-01-14T22:07:25.787Z] [AUTH] INFO: API Verify attempt: User=kisodrakon, OTP=150612
+[2026-01-14T22:07:25.787Z] [AUTH] INFO: Verify Success for kisodrakon. OTP matches.
+[2026-01-14T22:10:15.384Z] [AUTH] ATTEMPT: Attempt to link Google account m.postnikov@gmail.com to Telegram @kisodrakon
+[2026-01-14T22:13:07.586Z] [AUTH] ATTEMPT: Attempt to link Google account m.postnikov@gmail.com to Telegram @kisodrakon
+[2026-01-14T22:15:29.993Z] [AUTH] ATTEMPT: Attempt to link Google account m.postnikov@gmail.com to Telegram @kisodrakon
+[2026-01-14T22:15:50.784Z] [AUTH] ATTEMPT: Attempt to link Google account kisodrakon@gmail.com to Telegram @kisodrakon
+[2026-01-14T22:15:51.876Z] [AUTH] SUCCESS: Successfully linked kisodrakon@gmail.com to Telegram @kisodrakon (ID: recx8xEERi5fHD75t)
+[2026-01-14T22:16:40.654Z] [AUTH] ATTEMPT: Google login attempt for m.postnikov@gmail.com
+[2026-01-14T22:16:41.206Z] [AUTH] SUCCESS: Google login success: Existing user m.postnikov@gmail.com (ID: rectsvcJ7M2AAioNs)
+[2026-01-14T22:17:06.078Z] [AUTH] ATTEMPT: Google login attempt for kisodrakon@gmail.com
+[2026-01-14T22:17:06.634Z] [AUTH] SUCCESS: Google login success: Existing user kisodrakon@gmail.com (ID: recx8xEERi5fHD75t)
+[2026-01-14T22:22:15.314Z] [AUTH] ATTEMPT: Google login attempt for m.postnikov@gmail.com
+[2026-01-14T22:22:15.928Z] [AUTH] SUCCESS: Google login success: Existing user m.postnikov@gmail.com (ID: rectsvcJ7M2AAioNs)
+[2026-01-14T22:56:12.255Z] Server Initialized
+[2026-01-14T22:56:52.868Z] Server Initialized
+[2026-01-14T22:57:58.416Z] [AUTH] ATTEMPT: Google login attempt for m.postnikov@gmail.com
+[2026-01-14T22:57:59.000Z] [AUTH] SUCCESS: Google login success: Existing user m.postnikov@gmail.com (ID: rectsvcJ7M2AAioNs)
+[2026-01-14T23:03:55.399Z] Server Initialized
+[2026-01-14T23:04:36.680Z] [AUTH] ERROR: LinkedIn Auth Error: Request failed with status code 400
+[2026-01-14T23:04:37.198Z] [AUTH] ERROR: LinkedIn Auth Error: Request failed with status code 401
+[2026-01-14T23:04:48.244Z] [AUTH] ATTEMPT: LinkedIn login attempt for m.postnikov@gmail.com (sub: t5K-8hBkoU)
+[2026-01-14T23:04:48.276Z] [AUTH] ATTEMPT: LinkedIn login attempt for m.postnikov@gmail.com (sub: t5K-8hBkoU)
+[2026-01-14T23:05:10.467Z] [AUTH] SUCCESS: LinkedIn login: Linked to existing email m.postnikov@gmail.com
+[2026-01-14T23:05:10.598Z] [AUTH] SUCCESS: LinkedIn login: Linked to existing email m.postnikov@gmail.com
+[2026-01-14T23:05:10.932Z] [AUTH] ERROR: LinkedIn Auth Error: Request failed with status code 400
+[2026-01-14T23:05:10.973Z] [AUTH] ERROR: LinkedIn Auth Error: Request failed with status code 400
+[2026-01-14T23:05:30.833Z] [AUTH] ERROR: LinkedIn Auth Error: Request failed with status code 400
+[2026-01-14T23:05:31.387Z] [AUTH] ERROR: LinkedIn Auth Error: Request failed with status code 401
+[2026-01-14T23:06:34.930Z] Server Initialized
+[2026-01-14T23:06:56.685Z] [AUTH] ATTEMPT: LinkedIn login attempt for m.postnikov@gmail.com (sub: t5K-8hBkoU)
+[2026-01-14T23:06:56.874Z] [AUTH] SUCCESS: LinkedIn login success: Found via Linkedin_ID m.postnikov@gmail.com
+[2026-01-14T23:06:57.207Z] [AUTH] ERROR: LinkedIn Auth Error: Request failed with status code 400
+[2026-01-14T23:07:32.064Z] [AUTH] ATTEMPT: LinkedIn login attempt for m.postnikov@gmail.com (sub: t5K-8hBkoU)
+[2026-01-14T23:07:32.628Z] [AUTH] SUCCESS: LinkedIn login success: Found via Linkedin_ID m.postnikov@gmail.com
+[2026-01-14T23:07:32.992Z] [AUTH] ERROR: LinkedIn Auth Error: Request failed with status code 400
+[2026-01-14T23:09:27.200Z] [AUTH] ATTEMPT: LinkedIn login attempt for m.postnikov@gmail.com (sub: t5K-8hBkoU)
+[2026-01-14T23:09:27.732Z] [AUTH] SUCCESS: LinkedIn login success: Found via Linkedin_ID m.postnikov@gmail.com
+[2026-01-14T23:09:28.039Z] [AUTH] ERROR: LinkedIn Auth Error: Request failed with status code 400
+[2026-01-14T23:10:00.436Z] [AUTH] ATTEMPT: Google login attempt for kisodrakon@gmail.com
+[2026-01-14T23:10:01.007Z] [AUTH] SUCCESS: Google login success: Existing user kisodrakon@gmail.com (ID: recx8xEERi5fHD75t)
+[2026-01-14T23:10:17.889Z] [AUTH] ATTEMPT: LinkedIn login attempt for m.postnikov@gmail.com (sub: t5K-8hBkoU)
+[2026-01-14T23:10:18.985Z] [AUTH] SUCCESS: LinkedIn login: Linked to existing email m.postnikov@gmail.com
+[2026-01-14T23:10:19.368Z] [AUTH] ERROR: LinkedIn Auth Error: Request failed with status code 400
+[2026-01-14T23:12:57.825Z] [AUTH] ATTEMPT: LinkedIn login attempt for m.postnikov@gmail.com (sub: t5K-8hBkoU)
+[2026-01-14T23:12:58.915Z] [AUTH] SUCCESS: LinkedIn login: New user created m.postnikov@gmail.com
+[2026-01-14T23:13:04.230Z] [AUTH] ERROR: LinkedIn Auth Error: Request failed with status code 400
+[2026-01-14T23:14:37.514Z] [AUTH] ATTEMPT: LinkedIn login attempt for m.postnikov@gmail.com (sub: t5K-8hBkoU)
+[2026-01-14T23:14:37.961Z] [AUTH] SUCCESS: LinkedIn login success: Found via Linkedin_ID m.postnikov@gmail.com
+[2026-01-14T23:14:38.310Z] [AUTH] ERROR: LinkedIn Auth Error: Request failed with status code 400
+[2026-01-14T23:18:39.844Z] [AUTH] ATTEMPT: LinkedIn login attempt for m.postnikov@gmail.com (sub: t5K-8hBkoU)
+[2026-01-14T23:18:40.464Z] [AUTH] SUCCESS: LinkedIn login success: Found via Linkedin_ID m.postnikov@gmail.com
+[2026-01-14T23:19:55.956Z] [AUTH] ATTEMPT: LinkedIn login attempt for m.postnikov@gmail.com (sub: t5K-8hBkoU)
+[2026-01-14T23:19:56.985Z] [AUTH] SUCCESS: LinkedIn login: Linked to existing email m.postnikov@gmail.com
+[2026-01-14T23:25:04.124Z] Server Initialized
+[2026-01-14T23:26:51.411Z] [AUTH] ATTEMPT: Google login attempt for m.postnikov@gmail.com
+[2026-01-14T23:26:52.146Z] [AUTH] SUCCESS: Google login success: Existing user m.postnikov@gmail.com (ID: rectsvcJ7M2AAioNs)
+[2026-01-14T23:30:29.386Z] Server Initialized
+[2026-01-14T23:32:07.394Z] [AUTH] ATTEMPT: Telegram OTP request for @max_postnikov
+[2026-01-14T23:32:08.010Z] [AUTH] SUCCESS: Proactive OTP successfully sent to @max_postnikov (379053)
+[2026-01-14T23:32:14.526Z] [AUTH] INFO: Bot connect received from: max_postnikov (ID: 379053)
+[2026-01-14T23:32:14.526Z] [AUTH] INFO: Generated OTP for max_postnikov: 479428
+[2026-01-14T23:32:19.259Z] [AUTH] INFO: API Verify attempt: User=max_postnikov, OTP=479428
+[2026-01-14T23:32:19.259Z] [AUTH] INFO: Verify Success for max_postnikov. OTP matches.
+[2026-01-14T23:35:55.446Z] Server Initialized
+[2026-01-14T23:39:39.727Z] [AUTH] ATTEMPT: LinkedIn login attempt for m.postnikov@gmail.com (sub: t5K-8hBkoU)
+[2026-01-14T23:39:40.585Z] [AUTH] SUCCESS: LinkedIn login: Linked to existing email m.postnikov@gmail.com
+[2026-01-14T23:47:28.738Z] [AUTH] ATTEMPT: LinkedIn login attempt for m.postnikov@gmail.com (sub: t5K-8hBkoU)
+[2026-01-14T23:47:31.046Z] [AUTH] SUCCESS: LinkedIn login success: Found via Linkedin_ID m.postnikov@gmail.com

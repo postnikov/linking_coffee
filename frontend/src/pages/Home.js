@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
+import { GoogleLogin } from '@react-oauth/google';
 import GdprModal from '../components/GdprModal';
 
 const API_URL = process.env.REACT_APP_API_URL || '';
@@ -14,6 +15,35 @@ const Home = ({ onLogin }) => {
     const [hasTelegramId, setHasTelegramId] = useState(false);
     const [showGdprModal, setShowGdprModal] = useState(false);
     const [pendingUser, setPendingUser] = useState(null);
+
+    const handleGoogleLogin = async (credentialResponse) => {
+        setIsLoading(true);
+        try {
+            const response = await fetch(`${API_URL}/api/auth/google`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token: credentialResponse.credential }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                if (data.user.consentGdpr) {
+                    onLogin(data.user);
+                } else {
+                    setPendingUser(data.user);
+                    setShowGdprModal(true);
+                }
+            } else {
+                alert(data.message || 'Google Login Failed');
+            }
+        } catch (error) {
+            console.error('Google Login Error:', error);
+            alert('An error occurred during Google Login');
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     const handleUsernameSubmit = async (e) => {
         e.preventDefault();
@@ -109,16 +139,20 @@ const Home = ({ onLogin }) => {
 
     const handleGdprAccept = async (modalData) => {
         console.log('handleGdprAccept called. PendingUser:', pendingUser, 'ModalData:', modalData);
-        if (!pendingUser || !pendingUser.username) {
-            console.error('Missing pendingUser or username');
+        // User must have at least an ID or Email if Username is missing
+        if (!pendingUser || (!pendingUser.username && !pendingUser.id && !pendingUser.email)) {
+            console.error('Missing pendingUser or valid identifier');
             alert('Error: User session invalid. Please try logging in again.');
             return;
         }
 
         try {
-            console.log(`Sending consent for ${pendingUser.username} to ${API_URL}/api/consent`);
+            const identifier = pendingUser.username || pendingUser.email || pendingUser.id;
+            console.log(`Sending consent for ${identifier} to ${API_URL}/api/consent`);
             const payload = {
-                username: pendingUser.username,
+                username: pendingUser.username, // Might be null
+                id: pendingUser.id,             // Pass ID if available
+                email: pendingUser.email,       // Pass Email if available
                 linkedin: modalData?.linkedin || '',
                 name: modalData?.name || '',
                 family: modalData?.family || '',
@@ -212,44 +246,101 @@ const Home = ({ onLogin }) => {
                         </div>
 
                         {step === 1 && (
-                            <form className="registration-form" onSubmit={handleUsernameSubmit}>
-                                <div className="input-group">
-                                    <label htmlFor="telegram-username" className="form-label">
-                                        {t('form.label')}
-                                    </label>
-                                    <div className="input-wrapper">
-                                        <span className="input-prefix">@</span>
-                                        <input
-                                            type="text"
-                                            id="telegram-username"
-                                            className="form-input"
-                                            placeholder={t('form.username_placeholder')}
-                                            value={telegramUsername}
-                                            onChange={(e) => setTelegramUsername(e.target.value)}
-                                            disabled={isLoading}
-                                            required
-                                        />
-                                    </div>
-                                </div>
-                                
-                                {/* Warning Message */}
-                                {/* Warning Message */}
-                                <div style={{ margin: '0.5rem 0 0.5rem', textAlign: 'center', fontSize: '1.05rem', color: '#15803d' }}>
-                                    <Trans
-                                        i18nKey="form.warning_msg"
-                                        components={{
-                                            1: <strong />
+                            <>
+                                <div className="google-login-wrapper" style={{ margin: '20px 0', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                    <GoogleLogin
+                                        onSuccess={handleGoogleLogin}
+                                        onError={() => {
+                                            console.log('Login Failed');
+                                            alert('Google Login Failed');
                                         }}
+                                        theme="filled_blue"
+                                        shape="pill"
+                                        text="continue_with"
+                                        width="300"
                                     />
+
+                                    <button
+                                        onClick={async () => {
+                                            setIsLoading(true);
+                                            try {
+                                                const redirectUri = window.location.origin + '/auth/linkedin/callback';
+                                                const res = await fetch(`${API_URL}/api/auth/linkedin/url?redirectUri=${encodeURIComponent(redirectUri)}`);
+                                                const data = await res.json();
+                                                if (data.url) {
+                                                    window.location.href = data.url;
+                                                } else {
+                                                    alert('Failed to initialize LinkedIn login');
+                                                    setIsLoading(false);
+                                                }
+                                            } catch (e) {
+                                                console.error(e);
+                                                setIsLoading(false);
+                                            }
+                                        }}
+                                        className="linkedin-btn"
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            width: '300px',
+                                            height: '40px',
+                                            backgroundColor: '#0077b5',
+                                            color: 'white',
+                                            border: 'none',
+                                            borderRadius: '20px',
+                                            cursor: 'pointer',
+                                            fontSize: '14px',
+                                            fontWeight: '500',
+                                            fontFamily: 'Roboto, sans-serif',
+                                            boxShadow: '0 1px 3px rgba(0,0,0,0.12)',
+                                            marginTop: '12px'
+                                        }}
+                                        disabled={isLoading}
+                                    >
+                                        <svg style={{ height: '20px', marginRight: '10px', fill: 'white' }} viewBox="0 0 24 24" width="24" height="24">
+                                            <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
+                                        </svg>
+                                        Continue with LinkedIn
+                                    </button>
                                 </div>
 
-                                <button type="submit" className="submit-btn" disabled={isLoading}>
-                                    <div className="button-content">
-                                        {isLoading && <span className="spinner"></span>}
-                                        <span>{isLoading ? t('form.loading') : t('form.step1_btn')}</span>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '24px 0 16px' }}>
+                                    <span style={{ height: '1px', background: '#e5e7eb', flex: 1 }}></span>
+                                    <span style={{ padding: '0 10px', color: '#9ca3af', fontSize: '0.85rem', fontWeight: '500' }}>{t('form.or_telegram', 'OR via Telegram')}</span>
+                                    <span style={{ height: '1px', background: '#e5e7eb', flex: 1 }}></span>
+                                </div>
+
+                                <form className="registration-form" onSubmit={handleUsernameSubmit}>
+                                    <div className="input-group">
+                                        <label htmlFor="telegram-username" className="form-label" style={{ fontSize: '0.9rem', marginBottom: '0.4rem' }}>
+                                            {t('form.label')}
+                                        </label>
+                                        <div className="input-wrapper">
+                                            <span className="input-prefix">@</span>
+                                            <input
+                                                type="text"
+                                                id="telegram-username"
+                                                className="form-input"
+                                                placeholder={t('form.username_placeholder')}
+                                                value={telegramUsername}
+                                                onChange={(e) => setTelegramUsername(e.target.value)}
+                                                disabled={isLoading}
+                                                required
+                                            />
+                                        </div>
                                     </div>
-                                </button>
-                            </form>
+
+                                    {/* Warning Message */}
+
+                                    <button type="submit" className="submit-btn" disabled={isLoading} style={{ background: 'transparent', border: '1px solid #d1d5db', color: '#374151' }}>
+                                        <div className="button-content">
+                                            {isLoading && <span className="spinner" style={{ borderTopColor: '#374151' }}></span>}
+                                            <span>{isLoading ? t('form.loading') : t('form.step1_btn')}</span>
+                                        </div>
+                                    </button>
+                                </form>
+                            </>
                         )}
 
                         {step === 2 && (
@@ -273,11 +364,11 @@ const Home = ({ onLogin }) => {
                                     </div>
                                 </div>
                                 {!hasTelegramId && (
-                                    <div style={{ 
-                                        margin: '1.5rem 0', 
-                                        textAlign: 'center', 
-                                        fontSize: '1.05rem', 
-                                        color: '#1e3a8a', 
+                                    <div style={{
+                                        margin: '1.5rem 0',
+                                        textAlign: 'center',
+                                        fontSize: '1.05rem',
+                                        color: '#1e3a8a',
                                         lineHeight: '1.5',
                                         backgroundColor: '#eff6ff',
                                         padding: '1.25rem',
@@ -289,8 +380,7 @@ const Home = ({ onLogin }) => {
                                         <Trans
                                             i18nKey="form.verify_new"
                                             components={{
-                                                // eslint-disable-next-line jsx-a11y/anchor-has-content
-                                                1: <a href="https://t.me/Linked_Coffee_Bot" target="_blank" rel="noopener noreferrer" style={{ color: '#7c3aed', textDecoration: 'underline', fontWeight: 'bold' }} />
+                                                1: <a href="https://t.me/Linked_Coffee_Bot" target="_blank" rel="noopener noreferrer" style={{ color: '#7c3aed', textDecoration: 'underline', fontWeight: 'bold' }}>link</a>
                                             }}
                                         />
                                     </div>
@@ -301,7 +391,7 @@ const Home = ({ onLogin }) => {
                                         <Trans
                                             i18nKey="form.launch_bot_help"
                                             components={{
-                                                1: <a href="https://t.me/Linked_Coffee_Bot" target="_blank" rel="noopener noreferrer" style={{ color: '#4f46e5', fontWeight: 'bold' }} />
+                                                1: <a href="https://t.me/Linked_Coffee_Bot" target="_blank" rel="noopener noreferrer" style={{ color: '#4f46e5', fontWeight: 'bold' }}>link</a>
                                             }}
                                         />
                                     </div>

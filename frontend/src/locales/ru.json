@@ -6,7 +6,9 @@
         "add": "Добавить",
         "done": "Готово",
         "cancel": "Отмена",
-        "selected": "Выбрано"
+        "selected": "Выбрано",
+        "error": "Ошибка",
+        "close": "Закрыть"
     },
     "hero": {
         "title": "Linked.Coffee",
@@ -63,7 +65,13 @@
             "other_personal_interests_placeholder": "Другие личные интересы...",
             "change_interests": "Изменить",
             "ready": "Да! Ваш профиль готов!",
-            "complete_profile": "Заполните профиль"
+            "complete_profile": "Заполните профиль",
+            "error_incomplete": "Пожалуйста, заполните все обязательные поля перед переходом в режим просмотра.",
+            "avatar_too_big": "Фото слишком большое. Максимальный размер 5МБ.",
+            "avatar_updated": "Аватар успешно обновлен!",
+            "view_mode": "Режим просмотра",
+            "edit_mode": "Режим редактирования",
+            "improve_profile": "Улучшите свой профиль"
         },
         "matching": {
             "title": "Настройки мэтчинга",
@@ -79,13 +87,48 @@
             "status_passive": "Пропущу",
             "current_match": "Текущий собеседник",
             "this_week": "На этой неделе",
-            "view_profile": "Посмотреть профиль"
+            "view_profile": "Посмотреть профиль",
+            "your_community": "Ваше сообщество"
+        },
+        "connected_accounts": {
+            "title": "Подключенные аккаунты",
+            "telegram": "Telegram",
+            "google": "Google",
+            "primary": "Основной",
+            "auth_method": "метод входа",
+            "linked": "Связанный аккаунт",
+            "not_linked": "Не подключено",
+            "link_button": "Связать Google аккаунт",
+            "unlink_button": "Отвязать",
+            "success_title": "Успешно!",
+            "link_success": "Google аккаунт успешно подключен!",
+            "unlink_success": "Google аккаунт успешно отключен",
+            "link_error": "Не удалось подключить Google аккаунт",
+            "unlink_error": "Не удалось отключить Google аккаунт",
+            "confirm_unlink_title": "Отвязать Google аккаунт?",
+            "confirm_unlink_message": "Вы уверены, что хотите отвязать Google аккаунт? Вы сможете входить только через Telegram.",
+            "modal_title": "Связать Google аккаунт",
+            "modal_description": "Войдите через Google, чтобы связать аккаунт. Вы сможете использовать как Telegram, так и Google для входа.",
+            "try_logout_tip": "Попробуйте выйти из системы, а затем войти с помощью Google аккаунта.",
+            "ok_button": "OK"
+        },
+        "connect_telegram": {
+            "title": "Подключить Telegram",
+            "required": "Обязательно для мэтчинга",
+            "btn": "Подключить",
+            "modal_title": "Подключить Telegram",
+            "instructions": "Пожалуйста, запустите @Linked_Coffee_Bot в Telegram и введите код подтверждения вместе с вашим именем пользователя ниже.",
+            "error_username_required": "Требуется имя пользователя",
+            "error_otp_required": "Требуется код подтверждения",
+            "merge_success": "Аккаунты успешно объединены!",
+            "disconnect_success": "Telegram успешно отключен"
         }
     },
     "form": {
         "title": "Получить ранний доступ",
         "subtitle": "Зарегистрируйтесь сейчас и станьте одним из первых,<br /> кто попробует Linked.Coffee",
         "label": "Имя пользователя Telegram",
+        "or_telegram": "Или через Telegram",
         "username_placeholder": "ваш_username",
         "cta_button": "Получить ранний доступ",
         "loading": "Отправляем код...",

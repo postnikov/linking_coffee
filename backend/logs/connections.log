@@ -1,0 +1,76 @@
+[2026-01-14T21:59:29.069Z] Log Initialized
+[2026-01-14T21:59:59.945Z] Log Initialized
+[2026-01-14T22:00:34.815Z] [CONN] ATTEMPT: Attempt to unlink Google account from Telegram @max_postnikov
+[2026-01-14T22:00:35.666Z] [CONN] SUCCESS: Successfully unlinked Google account from Telegram @max_postnikov (ID: rectsvcJ7M2AAioNs)
+[2026-01-14T22:01:40.879Z] [CONN] ATTEMPT: Attempt to link Google account m.postnikov@gmail.com to Telegram @max_postnikov
+[2026-01-14T22:01:41.837Z] [CONN] SUCCESS: Successfully linked m.postnikov@gmail.com to Telegram @max_postnikov (ID: rectsvcJ7M2AAioNs)
+[2026-01-14T22:03:32.149Z] [CONN] ATTEMPT: Attempt to disconnect Telegram for user m.postnikov@gmail.com
+[2026-01-14T22:03:33.151Z] [CONN] SUCCESS: Successfully disconnected Telegram @max_postnikov from m.postnikov@gmail.com
+[2026-01-14T22:04:24.133Z] [CONN] ATTEMPT: Attempt to connect @max_postnikov to Google account m.postnikov@gmail.com
+[2026-01-14T22:04:24.134Z] [CONN] SUCCESS: OTP verified successfully for @max_postnikov
+[2026-01-14T22:04:28.204Z] [CONN] ATTEMPT: Attempt to connect @max_postnikov to Google account m.postnikov@gmail.com
+[2026-01-14T22:04:34.383Z] [CONN] SUCCESS: Successfully linked Telegram @max_postnikov to Google account m.postnikov@gmail.com (ID: rectsvcJ7M2AAioNs)
+[2026-01-14T22:07:09.140Z] [CONN] ATTEMPT: Telegram OTP request for @kisodrakon
+[2026-01-14T22:07:09.645Z] [CONN] SUCCESS: Proactive OTP successfully sent to @kisodrakon (7769456432)
+[2026-01-14T22:10:15.383Z] [CONN] ATTEMPT: Attempt to link Google account m.postnikov@gmail.com to Telegram @kisodrakon
+[2026-01-14T22:13:07.585Z] [CONN] ATTEMPT: Attempt to link Google account m.postnikov@gmail.com to Telegram @kisodrakon
+[2026-01-14T22:15:29.992Z] [CONN] ATTEMPT: Attempt to link Google account m.postnikov@gmail.com to Telegram @kisodrakon
+[2026-01-14T22:15:50.783Z] [CONN] ATTEMPT: Attempt to link Google account kisodrakon@gmail.com to Telegram @kisodrakon
+[2026-01-14T22:15:51.875Z] [CONN] SUCCESS: Successfully linked kisodrakon@gmail.com to Telegram @kisodrakon (ID: recx8xEERi5fHD75t)
+[2026-01-14T22:16:40.653Z] [CONN] ATTEMPT: Google login attempt for m.postnikov@gmail.com
+[2026-01-14T22:16:41.204Z] [CONN] SUCCESS: Google login success: Existing user m.postnikov@gmail.com (ID: rectsvcJ7M2AAioNs)
+[2026-01-14T22:17:06.078Z] [CONN] ATTEMPT: Google login attempt for kisodrakon@gmail.com
+[2026-01-14T22:17:06.634Z] [CONN] SUCCESS: Google login success: Existing user kisodrakon@gmail.com (ID: recx8xEERi5fHD75t)
+[2026-01-14T22:22:15.313Z] [CONN] ATTEMPT: Google login attempt for m.postnikov@gmail.com
+[2026-01-14T22:22:15.928Z] [CONN] SUCCESS: Google login success: Existing user m.postnikov@gmail.com (ID: rectsvcJ7M2AAioNs)
+[2026-01-14T22:56:12.255Z] Log Initialized
+[2026-01-14T22:56:52.868Z] Log Initialized
+[2026-01-14T22:57:58.415Z] [CONN] ATTEMPT: Google login attempt for m.postnikov@gmail.com
+[2026-01-14T22:57:58.999Z] [CONN] SUCCESS: Google login success: Existing user m.postnikov@gmail.com (ID: rectsvcJ7M2AAioNs)
+[2026-01-14T23:03:55.399Z] Log Initialized
+[2026-01-14T23:04:36.679Z] [CONN] ERROR: LinkedIn Auth Error: Request failed with status code 400
+[2026-01-14T23:04:37.198Z] [CONN] ERROR: LinkedIn Auth Error: Request failed with status code 401
+[2026-01-14T23:04:48.243Z] [CONN] ATTEMPT: LinkedIn login attempt for m.postnikov@gmail.com (sub: t5K-8hBkoU)
+[2026-01-14T23:04:48.276Z] [CONN] ATTEMPT: LinkedIn login attempt for m.postnikov@gmail.com (sub: t5K-8hBkoU)
+[2026-01-14T23:05:10.466Z] [CONN] SUCCESS: LinkedIn login: Linked to existing email m.postnikov@gmail.com
+[2026-01-14T23:05:10.597Z] [CONN] SUCCESS: LinkedIn login: Linked to existing email m.postnikov@gmail.com
+[2026-01-14T23:05:10.932Z] [CONN] ERROR: LinkedIn Auth Error: Request failed with status code 400
+[2026-01-14T23:05:10.973Z] [CONN] ERROR: LinkedIn Auth Error: Request failed with status code 400
+[2026-01-14T23:05:30.833Z] [CONN] ERROR: LinkedIn Auth Error: Request failed with status code 400
+[2026-01-14T23:05:31.386Z] [CONN] ERROR: LinkedIn Auth Error: Request failed with status code 401
+[2026-01-14T23:06:34.930Z] Log Initialized
+[2026-01-14T23:06:56.684Z] [CONN] ATTEMPT: LinkedIn login attempt for m.postnikov@gmail.com (sub: t5K-8hBkoU)
+[2026-01-14T23:06:56.873Z] [CONN] SUCCESS: LinkedIn login success: Found via Linkedin_ID m.postnikov@gmail.com
+[2026-01-14T23:06:57.207Z] [CONN] ERROR: LinkedIn Auth Error: Request failed with status code 400
+[2026-01-14T23:07:32.063Z] [CONN] ATTEMPT: LinkedIn login attempt for m.postnikov@gmail.com (sub: t5K-8hBkoU)
+[2026-01-14T23:07:32.627Z] [CONN] SUCCESS: LinkedIn login success: Found via Linkedin_ID m.postnikov@gmail.com
+[2026-01-14T23:07:32.992Z] [CONN] ERROR: LinkedIn Auth Error: Request failed with status code 400
+[2026-01-14T23:09:27.198Z] [CONN] ATTEMPT: LinkedIn login attempt for m.postnikov@gmail.com (sub: t5K-8hBkoU)
+[2026-01-14T23:09:27.732Z] [CONN] SUCCESS: LinkedIn login success: Found via Linkedin_ID m.postnikov@gmail.com
+[2026-01-14T23:09:28.038Z] [CONN] ERROR: LinkedIn Auth Error: Request failed with status code 400
+[2026-01-14T23:10:00.435Z] [CONN] ATTEMPT: Google login attempt for kisodrakon@gmail.com
+[2026-01-14T23:10:01.006Z] [CONN] SUCCESS: Google login success: Existing user kisodrakon@gmail.com (ID: recx8xEERi5fHD75t)
+[2026-01-14T23:10:17.887Z] [CONN] ATTEMPT: LinkedIn login attempt for m.postnikov@gmail.com (sub: t5K-8hBkoU)
+[2026-01-14T23:10:18.984Z] [CONN] SUCCESS: LinkedIn login: Linked to existing email m.postnikov@gmail.com
+[2026-01-14T23:10:19.368Z] [CONN] ERROR: LinkedIn Auth Error: Request failed with status code 400
+[2026-01-14T23:12:57.823Z] [CONN] ATTEMPT: LinkedIn login attempt for m.postnikov@gmail.com (sub: t5K-8hBkoU)
+[2026-01-14T23:12:58.914Z] [CONN] SUCCESS: LinkedIn login: New user created m.postnikov@gmail.com
+[2026-01-14T23:13:04.230Z] [CONN] ERROR: LinkedIn Auth Error: Request failed with status code 400
+[2026-01-14T23:14:37.513Z] [CONN] ATTEMPT: LinkedIn login attempt for m.postnikov@gmail.com (sub: t5K-8hBkoU)
+[2026-01-14T23:14:37.961Z] [CONN] SUCCESS: LinkedIn login success: Found via Linkedin_ID m.postnikov@gmail.com
+[2026-01-14T23:14:38.310Z] [CONN] ERROR: LinkedIn Auth Error: Request failed with status code 400
+[2026-01-14T23:18:39.841Z] [CONN] ATTEMPT: LinkedIn login attempt for m.postnikov@gmail.com (sub: t5K-8hBkoU)
+[2026-01-14T23:18:40.463Z] [CONN] SUCCESS: LinkedIn login success: Found via Linkedin_ID m.postnikov@gmail.com
+[2026-01-14T23:19:55.953Z] [CONN] ATTEMPT: LinkedIn login attempt for m.postnikov@gmail.com (sub: t5K-8hBkoU)
+[2026-01-14T23:19:56.984Z] [CONN] SUCCESS: LinkedIn login: Linked to existing email m.postnikov@gmail.com
+[2026-01-14T23:25:04.124Z] Log Initialized
+[2026-01-14T23:26:51.410Z] [CONN] ATTEMPT: Google login attempt for m.postnikov@gmail.com
+[2026-01-14T23:26:52.146Z] [CONN] SUCCESS: Google login success: Existing user m.postnikov@gmail.com (ID: rectsvcJ7M2AAioNs)
+[2026-01-14T23:30:29.386Z] Log Initialized
+[2026-01-14T23:32:07.393Z] [CONN] ATTEMPT: Telegram OTP request for @max_postnikov
+[2026-01-14T23:32:08.010Z] [CONN] SUCCESS: Proactive OTP successfully sent to @max_postnikov (379053)
+[2026-01-14T23:35:55.446Z] Log Initialized
+[2026-01-14T23:39:39.727Z] [CONN] ATTEMPT: LinkedIn login attempt for m.postnikov@gmail.com (sub: t5K-8hBkoU)
+[2026-01-14T23:39:40.585Z] [CONN] SUCCESS: LinkedIn login: Linked to existing email m.postnikov@gmail.com
+[2026-01-14T23:47:28.737Z] [CONN] ATTEMPT: LinkedIn login attempt for m.postnikov@gmail.com (sub: t5K-8hBkoU)
+[2026-01-14T23:47:31.046Z] [CONN] SUCCESS: LinkedIn login success: Found via Linkedin_ID m.postnikov@gmail.com

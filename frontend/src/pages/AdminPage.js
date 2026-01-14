@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 import './Dashboard.css'; // Reusing dashboard styles for now
 import './AdminPage.css'; // Admin specific overrides
 import AdminHealth from './AdminHealth';
@@ -8,7 +7,6 @@ import AdminHealth from './AdminHealth';
 const API_URL = process.env.REACT_APP_API_URL || '';
 
 const AdminPage = () => {
-    const { t } = useTranslation();
     const navigate = useNavigate();
     const [isLoading, setIsLoading] = useState(true);
     const [data, setData] = useState({ users: [], matches: [] });

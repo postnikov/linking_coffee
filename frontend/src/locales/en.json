@@ -64,7 +64,12 @@
             "other_personal_interests_placeholder": "Other personal interests...",
             "change_interests": "Change",
             "ready": "Yes! Your profile is ready!",
-            "complete_profile": "Complete the profile"
+            "complete_profile": "Complete the profile",
+            "error_incomplete": "Please fill in all mandatory fields before switching to view mode.",
+            "avatar_updated": "Avatar updated successfully!",
+            "view_mode": "View Mode",
+            "edit_mode": "Edit Mode",
+            "improve_profile": "Improve your profile"
         },
         "matching": {
             "title": "Matching Settings",
@@ -80,7 +85,40 @@
             "status_passive": "I'll skip",
             "current_match": "Current match",
             "this_week": "This week",
-            "view_profile": "View Profile"
+            "view_profile": "View Profile",
+            "your_community": "Your Community"
+        },
+        "connected_accounts": {
+            "title": "Connected Accounts",
+            "telegram": "Telegram",
+            "google": "Google",
+            "primary": "Primary",
+            "auth_method": "authentication",
+            "linked": "Linked account",
+            "not_linked": "Not linked",
+            "link_button": "Link Google Account",
+            "unlink_button": "Unlink",
+            "success_title": "Success!",
+            "link_success": "Google account linked successfully!",
+            "unlink_success": "Google account unlinked successfully",
+            "link_error": "Failed to link Google account",
+            "unlink_error": "Failed to unlink Google account",
+            "confirm_unlink_title": "Unlink Google Account?",
+            "confirm_unlink_message": "Are you sure you want to unlink your Google account? You'll only be able to log in with Telegram.",
+            "modal_title": "Link Google Account",
+            "modal_description": "Sign in with Google to link your account. You'll be able to use either Telegram or Google to log in.",
+            "ok_button": "OK"
+        },
+        "connect_telegram": {
+            "title": "Connect Telegram",
+            "required": "Required for matching",
+            "btn": "Connect",
+            "modal_title": "Connect Telegram",
+            "instructions": "Please start @Linked_Coffee_Bot in Telegram and enter the verification code along with your username below.",
+            "error_username_required": "Username is required",
+            "error_otp_required": "OTP is required",
+            "merge_success": "Accounts merged successfully!",
+            "disconnect_success": "Telegram disconnected successfully"
         }
     },
     "form": {

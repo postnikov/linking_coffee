@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { GoogleLogin } from '@react-oauth/google';
 import GdprModal from '../components/GdprModal';
 import './Dashboard.css'; // Reuse dashboard styles for glass card if needed, or App.css
 
@@ -116,14 +117,17 @@ const LoginPage = ({ onLogin }) => {
     };
 
     const handleGdprAccept = async (modalData) => {
-        if (!pendingUser || !pendingUser.username) {
+        // User must have at least an ID or Email if Username is missing
+        if (!pendingUser || (!pendingUser.username && !pendingUser.id && !pendingUser.email)) {
             alert('Error: User session invalid. Please try logging in again.');
             return;
         }
 
         try {
             const payload = {
-                username: pendingUser.username,
+                username: pendingUser.username, // Might be null
+                id: pendingUser.id,             // Pass ID if available
+                email: pendingUser.email,       // Pass Email if available
                 linkedin: modalData?.linkedin || '',
                 name: modalData?.name || '',
                 family: modalData?.family || '',
@@ -154,6 +158,41 @@ const LoginPage = ({ onLogin }) => {
     const handleGdprClose = () => {
         setShowGdprModal(false);
         setPendingUser(null);
+    };
+
+    const handleGoogleLogin = async (credentialResponse) => {
+        setIsLoading(true);
+        try {
+            const response = await fetch(`${API_URL}/api/auth/google`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token: credentialResponse.credential }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                // Handle successful login (same as OTP flow)
+                const finalizeLogin = (u) => {
+                    onLogin(u);
+                    navigate(from, { replace: true });
+                };
+
+                if (data.user.consentGdpr) {
+                    finalizeLogin(data.user);
+                } else {
+                    setPendingUser(data.user);
+                    setShowGdprModal(true);
+                }
+            } else {
+                alert(data.message || 'Google Login Failed');
+            }
+        } catch (error) {
+            console.error('Google Login Error:', error);
+            alert('An error occurred during Google Login');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -199,44 +238,111 @@ const LoginPage = ({ onLogin }) => {
                 </div>
 
                 {step === 1 && (
-                    <form className="registration-form" onSubmit={handleUsernameSubmit}>
-                        <div className="input-group">
-                            <label htmlFor="telegram-username" className="form-label">
-                                {t('form.label')}
-                            </label>
-                            <div className="input-wrapper">
-                                <span className="input-prefix">@</span>
-                                <input
-                                    type="text"
-                                    id="telegram-username"
-                                    className="form-input"
-                                    placeholder={t('form.username_placeholder')}
-                                    value={telegramUsername}
-                                    onChange={(e) => setTelegramUsername(e.target.value)}
-                                    disabled={isLoading}
-                                    required
-                                />
-                            </div>
-                        </div>
-                        
-                        {/* Warning Message */}
-                        {/* Warning Message */}
-                        <div style={{ margin: '0.5rem 0 0.5rem', textAlign: 'center', fontSize: '1.05rem', color: '#15803d' }}>
-                            <Trans
-                                i18nKey="form.warning_msg"
-                                components={{
-                                    1: <strong />
+                    <>
+                        <div className="google-login-wrapper" style={{ margin: '20px 0', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+                            <GoogleLogin
+                                onSuccess={handleGoogleLogin}
+                                onError={() => {
+                                    console.log('Login Failed');
+                                    alert('Google Login Failed');
                                 }}
+                                theme="filled_blue"
+                                shape="pill"
+                                text="continue_with"
+                                width="300"
                             />
+
+                            <button
+                                onClick={async () => {
+                                    /* Handle LinkedIn Login */
+                                    setIsLoading(true);
+                                    try {
+                                        const redirectUri = window.location.origin + '/auth/linkedin/callback';
+                                        const res = await fetch(`${API_URL}/api/auth/linkedin/url?redirectUri=${encodeURIComponent(redirectUri)}`);
+                                        const data = await res.json();
+                                        if (data.url) {
+                                            window.location.href = data.url;
+                                        } else {
+                                            alert('Failed to initialize LinkedIn login');
+                                            setIsLoading(false);
+                                        }
+                                    } catch (e) {
+                                        console.error(e);
+                                        setIsLoading(false);
+                                    }
+                                }}
+                                className="linkedin-btn"
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    width: '300px',
+                                    height: '40px',
+                                    backgroundColor: '#0077b5',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '20px',
+                                    cursor: 'pointer',
+                                    fontSize: '14px',
+                                    fontWeight: '500',
+                                    fontFamily: 'Roboto, sans-serif',
+                                    boxShadow: '0 1px 3px rgba(0,0,0,0.12)'
+                                }}
+                                disabled={isLoading}
+                            >
+                                <img
+                                    src="https://upload.wikimedia.org/wikipedia/commons/c/ca/LinkedIn_logo_initials.png"
+                                    alt="Li"
+                                    style={{ height: '20px', marginRight: '10px', filter: 'brightness(100) grayscale(100%)' }}
+                                />
+                                Continue with LinkedIn
+                            </button>
                         </div>
 
-                        <button type="submit" className="submit-btn" disabled={isLoading}>
-                            <div className="button-content">
-                                {isLoading && <span className="spinner"></span>}
-                                <span>{isLoading ? t('form.loading') : t('form.get_code')}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '24px 0 16px' }}>
+                            <span style={{ height: '1px', background: '#e5e7eb', flex: 1 }}></span>
+                            <span style={{ padding: '0 10px', color: '#9ca3af', fontSize: '0.85rem', fontWeight: '500' }}>{t('form.or_telegram', 'OR via Telegram')}</span>
+                            <span style={{ height: '1px', background: '#e5e7eb', flex: 1 }}></span>
+                        </div>
+
+                        <form className="registration-form" onSubmit={handleUsernameSubmit}>
+                            <div className="input-group">
+                                <label htmlFor="telegram-username" className="form-label" style={{ fontSize: '0.9rem', marginBottom: '0.4rem' }}>
+                                    {t('form.label')}
+                                </label>
+                                <div className="input-wrapper">
+                                    <span className="input-prefix">@</span>
+                                    <input
+                                        type="text"
+                                        id="telegram-username"
+                                        className="form-input"
+                                        placeholder={t('form.username_placeholder')}
+                                        value={telegramUsername}
+                                        onChange={(e) => setTelegramUsername(e.target.value)}
+                                        disabled={isLoading}
+                                        required
+                                    />
+                                </div>
                             </div>
-                        </button>
-                    </form>
+
+                            {/* Warning Message */}
+                            <div style={{ margin: '0.5rem 0 0.5rem', textAlign: 'center', fontSize: '1.05rem', color: '#15803d' }}>
+                                <Trans
+                                    i18nKey="form.warning_msg"
+                                    components={{
+                                        1: <strong />
+                                    }}
+                                />
+                            </div>
+
+                            <button type="submit" className="submit-btn" disabled={isLoading} style={{ background: 'transparent', border: '1px solid #d1d5db', color: '#374151' }}>
+                                <div className="button-content">
+                                    {isLoading && <span className="spinner" style={{ borderTopColor: '#374151' }}></span>}
+                                    <span>{isLoading ? t('form.loading') : t('form.get_code')}</span>
+                                </div>
+                            </button>
+                        </form>
+                    </>
                 )}
 
                 {step === 2 && (
@@ -259,14 +365,14 @@ const LoginPage = ({ onLogin }) => {
                                 />
                             </div>
                         </div>
-                        
+
                         {/* Important: Verify New User Instructions */}
                         {!hasTelegramId && (
-                            <div style={{ 
-                                margin: '1.5rem 0', 
-                                textAlign: 'center', 
-                                fontSize: '1.05rem', 
-                                color: '#1e3a8a', 
+                            <div style={{
+                                margin: '1.5rem 0',
+                                textAlign: 'center',
+                                fontSize: '1.05rem',
+                                color: '#1e3a8a',
                                 lineHeight: '1.5',
                                 backgroundColor: '#eff6ff',
                                 padding: '1.25rem',
@@ -278,8 +384,7 @@ const LoginPage = ({ onLogin }) => {
                                 <Trans
                                     i18nKey="form.verify_new"
                                     components={{
-                                        // eslint-disable-next-line jsx-a11y/anchor-has-content
-                                        1: <a href="https://t.me/Linked_Coffee_Bot" target="_blank" rel="noopener noreferrer" style={{ color: '#7c3aed', textDecoration: 'underline', fontWeight: 'bold' }} />
+                                        1: <a href="https://t.me/Linked_Coffee_Bot" target="_blank" rel="noopener noreferrer" style={{ color: '#7c3aed', textDecoration: 'underline', fontWeight: 'bold' }}>link</a>
                                     }}
                                 />
                             </div>
@@ -290,7 +395,7 @@ const LoginPage = ({ onLogin }) => {
                                 <Trans
                                     i18nKey="form.launch_bot_help"
                                     components={{
-                                        1: <a href="https://t.me/Linked_Coffee_Bot" target="_blank" rel="noopener noreferrer" style={{ color: '#4f46e5', fontWeight: 'bold' }} />
+                                        1: <a href="https://t.me/Linked_Coffee_Bot" target="_blank" rel="noopener noreferrer" style={{ color: '#4f46e5', fontWeight: 'bold' }}>link</a>
                                     }}
                                 />
                             </div>

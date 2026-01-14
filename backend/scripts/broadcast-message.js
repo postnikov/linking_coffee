@@ -27,13 +27,22 @@ const MESSAGE_TEXT = `
 Привет! 👋
 Это Linked.Coffee 🤖 робот.
 
-Слушай, тут такое дело.
-В сообщениях о партнерах была ошибка. 
-Я уже ее исправил. И даже старые сообщения теперь работают. 
-Прости, что не заметил этот баг раньше.
+Целую неделю мы были на каникулах. 
+Не пили кофе. Перезаряжали социальные батарейки. 
+Но теперь мы вернулись!
 
-Хорошего тебе кофе!
+Спасибо тебе что, ты с нами и веришь в проект. 
+В этом году все новые фичи для тебя будут всегда бесплатными.
+ИИ мэтчинг, умные алгоритмы, и всё такое.
+С новым годом кстати 🎄
+
+Скоро ты получишь сообщение про следующую неделю.
+Надеюсь, ты решишь участвовать 😉.
+
+И главное - по любым вопросам с проетом сразу смело пиши Максу @max_postnikov.
+
 Обнимаю! 🤗
+Твой Linked Coffee Робот.
 `;
 
 // --- SETUP ---
@@ -182,8 +191,8 @@ async function run() {
 
         for (const recipient of recipients) {
             if (processedCount >= MAX_MESSAGES_TO_PROCESS) {
-                 console.log(`🛑 Limit of ${MAX_MESSAGES_TO_PROCESS} reached.`);
-                 break;
+                console.log(`🛑 Limit of ${MAX_MESSAGES_TO_PROCESS} reached.`);
+                break;
             }
 
             const name = recipient.fields.Name || 'User';
@@ -193,7 +202,7 @@ async function run() {
 
             let targetId = tgId;
             let message = MESSAGE_TEXT;
-            
+
             if (isTestMode) {
                 targetId = ADMIN_CHAT_ID;
                 message = `[TEST MODE - Original Reicipient: ${name}]\n\n${MESSAGE_TEXT}`;
@@ -201,7 +210,7 @@ async function run() {
 
             if (isDryRun) {
                 console.log(`   [DRY RUN] Would send to ${isTestMode ? `ADMIN for ${name}` : name} (${targetId})`);
-                success++; 
+                success++;
                 processedCount++;
                 continue;
             }
@@ -216,7 +225,7 @@ async function run() {
                 console.error(`   ❌ Failed to send to ${name} (${targetId}): ${e.message}`);
                 fail++;
             }
-            
+
             processedCount++;
         }
 

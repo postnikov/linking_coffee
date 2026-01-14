@@ -194,7 +194,7 @@ const TokenProfile = () => {
                                                         {getLocalizedInterest(item, 'professional')}
                                                     </span>
                                                 ))}
-                                                {formData.otherProfessionalInterests && formData.otherProfessionalInterests.split(/[,\.;]+/).map(item => item.trim()).filter(item => item).map((item, index) => (
+                                                {formData.otherProfessionalInterests && formData.otherProfessionalInterests.split(/[,.;]+/).map(item => item.trim()).filter(item => item).map((item, index) => (
                                                     <span key={`other-prof-${index}`} className="chip" style={{ backgroundColor: getInterestColor(item) }}>
                                                         {item}
                                                     </span>
@@ -211,7 +211,7 @@ const TokenProfile = () => {
                                                         {getLocalizedInterest(item, 'personal')}
                                                     </span>
                                                 ))}
-                                                {formData.otherPersonalInterests && formData.otherPersonalInterests.split(/[,\.;]+/).map(item => item.trim()).filter(item => item).map((item, index) => (
+                                                {formData.otherPersonalInterests && formData.otherPersonalInterests.split(/[,.;]+/).map(item => item.trim()).filter(item => item).map((item, index) => (
                                                     <span key={`other-pers-${index}`} className="chip" style={{ backgroundColor: getInterestColor(item) }}>
                                                         {item}
                                                     </span>

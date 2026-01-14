@@ -11,8 +11,8 @@ Linked.Coffee is a web service that connects people for meaningful conversations
 ### Development
 ```bash
 # Start both frontend and backend servers
-./start-dev.sh
-# Frontend runs on http://localhost:3002
+./start_local.sh
+# Frontend runs on http://localhost:3000
 # Backend runs on http://localhost:3001
 
 # Run backend only

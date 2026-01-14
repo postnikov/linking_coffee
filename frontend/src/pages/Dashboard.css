@@ -532,3 +532,15 @@ textarea.form-control {
     font-size: 1.5rem;
   }
 }
+
+/* Success Modal Animation */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

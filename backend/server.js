@@ -2,6 +2,7 @@ const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const express = require('express');
 const cors = require('cors');
+const axios = require('axios');
 const cron = require('node-cron');
 const Scheduler = require('./scheduler');
 const Airtable = require('airtable');
@@ -34,6 +35,7 @@ try {
 }
 const debugLogFile = path.join(logDir, 'debug.log');
 const authLogFile = path.join(logDir, 'auth.log');
+const connectionsLogFile = path.join(logDir, 'connections.log');
 
 // Ensure backups directory exists
 const backupDir = process.env.BACKUP_DIR || path.join(__dirname, 'backups');
@@ -48,10 +50,12 @@ if (!fs.existsSync(backupDir)) {
 
 // Test write access on startup
 try {
-  fs.appendFileSync(authLogFile, `[${new Date().toISOString()}] Server Initialized\n`);
-  console.log('✅ Auth log file writable');
+  const now = new Date().toISOString();
+  fs.appendFileSync(authLogFile, `[${now}] Server Initialized\n`);
+  fs.appendFileSync(connectionsLogFile, `[${now}] Log Initialized\n`);
+  console.log('✅ Log files writable');
 } catch (e) {
-  console.error('❌ Failed to write to auth log:', e);
+  console.error('❌ Failed to write to log files:', e);
 }
 
 function logDebug(msg) {
@@ -63,13 +67,28 @@ function logDebug(msg) {
   }
 }
 
-function logAuth(msg) {
+function logAuth(msg, type = 'INFO') {
   const time = new Date().toISOString();
+  // Standard format: [AUTH] TYPE: Message
+  const formattedMsg = `[AUTH] ${type.toUpperCase()}: ${msg}`;
   try {
-    fs.appendFileSync(authLogFile, `[${time}] ${msg}\n`);
-    console.log(`[AUTH] ${msg}`);
+    fs.appendFileSync(authLogFile, `[${time}] ${formattedMsg}\n`);
+    console.log(`${formattedMsg}`);
   } catch (e) {
     console.error('Auth Logging error:', e);
+  }
+}
+
+function logConnection(msg, type = 'INFO') {
+  const time = new Date().toISOString();
+  // Standard format: [CONN] TYPE: Message
+  const formattedMsg = `[CONN] ${type.toUpperCase()}: ${msg}`;
+  try {
+    fs.appendFileSync(connectionsLogFile, `[${time}] ${formattedMsg}\n`);
+    // Also mirror to auth log for historical completeness
+    logAuth(msg, type);
+  } catch (e) {
+    console.error('Connection Logging error:', e);
   }
 }
 
@@ -94,6 +113,13 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
+// Security Headers for Google OAuth
+app.use((req, res, next) => {
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
+  res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+  next();
+});
+
 // Configure Airtable
 console.log('🔹 Airtable Configuration:');
 console.log('   Base ID:', process.env.AIRTABLE_BASE_ID);
@@ -103,6 +129,10 @@ console.log('   Cities Table:', process.env.AIRTABLE_CITIES_TABLE);
 const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY }).base(
   process.env.AIRTABLE_BASE_ID
 );
+
+// Configure Google OAuth
+const { OAuth2Client } = require('google-auth-library');
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // Configure Multer for file uploads
 const multer = require('multer');
@@ -157,16 +187,17 @@ console.log(`🤖 Initializing Bot in ${process.env.NODE_ENV} mode`);
 console.log(`🔑 Using Bot Token starting with: ${botToken ? botToken.substring(0, 5) + '...' : 'UNDEFINED'}`);
 const bot = new Telegraf(botToken);
 
-bot.start((ctx) => {
+// Shared handler for /start and /connect commands
+const handleConnect = (ctx) => {
   const username = ctx.from.username;
-  logAuth(`Bot /start received from: ${username} (ID: ${ctx.from.id})`);
+  logAuth(`Bot connect received from: ${username} (ID: ${ctx.from.id})`);
 
   if (!username) {
     return ctx.reply('Please set a username in your Telegram settings to use this bot.');
   }
 
   const cleanUsername = username.toLowerCase();
-  console.log(`🤖 Bot received /start from: ${username} (clean: ${cleanUsername})`);
+  console.log(`🤖 Bot received connect from: ${username} (clean: ${cleanUsername})`);
 
   // Generate 6-digit OTP
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
@@ -183,7 +214,11 @@ bot.start((ctx) => {
   console.log(`✅ Generated OTP for ${cleanUsername}: ${otp}`);
   logAuth(`Generated OTP for ${cleanUsername}: ${otp}`);
   ctx.reply(`☕️☕️☕️\nYour verification code for Linked.Coffee is:\n\n\`${otp}\`\n\nPlease enter this code on the website.`, { parse_mode: 'Markdown' });
-});
+};
+
+// Register both /start and /connect commands
+bot.start(handleConnect);
+bot.command('connect', handleConnect);
 
 // Localized participation messages
 const PARTICIPATION_MESSAGES = {
@@ -411,6 +446,16 @@ bot.action(/^fb_rate:(.+):(\d+):(\d+)(?::([A-Za-z]{2}))?$/, async (ctx) => {
   }
 });
 
+// Register bot menu commands
+bot.telegram.setMyCommands([
+  { command: 'start', description: '🚀 Start the bot' },
+  { command: 'connect', description: '☕ Connect to Linked.Coffee' }
+]).then(() => {
+  console.log('📋 Bot menu commands registered');
+}).catch(err => {
+  console.error('Failed to set bot commands:', err);
+});
+
 bot.launch().then(() => {
   console.log('🤖 Telegram bot started');
 }).catch(err => {
@@ -430,8 +475,7 @@ app.get('/api/health', (req, res) => {
 // Step 1: Register (Create Record) or Request OTP
 app.post('/api/register', async (req, res) => {
   const { telegramUsername } = req.body;
-  console.log(`📥 /api/register called with: ${telegramUsername}`);
-  logAuth(`API Register request for: ${telegramUsername}`);
+  logConnection(`Telegram OTP request for @${telegramUsername || 'UNKNOWN'}`, 'ATTEMPT');
 
   if (!telegramUsername) {
     return res.status(400).json({ success: false, message: 'Username is required' });
@@ -467,11 +511,10 @@ app.post('/api/register', async (req, res) => {
 
         try {
           await bot.telegram.sendMessage(tgId, `☕️☕️☕️\nYour verification code for Linked.Coffee is:\n\n\`${otp}\`\n\nPlease enter this code on the website.`, { parse_mode: 'Markdown' });
-          console.log(`📤 Proactive OTP sent to ${cleanUsername} (${tgId})`);
-          logAuth(`Proactive OTP successfully sent to ${cleanUsername} (${tgId})`);
+          logConnection(`Proactive OTP successfully sent to @${cleanUsername} (${tgId})`, 'SUCCESS');
         } catch (botError) {
           console.error('❌ Failed to send proactive OTP:', botError);
-          logAuth(`Failed to send proactive OTP to ${cleanUsername}: ${botError.message}`);
+          logConnection(`Failed to send proactive OTP to @${cleanUsername}: ${botError.message}`, 'ERROR');
           // Fallback: If bot blocked or failed, treat as if no ID (ask to start bot)
           return res.json({
             success: true,
@@ -516,6 +559,7 @@ app.post('/api/register', async (req, res) => {
       hasTelegramId: false
     });
   } catch (error) {
+    logConnection(`Telegram registration error for @${cleanUsername}: ${error.message}`, 'ERROR');
     console.error('Airtable Register Error:', JSON.stringify(error, null, 2));
     if (error.message) console.error('Error Message:', error.message);
     res.status(500).json({
@@ -665,25 +709,45 @@ app.post('/api/verify', async (req, res) => {
 
 // Step 3: Update GDPR Consent
 app.post('/api/consent', async (req, res) => {
-  const { username, linkedin, name, family } = req.body;
+  const { username, id, email, linkedin, name, family } = req.body;
 
-  if (!username) {
-    return res.status(400).json({ success: false, message: 'Username is required' });
+  // We need at least ONE identifier
+  if (!username && !id && !email) {
+    return res.status(400).json({ success: false, message: 'User identifier (username, id, or email) is required' });
   }
 
-  const cleanUsername = username.replace('@', '').trim().toLowerCase();
-
   try {
+    let record;
 
-    const records = await base(process.env.AIRTABLE_MEMBERS_TABLE)
-      .select({
+    // 1. Try finding by ID (most reliable)
+    if (id) {
+      try {
+        record = await base(process.env.AIRTABLE_MEMBERS_TABLE).find(id);
+      } catch (err) {
+        console.log(`Could not find record by ID: ${id}`);
+      }
+    }
+
+    // 2. Try finding by Email
+    if (!record && email) {
+      const emailRecords = await base(process.env.AIRTABLE_MEMBERS_TABLE).select({
+        filterByFormula: `{Email} = '${email}'`,
+        maxRecords: 1
+      }).firstPage();
+      if (emailRecords.length > 0) record = emailRecords[0];
+    }
+
+    // 3. Try finding by Username
+    if (!record && username) {
+      const cleanUsername = username.replace('@', '').trim().toLowerCase();
+      const usernameRecords = await base(process.env.AIRTABLE_MEMBERS_TABLE).select({
         filterByFormula: `{Tg_Username} = '${cleanUsername}'`,
         maxRecords: 1
-      })
-      .firstPage();
+      }).firstPage();
+      if (usernameRecords.length > 0) record = usernameRecords[0];
+    }
 
-    if (records.length > 0) {
-      const record = records[0];
+    if (record) {
       const updates = {
         Consent_GDPR: true
       };
@@ -696,7 +760,8 @@ app.post('/api/consent', async (req, res) => {
       let communityName = null;
 
       console.log('--- START CONSENT UPDATE ---');
-      console.log(`User: ${cleanUsername}, CommunityCode: ${req.body.communityCode}`);
+      const identifier = username ? username : (email ? email : id);
+      console.log(`User Identifier: ${identifier}, CommunityCode: ${req.body.communityCode}`);
       console.log(`Base ID: ${process.env.AIRTABLE_BASE_ID}`);
 
       // Validate Community Code first
@@ -778,6 +843,704 @@ app.post('/api/consent', async (req, res) => {
   } catch (error) {
     console.error('Consent update error:', error);
     res.status(500).json({ success: false, message: 'Failed to update consent' });
+  }
+});
+
+// Google OAuth Authentication
+app.post('/api/auth/google', async (req, res) => {
+  const { token } = req.body;
+
+  if (!token) {
+    return res.status(400).json({ success: false, message: 'No token provided' });
+  }
+
+  try {
+    // 1. Verify Token
+    const ticket = await googleClient.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+
+    const { email, name, picture, family_name, given_name } = payload;
+
+    logConnection(`Google login attempt for ${email}`, 'ATTEMPT');
+
+    // 2. Check/Update Airtable
+    const records = await base(process.env.AIRTABLE_MEMBERS_TABLE)
+      .select({
+        filterByFormula: `{Email} = '${email}'`,
+        maxRecords: 1
+      })
+      .firstPage();
+
+    let record;
+    let isNew = false;
+    let telegramConnected = false;
+
+    if (records.length > 0) {
+      record = records[0];
+      telegramConnected = !!record.fields.Tg_ID;
+      logConnection(`Google login success: Existing user ${email} (ID: ${record.id})`, 'SUCCESS');
+
+      // Update Avatar if missing
+      if (!record.fields.Avatar && picture) {
+        await base(process.env.AIRTABLE_MEMBERS_TABLE).update([{
+          id: record.id,
+          fields: { Avatar: [{ url: picture }] }
+        }]);
+      }
+    } else {
+      // Create New Use (Gmail Only)
+      isNew = true;
+      const newFields = {
+        Email: email,
+        Name: given_name || name,
+        Family: family_name || '',
+        Status: 'EarlyBird',
+        Created_At: new Date().toISOString().split('T')[0],
+      };
+
+      const createRes = await base(process.env.AIRTABLE_MEMBERS_TABLE).create([{
+        fields: newFields
+      }]);
+      record = createRes[0];
+      logConnection(`Google login success: New user created for ${email} (ID: ${record.id})`, 'SUCCESS');
+    }
+
+    // 3. Return Session Data
+    res.json({
+      success: true,
+      user: {
+        id: record.id, // Return Airtable ID for reference
+        username: record.fields.Tg_Username || null,
+        email: email,
+        status: record.fields.Status,
+        consentGdpr: record.fields.Consent_GDPR,
+        firstName: record.fields.Name || given_name,
+        lastName: record.fields.Family || family_name,
+        telegramConnected: telegramConnected,
+        tgId: record.fields.Tg_ID,
+        linkedAccounts: ['google']
+          .concat(telegramConnected ? ['telegram'] : [])
+          .concat(record.fields.Linkedin_ID ? ['linkedin'] : [])
+          .filter((v, i, a) => a.indexOf(v) === i)
+      },
+      isNew,
+      message: telegramConnected ? 'Login successful' : 'Please connect your Telegram account'
+    });
+
+  } catch (error) {
+    logConnection(`Google Auth Error for token: ${error.message}`, 'ERROR');
+    console.error('Google Auth Error:', error);
+    res.status(401).json({ success: false, message: 'Invalid Token' });
+  }
+});
+
+// LinkedIn Auth URL
+app.get('/api/auth/linkedin/url', (req, res) => {
+  const scope = 'openid profile email';
+  const state = Math.random().toString(36).substring(7);
+  // Default to env or prod, but allow override from query for localhost dev
+  const redirectUri = req.query.redirectUri || process.env.LINKEDIN_REDIRECT_URI || 'https://linked.coffee/auth/linkedin/callback';
+
+  const url = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${process.env.LINKEDIN_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}&scope=${encodeURIComponent(scope)}`;
+
+  res.json({ url });
+});
+
+// LinkedIn Auth Callback
+app.post('/api/auth/linkedin', async (req, res) => {
+  const { code, redirectUri: clientRedirectUri, currentUserId } = req.body;
+  if (!code) return res.status(400).json({ success: false, message: 'No code provided' });
+
+  try {
+    // Must match the one used in the URL generation exactly
+    const redirectUri = clientRedirectUri || process.env.LINKEDIN_REDIRECT_URI || 'https://linked.coffee/auth/linkedin/callback';
+
+    // 1. Exchange Code for Token
+    const tokenResponse = await axios.post('https://www.linkedin.com/oauth/v2/accessToken', null, {
+      params: {
+        grant_type: 'authorization_code',
+        code,
+        redirect_uri: redirectUri,
+        client_id: process.env.LINKEDIN_CLIENT_ID,
+        client_secret: process.env.LINKEDIN_CLIENT_SECRET
+      },
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+    });
+
+    const { access_token } = tokenResponse.data;
+
+    // 2. Get User Info
+    const userInfoResponse = await axios.get('https://api.linkedin.com/v2/userinfo', {
+      headers: { Authorization: `Bearer ${access_token}` }
+    });
+
+    const { sub, email, name, given_name, family_name, picture } = userInfoResponse.data;
+
+    logConnection(`LinkedIn login attempt for ${email} (sub: ${sub})`, 'ATTEMPT');
+
+    // 3. Check/Update Airtable
+    // Priority 1: Match by Linkedin_ID
+    let records = await base(process.env.AIRTABLE_MEMBERS_TABLE).select({
+      filterByFormula: `{Linkedin_ID} = '${sub}'`,
+      maxRecords: 1
+    }).firstPage();
+
+    let record;
+    let isNew = false;
+    let telegramConnected = false;
+
+    if (records.length > 0) {
+      record = records[0];
+      telegramConnected = !!record.fields.Tg_ID;
+      logConnection(`LinkedIn login success: Found via Linkedin_ID ${email}`, 'SUCCESS');
+
+      // Update Avatar if missing and provided
+      if (!record.fields.Avatar && picture) {
+        await base(process.env.AIRTABLE_MEMBERS_TABLE).update([{
+          id: record.id,
+          fields: { Avatar: [{ url: picture }] }
+        }]);
+      }
+    } else {
+      // Priority 2: Match by Email
+      const emailRecords = await base(process.env.AIRTABLE_MEMBERS_TABLE).select({
+        filterByFormula: `{Email} = '${email}'`,
+        maxRecords: 1
+      }).firstPage();
+
+      if (currentUserId) {
+        // EXPLICIT LINKING (User is already logged in)
+        // If currentUserId is provided, we prefer linking to THAT user, 
+        // unless the LinkedIn account is already claimed by someone else (handled by Priority 1).
+
+        // Safety: If emailRecords found someone ELSE, we should warn or merge.
+        // But for "Connect LinkedIn", we usually just want to attach it to the current user
+        // validating that the current user exists.
+        try {
+          record = await base(process.env.AIRTABLE_MEMBERS_TABLE).find(currentUserId);
+          if (record) {
+            telegramConnected = !!record.fields.Tg_ID;
+
+            // If the user has a DIFFERENT email than LinkedIn, that's fine for linking ID,
+            // but we might want to store the LinkedIn email somewhere? 
+            // For now, just Linking the ID is sufficient for Auth.
+            // We update the Linkedin_ID field.
+            await base(process.env.AIRTABLE_MEMBERS_TABLE).update([{
+              id: record.id,
+              fields: { Linkedin_ID: sub }
+            }]);
+            logConnection(`LinkedIn login: Explicitly linked to user ${currentUserId} (${email})`, 'SUCCESS');
+          }
+        } catch (e) {
+          console.error('Explicit Link Error', e);
+        }
+      }
+
+      if (!record && emailRecords.length > 0) {
+        // Link Account by Email (Implicit)
+        record = emailRecords[0];
+        telegramConnected = !!record.fields.Tg_ID;
+        await base(process.env.AIRTABLE_MEMBERS_TABLE).update([{
+          id: record.id,
+          fields: { Linkedin_ID: sub }
+        }]);
+        logConnection(`LinkedIn login: Linked to existing email ${email}`, 'SUCCESS');
+      }
+
+      if (!record) {
+        // Create New
+        isNew = true;
+        const newFields = {
+          Email: email,
+          Name: given_name || name,
+          Family: family_name || '',
+          Status: 'EarlyBird',
+          Created_At: new Date().toISOString().split('T')[0],
+          Linkedin_ID: sub
+        };
+        // Add avatar if available
+        if (picture) {
+          newFields.Avatar = [{ url: picture }];
+        }
+
+        const createRes = await base(process.env.AIRTABLE_MEMBERS_TABLE).create([{ fields: newFields }]);
+        record = createRes[0];
+        logConnection(`LinkedIn login: New user created ${email}`, 'SUCCESS');
+      }
+    }
+
+    // 4. Return Session
+    res.json({
+      success: true,
+      user: {
+        id: record.id,
+        username: record.fields.Tg_Username || null,
+        email: email,
+        status: record.fields.Status,
+        consentGdpr: record.fields.Consent_GDPR,
+        firstName: record.fields.Name || given_name,
+        lastName: record.fields.Family || family_name,
+        telegramConnected: telegramConnected,
+        tgId: record.fields.Tg_ID,
+        tgId: record.fields.Tg_ID,
+        linkedAccounts: ['linkedin'].concat(telegramConnected ? ['telegram'] : [])
+          .concat(record.fields.Linkedin_ID ? ['linkedin'] : [])
+          .filter((v, i, a) => a.indexOf(v) === i) // unique
+      },
+      isNew,
+      message: telegramConnected ? 'Login successful' : 'Please connect your Telegram account'
+    });
+
+  } catch (error) {
+    if (error.response) {
+      console.error('LinkedIn Auth Error Data:', JSON.stringify(error.response.data, null, 2));
+    } else {
+      console.error('LinkedIn Auth Error Message:', error.message);
+    }
+    logConnection(`LinkedIn Auth Error: ${error.message}`, 'ERROR');
+    res.status(401).json({ success: false, message: 'LinkedIn Authentication Failed' });
+  }
+});
+
+// Unlink LinkedIn Account
+app.post('/api/unlink-linkedin-account', async (req, res) => {
+  const { id } = req.body;
+  if (!id) return res.status(400).json({ success: false, message: 'User ID required' });
+
+  try {
+    const record = await base(process.env.AIRTABLE_MEMBERS_TABLE).find(id);
+    if (!record) return res.status(404).json({ success: false, message: 'User not found' });
+
+    // Safety Check: Must have email or telegram
+    if (!record.fields.Email && !record.fields.Tg_ID) {
+      return res.status(400).json({ success: false, message: 'Cannot unlink your only login method' });
+    }
+
+    await base(process.env.AIRTABLE_MEMBERS_TABLE).update([{
+      id: record.id,
+      fields: { Linkedin_ID: null }
+    }]);
+
+    logConnection(`Unlinked LinkedIn for user ${id}`, 'SUCCESS');
+    res.json({ success: true, message: 'LinkedIn account unlinked' });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Failed to unlink' });
+  }
+});
+
+// Link Google Account to Existing Telegram Account
+app.post('/api/link-google-account', async (req, res) => {
+  const { token, username } = req.body;
+
+  if (!token || !username) {
+    return res.status(400).json({ success: false, message: 'Token and username are required' });
+  }
+
+  try {
+    // 1. Verify Google Token
+    const ticket = await googleClient.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    const { email } = payload;
+
+    logConnection(`Attempt to link Google account ${email} to Telegram @${username}`, 'ATTEMPT');
+
+    // 2. Find the current user by Telegram username
+    const currentUserRecords = await base(process.env.AIRTABLE_MEMBERS_TABLE)
+      .select({
+        filterByFormula: `{Tg_Username} = '${username}'`,
+        maxRecords: 1
+      })
+      .firstPage();
+
+    if (currentUserRecords.length === 0) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const currentUser = currentUserRecords[0];
+
+    // 3. Check if this user already has a different email linked
+    if (currentUser.fields.Email && currentUser.fields.Email !== email) {
+      return res.status(400).json({
+        success: false,
+        message: 'You already have a different Google account linked. Please unlink it first.'
+      });
+    }
+
+    // 4. Check if this email is already used by another account
+    const emailCheckRecords = await base(process.env.AIRTABLE_MEMBERS_TABLE)
+      .select({
+        filterByFormula: `{Email} = '${email}'`,
+        maxRecords: 2
+      })
+      .firstPage();
+
+    const otherUserWithEmail = emailCheckRecords.find(record => record.id !== currentUser.id);
+
+    if (otherUserWithEmail) {
+      return res.status(400).json({
+        success: false,
+        message: 'This email is already linked to another account'
+      });
+    }
+
+    // 5. Update the user's Email field
+    await base(process.env.AIRTABLE_MEMBERS_TABLE).update([{
+      id: currentUser.id,
+      fields: { Email: email }
+    }]);
+
+    logConnection(`Successfully linked ${email} to Telegram @${username} (ID: ${currentUser.id})`, 'SUCCESS');
+
+    // 6. Return success with updated user data
+    res.json({
+      success: true,
+      message: 'Google account linked successfully',
+      user: {
+        username: currentUser.fields.Tg_Username,
+        email: email,
+        linkedAccounts: ['telegram', 'google'],
+        telegramConnected: true,
+        tgId: currentUser.fields.Tg_ID
+      }
+    });
+
+  } catch (error) {
+    logConnection(`Failed to link Google account ${email || ''} to @${username}: ${error.message}`, 'ERROR');
+    console.error('Link Google Account Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to link Google account' });
+  }
+});
+
+// Unlink Google Account from Telegram Account
+app.post('/api/unlink-google-account', async (req, res) => {
+  const { username } = req.body;
+
+  logConnection(`Attempt to unlink Google account from Telegram @${username || 'UNKNOWN'}`, 'ATTEMPT');
+
+  if (!username) {
+    return res.status(400).json({ success: false, message: 'Username is required' });
+  }
+
+  try {
+    // 1. Find the user by Telegram username
+    const userRecords = await base(process.env.AIRTABLE_MEMBERS_TABLE)
+      .select({
+        filterByFormula: `{Tg_Username} = '${username}'`,
+        maxRecords: 1
+      })
+      .firstPage();
+
+    if (userRecords.length === 0) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const user = userRecords[0];
+
+    // 2. Verify user has Telegram auth (don't allow unlinking if it's their only method)
+    if (!user.fields.Tg_ID) {
+      logConnection(`Failed to unlink Google for @${username}: Only available auth method`, 'WARN');
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot unlink your only authentication method'
+      });
+    }
+
+    // 3. Check if user even has an email linked
+    if (!user.fields.Email) {
+      return res.status(400).json({
+        success: false,
+        message: 'No Google account is linked to this profile'
+      });
+    }
+
+    // 4. Clear the Email field
+    await base(process.env.AIRTABLE_MEMBERS_TABLE).update([{
+      id: user.id,
+      fields: { Email: '' }
+    }]);
+
+    logConnection(`Successfully unlinked Google account from Telegram @${username} (ID: ${user.id})`, 'SUCCESS');
+
+    // 5. Return success
+    res.json({
+      success: true,
+      message: 'Google account unlinked successfully'
+    });
+
+  } catch (error) {
+    logConnection(`Error unlinking Google for @${username}: ${error.message}`, 'ERROR');
+    console.error('Unlink Google Account Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to unlink Google account' });
+  }
+});
+
+// Connect Telegram to (Gmail) Account
+// Handles Linking AND Merging
+app.post('/api/connect-telegram', async (req, res) => {
+  const { telegramUsername, otp, currentEmail, confirmMerge } = req.body;
+  logConnection(`Attempt to connect @${telegramUsername} to Google account ${currentEmail}${confirmMerge ? ' (MERGE CONFIRMATION)' : ''}`, 'ATTEMPT');
+
+  if (!telegramUsername || !currentEmail) {
+    return res.status(400).json({ success: false, message: 'Missing fields' });
+  }
+
+  const cleanUsername = telegramUsername.replace('@', '').trim().toLowerCase();
+  const cleanOtp = otp ? otp.replace(/\s+/g, '') : '';
+
+  // 1. Verify OTP (skip if this is a merge confirmation - OTP was already verified)
+  let telegramId = 0;
+  let firstName = '';
+  let lastName = '';
+
+  if (confirmMerge) {
+    // Skip OTP verification for merge confirmation - already verified in initial request
+    console.log('🔀 Merge confirmation - skipping OTP verification');
+  } else if (cleanOtp === '000000' && process.env.ENABLE_MAGIC_OTP === 'true') {
+    console.log('✨ Magic OTP used.');
+    // If magic OTP, we can't get ID from valid store... 
+    // We'll trust the user provided username exists? 
+    // Actually, this is risky for magic OTP in this flow because we rely on ID.
+    // For now, let's assume we skip ID check or fetch it differently for test.
+  } else {
+    if (!otp) {
+      return res.status(400).json({ success: false, message: 'OTP is required' });
+    }
+    const storedData = otpStore.get(cleanUsername);
+    if (!storedData) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired code' });
+    }
+    if (storedData.code !== cleanOtp) {
+      return res.status(400).json({ success: false, message: 'Incorrect code' });
+    }
+    telegramId = parseInt(storedData.telegramId, 10);
+    firstName = storedData.firstName;
+    lastName = storedData.lastName;
+    otpStore.delete(cleanUsername); // Burn OTP
+    logConnection(`OTP verified successfully for @${cleanUsername}`, 'SUCCESS');
+  }
+
+  try {
+    // 2. Find "Target" (Existing Telegram User)
+    // If the user already used the bot, they might have a record.
+    const targetRecords = await base(process.env.AIRTABLE_MEMBERS_TABLE)
+      .select({
+        filterByFormula: `{Tg_Username} = '${cleanUsername}'`,
+        maxRecords: 1
+      })
+      .firstPage();
+
+    // 3. Find "Source" (Current Gmail User)
+    const sourceRecords = await base(process.env.AIRTABLE_MEMBERS_TABLE)
+      .select({
+        filterByFormula: `{Email} = '${currentEmail}'`,
+        maxRecords: 1
+      })
+      .firstPage();
+
+    if (sourceRecords.length === 0) {
+      return res.status(404).json({ success: false, message: 'Current session invalid' });
+    }
+    const sourceRecord = sourceRecords[0];
+
+    // SCENARIO A: Telegram Profile Exists -> MERGE (with confirmation)
+    if (targetRecords.length > 0) {
+      const targetRecord = targetRecords[0];
+
+      // Safety: Are they the same record?
+      if (targetRecord.id === sourceRecord.id) {
+        return res.json({
+          success: true,
+          message: 'Already connected!',
+          user: {
+            username: cleanUsername,
+            email: currentEmail,
+            telegramConnected: true,
+            tgId: telegramId
+          }
+        });
+      }
+
+      // Check if this is a confirmation request
+      const { confirmMerge } = req.body;
+
+      if (!confirmMerge) {
+        // Return merge required response - ask frontend to confirm
+        logConnection(`Telegram @${cleanUsername} already exists. Merge confirmation requested for ${currentEmail}`, 'WARN');
+        return res.json({
+          success: false,
+          requiresMerge: true,
+          message: 'User with this Telegram already exists',
+          existingProfile: {
+            id: targetRecord.id,
+            name: targetRecord.fields.Name || '',
+            family: targetRecord.fields.Family || '',
+            username: targetRecord.fields.Tg_Username
+          }
+        });
+      }
+
+      // User confirmed merge - proceed
+      console.log(`🔀 MERGE CONFIRMED: Keep ${targetRecord.id}, Delete ${sourceRecord.id}`);
+
+      // Update Target with Source's Email
+      const updates = {
+        Email: currentEmail
+      };
+      // Preserve Name/Family if Target missing them
+      if (!targetRecord.fields.Name && sourceRecord.fields.Name) updates.Name = sourceRecord.fields.Name;
+      if (!targetRecord.fields.Family && sourceRecord.fields.Family) updates.Family = sourceRecord.fields.Family;
+      // Preserve Avatar if Target missing
+      if ((!targetRecord.fields.Avatar || targetRecord.fields.Avatar.length === 0) && sourceRecord.fields.Avatar) {
+        updates.Avatar = sourceRecord.fields.Avatar;
+      }
+      // Ensure ID is set
+      if (!targetRecord.fields.Tg_ID && telegramId) updates.Tg_ID = telegramId;
+
+      // Execute Update
+      await base(process.env.AIRTABLE_MEMBERS_TABLE).update([{
+        id: targetRecord.id,
+        fields: updates
+      }]);
+
+      // Execute Delete (Source)
+      await base(process.env.AIRTABLE_MEMBERS_TABLE).destroy([sourceRecord.id]);
+
+      logConnection(`Accounts MERGED: Record ${sourceRecord.id} (${currentEmail}) deleted. Profile moved to existing Telegram @${cleanUsername} (Record ${targetRecord.id})`, 'SUCCESS');
+
+      // Return the "Survivor" (Target) as the new user session
+      return res.json({
+        success: true,
+        message: 'Accounts merged successfully',
+        merged: true,
+        user: {
+          id: targetRecord.id,
+          username: targetRecord.fields.Tg_Username,
+          email: currentEmail,
+          status: targetRecord.fields.Status,
+          consentGdpr: targetRecord.fields.Consent_GDPR,
+          firstName: updates.Name || targetRecord.fields.Name,
+          lastName: updates.Family || targetRecord.fields.Family,
+          telegramConnected: true,
+          tgId: updates.Tg_ID || targetRecord.fields.Tg_ID
+        }
+      });
+
+    } else {
+      // SCENARIO B: Telegram Profile Does Not Exist -> LINK
+      // Just update the current record (Source)
+      console.log(`🔗 LINKING: Adding Telegram info to ${sourceRecord.id}`);
+
+      const updates = {
+        Tg_Username: cleanUsername,
+        Tg_ID: telegramId
+      };
+
+      // If we have first/last name from Telegram and none in record, update
+      if (firstName && !sourceRecord.fields.Name) updates.Name = firstName;
+      if (lastName && !sourceRecord.fields.Family) updates.Family = lastName;
+
+      await base(process.env.AIRTABLE_MEMBERS_TABLE).update([{
+        id: sourceRecord.id,
+        fields: updates
+      }]);
+
+      logConnection(`Successfully linked Telegram @${cleanUsername} to Google account ${currentEmail} (ID: ${sourceRecord.id})`, 'SUCCESS');
+
+      return res.json({
+        success: true,
+        message: 'Telegram connected successfully',
+        user: {
+          username: cleanUsername,
+          email: currentEmail,
+          status: sourceRecord.fields.Status,
+          firstName: updates.Name || sourceRecord.fields.Name,
+          lastName: updates.Family || sourceRecord.fields.Family,
+          telegramConnected: true,
+          tgId: telegramId
+        }
+      });
+    }
+
+  } catch (error) {
+    logConnection(`Connect Telegram Error for @${telegramUsername}: ${error.message}`, 'ERROR');
+    console.error('Connect Telegram Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to connect account: ' + error.message });
+  }
+});
+
+// Disconnect Telegram from account
+app.post('/api/disconnect-telegram', async (req, res) => {
+  const { id, email } = req.body;
+
+  logConnection(`Attempt to disconnect Telegram for user ${email || id}`, 'ATTEMPT');
+
+  // Need at least one identifier
+  if (!id && !email) {
+    return res.status(400).json({ success: false, message: 'User identifier required' });
+  }
+
+  try {
+    let record;
+
+    // Find user by ID first
+    if (id) {
+      try {
+        record = await base(process.env.AIRTABLE_MEMBERS_TABLE).find(id);
+      } catch (err) {
+        console.log(`Could not find record by ID: ${id}`);
+      }
+    }
+
+    // Try finding by email
+    if (!record && email) {
+      const records = await base(process.env.AIRTABLE_MEMBERS_TABLE).select({
+        filterByFormula: `{Email} = '${email}'`,
+        maxRecords: 1
+      }).firstPage();
+      if (records.length > 0) record = records[0];
+    }
+
+    if (!record) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // Verify user has email (required to disconnect Telegram)
+    if (!record.fields.Email) {
+      logConnection(`Failed to disconnect Telegram for ${email || id}: No email on file`, 'WARN');
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot disconnect Telegram: No email on file. Please connect Google first.'
+      });
+    }
+
+    // Clear Telegram fields
+    await base(process.env.AIRTABLE_MEMBERS_TABLE).update([{
+      id: record.id,
+      fields: {
+        Tg_Username: null,
+        Tg_ID: null
+      }
+    }]);
+
+    logConnection(`Successfully disconnected Telegram @${record.fields.Tg_Username} from ${email || record.fields.Email}`, 'SUCCESS');
+
+    res.json({
+      success: true,
+      message: 'Telegram disconnected successfully'
+    });
+
+  } catch (error) {
+    logConnection(`Error disconnecting Telegram for ${email || id}: ${error.message}`, 'ERROR');
+    console.error('Disconnect Telegram Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to disconnect Telegram' });
   }
 });
 
@@ -1428,40 +2191,54 @@ app.get('/api/view/:token', async (req, res) => {
 // Step 4: Get User Profile
 // Step 4: Get User Profile
 app.get('/api/profile', async (req, res) => {
-  const { username, requester } = req.query;
+  const { username, requester, id, email } = req.query;
   const requestId = Date.now();
   console.time(`Profile_Req_${requestId}`);
 
-  if (!username || !requester) {
-    return res.status(400).json({ success: false, message: 'Username and requester are required' });
+  // We need at least one identifier
+  if (!username && !id && !email) {
+    return res.status(400).json({ success: false, message: 'Username, ID, or Email is required' });
   }
 
-  const cleanUsername = username.replace('@', '').trim().toLowerCase();
-  const cleanRequester = requester.replace('@', '').trim().toLowerCase();
+  const cleanUsername = username ? username.replace('@', '').trim().toLowerCase() : null;
+  const cleanRequester = requester ? requester.replace('@', '').trim().toLowerCase() : null;
 
-  logDebug(`GET /api/profile request for ${cleanUsername} by ${cleanRequester}`);
+  logDebug(`GET /api/profile request for ${cleanUsername || id || email} by ${cleanRequester || 'SELF'}`);
 
   try {
     // --- PHASE 1: Fetch Core Data in Parallel ---
     console.time(`Phase1_Core_${requestId}`);
 
     // 1. Fetch Target User
-    const pTargetUser = base(process.env.AIRTABLE_MEMBERS_TABLE)
-      .select({ filterByFormula: `{Tg_Username} = '${cleanUsername}'`, maxRecords: 1 })
-      .firstPage();
+    let pTargetUser;
+    if (id) {
+      pTargetUser = base(process.env.AIRTABLE_MEMBERS_TABLE).find(id)
+        .then(record => [record]) // Wrap in array to match .select() output
+        .catch(err => []);
+    } else if (cleanUsername) {
+      pTargetUser = base(process.env.AIRTABLE_MEMBERS_TABLE)
+        .select({ filterByFormula: `{Tg_Username} = '${cleanUsername}'`, maxRecords: 1 })
+        .firstPage();
+    } else if (email) {
+      pTargetUser = base(process.env.AIRTABLE_MEMBERS_TABLE)
+        .select({ filterByFormula: `{Email} = '${email}'`, maxRecords: 1 })
+        .firstPage();
+    } else {
+      // Should not happen
+      pTargetUser = Promise.resolve([]);
+    }
 
-    // 2. Fetch Requester (if different, for Admin check)
+    // 2. Fetch Requester (if different and present, for Admin check)
     let pRequesterUser = Promise.resolve([]);
-    if (cleanUsername !== cleanRequester) {
+    if (cleanRequester && cleanUsername && cleanUsername !== cleanRequester) {
       pRequesterUser = base(process.env.AIRTABLE_MEMBERS_TABLE)
         .select({ filterByFormula: `{Tg_Username} = '${cleanRequester}'`, maxRecords: 1 })
         .firstPage();
     }
 
     // 3. Fetch Access Validation Match (if not self view)
-    // OPTIMIZED: Use direct lookup checks instead of expensive FIND/ARRAYJOIN
     let pAccessMatch = Promise.resolve([]);
-    if (cleanUsername !== cleanRequester) {
+    if (cleanRequester && cleanUsername && cleanUsername !== cleanRequester) {
       pAccessMatch = base('tblx2OEN5sSR1xFI2').select({
         filterByFormula: `OR(
               AND({Tg_Username (from Member1)} = '${cleanRequester}', {Tg_Username (from Member2)} = '${cleanUsername}'),
@@ -1471,25 +2248,19 @@ app.get('/api/profile', async (req, res) => {
       }).firstPage();
     }
 
-    // 4. Fetch Latest Match for Target User (to display "Current Match")
-    // OPTIMIZED: Add date filter to reduce scan
-    const d = new Date();
-    const day = d.getDay();
-    const diff = d.getDate() - day + (day == 0 ? -6 : 1);
-    const monday = new Date(d.setDate(diff));
-    const currentWeekStart = monday.toISOString().split('T')[0];
-
+    // 4. Fetch Latest Match (Deferred if no username yet)
     // We only care about matches from current week or older? 
     // Actually we just want the *latest* match.
-    // But adding a date filter helps if we only care about recent history.
-    // Let's at least filter for matches since 2024 to avoid scanning ancient history
     const recentDate = '2024-01-01';
+    let pLatestMatch = Promise.resolve([]);
 
-    const pLatestMatch = base('tblx2OEN5sSR1xFI2').select({
-      filterByFormula: `AND(IS_AFTER({Week_Start}, '${recentDate}'), OR({Tg_Username (from Member1)} = '${cleanUsername}', {Tg_Username (from Member2)} = '${cleanUsername}'))`,
-      sort: [{ field: 'Week_Start', direction: 'desc' }],
-      maxRecords: 1
-    }).firstPage();
+    if (cleanUsername) {
+      pLatestMatch = base('tblx2OEN5sSR1xFI2').select({
+        filterByFormula: `AND(IS_AFTER({Week_Start}, '${recentDate}'), OR({Tg_Username (from Member1)} = '${cleanUsername}', {Tg_Username (from Member2)} = '${cleanUsername}'))`,
+        sort: [{ field: 'Week_Start', direction: 'desc' }],
+        maxRecords: 1
+      }).firstPage();
+    }
 
     const [targetUserRecords, requesterRecords, accessMatchRecords, latestMatchRecords] =
       await Promise.all([pTargetUser, pRequesterUser, pAccessMatch, pLatestMatch]);
@@ -1552,7 +2323,12 @@ app.get('/api/profile', async (req, res) => {
       const day = d.getDay();
       const diff = d.getDate() - day + (day == 0 ? -6 : 1);
       const monday = new Date(d.setDate(diff));
-      const currentWeekStart = monday.toISOString().split('T')[0];
+
+      // Use local date components to avoid UTC shifts
+      const yyyy = monday.getFullYear();
+      const mm = String(monday.getMonth() + 1).padStart(2, '0');
+      const dd = String(monday.getDate()).padStart(2, '0');
+      const currentWeekStart = `${yyyy}-${mm}-${dd}`;
 
       // Only show if the match is for the current week
       if (match.fields.Week_Start === currentWeekStart) {
@@ -1670,6 +2446,7 @@ app.get('/api/profile', async (req, res) => {
     const profile = {
       name: fields.Name || '',
       family: fields.Family || '',
+      email: fields.Email || null,
       country: country,
       city: city,
       timezone: fields.Time_Zone || 'UTC (UTC+0)',
@@ -1704,26 +2481,49 @@ app.get('/api/profile', async (req, res) => {
 
 // Step 5: Update User Profile
 app.put('/api/profile', async (req, res) => {
-  const { username, profile } = req.body;
-  logDebug(`PUT /api/profile request for ${username}. Data: Name=${profile?.name}, Family=${profile?.family}`);
+  const { username, id, email, profile } = req.body;
 
-  if (!username) {
-    return res.status(400).json({ success: false, message: 'Username is required' });
+  // We need at least one identifier
+  if (!username && !id && !email) {
+    return res.status(400).json({ success: false, message: 'User identifier (username, id, or email) is required' });
   }
 
-  const cleanUsername = username.replace('@', '').trim().toLowerCase();
+  const cleanUsername = username ? username.replace('@', '').trim().toLowerCase() : null;
+  logDebug(`PUT /api/profile request for ${cleanUsername || id || email}. Data: Name=${profile?.name}`);
 
   try {
-    const records = await base(process.env.AIRTABLE_MEMBERS_TABLE)
-      .select({
-        filterByFormula: `{Tg_Username} = '${cleanUsername}'`,
+    let record;
+
+    // 1. Try finding by ID
+    if (id) {
+      try {
+        record = await base(process.env.AIRTABLE_MEMBERS_TABLE).find(id);
+      } catch (err) {
+        console.log(`Could not find record by ID: ${id} for update`);
+      }
+    }
+
+    // 2. Try finding by Email
+    if (!record && email) {
+      const emailRecords = await base(process.env.AIRTABLE_MEMBERS_TABLE).select({
+        filterByFormula: `{Email} = '${email}'`,
         maxRecords: 1
-      })
-      .firstPage();
+      }).firstPage();
+      if (emailRecords.length > 0) record = emailRecords[0];
+    }
 
-    if (records.length > 0) {
-      const record = records[0];
+    // 3. Try finding by Username
+    if (!record && cleanUsername) {
+      const records = await base(process.env.AIRTABLE_MEMBERS_TABLE)
+        .select({
+          filterByFormula: `{Tg_Username} = '${cleanUsername}'`,
+          maxRecords: 1
+        })
+        .firstPage();
+      if (records.length > 0) record = records[0];
+    }
 
+    if (record) {
       // Prepare fields for Airtable
       const updateFields = {
         Name: profile.name,
