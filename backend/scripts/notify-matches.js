@@ -53,7 +53,7 @@ if (!process.env.AIRTABLE_API_KEY || !process.env.AIRTABLE_BASE_ID || !BOT_TOKEN
 const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY }).base(process.env.AIRTABLE_BASE_ID);
 const bot = new Telegraf(BOT_TOKEN);
 
-function getMessage(lang, memberName, partnerName, partnerUsername, introData, isTest = false, realRecipientName = '', viewToken = null) {
+function getMessage(lang, memberName, partnerName, partnerUsername, introData, isTest = false, realRecipientName = '', viewToken = null, partnerLinkedin = null) {
     const isRu = lang === 'Ru';
 
     // Use tokenized link if available, otherwise fall back to profile link
@@ -67,6 +67,15 @@ function getMessage(lang, memberName, partnerName, partnerUsername, introData, i
             ? `Ссылка: https://linked.coffee/profile/${partnerUsername.replace('@', '')}`
             : `Link: https://linked.coffee/profile/${partnerUsername.replace('@', '')}`;
     }
+
+    // Add LinkedIn link if available
+    let linkedinText = '';
+    if (partnerLinkedin) {
+        linkedinText = `LinkedIn: ${partnerLinkedin}`;
+    }
+
+    // Combine links
+    const linksBlock = [partnerLink, linkedinText].filter(Boolean).join('\n');
 
     let introText = '';
     if (introData) {
@@ -92,7 +101,7 @@ function getMessage(lang, memberName, partnerName, partnerUsername, introData, i
 🎉 Твой partner for Linked Coffee на эту неделю!
 
 Твой собеседник: ${partnerName} ${partnerUsername}
-${partnerLink}
+${linksBlock}
 ${introText}
 Договоритесь о встрече и выпейте кофе (в Zoom, Google Meet или лично).
 В личном кабинете (https://linked.coffee) можно узнать больше деталей о собеседнике.
@@ -105,7 +114,7 @@ ${introText}
 🎉 You've got a Linked Coffee partner for this week!
 
 Your partner: ${partnerName} ${partnerUsername}
-${partnerLink}
+${linksBlock}
 ${introText}
 Set up a meeting and drink some Zoom or Google-Meet coffee together.
 On the dashboard (https://linked.coffee) you can find some details about your partner.
@@ -141,7 +150,9 @@ async function notifyMember(member, partner, introField, viewToken = null, match
         return false;
     }
 
-    const message = getMessage(lang, memberName, partnerName, partnerUsername, introField, IS_TEST_MODE, memberName, viewToken);
+    const partnerLinkedin = partner.fields.Linkedin || null;
+
+    const message = getMessage(lang, memberName, partnerName, partnerUsername, introField, IS_TEST_MODE, memberName, viewToken, partnerLinkedin);
 
     // Determine final recipient
     const targetChatId = IS_TEST_MODE ? ADMIN_CHAT_ID : recipientId;
