@@ -142,7 +142,9 @@ async function run() {
                     scriptName: 'weekend-invitation-all',
                     memberId: record.id,
                     status: 'Dry Run',
-                    content: message
+                    content: message,
+                    tgUsername: record.fields.Tg_Username,
+                    tgId: userTgId
                 });
                 processedCount++;
                 sentCount++;
@@ -155,7 +157,9 @@ async function run() {
                     scriptName: 'weekend-invitation-all',
                     memberId: record.id,
                     status: 'Sent',
-                    content: message
+                    content: message,
+                    tgUsername: record.fields.Tg_Username,
+                    tgId: userTgId
                 });
 
                 // Mark as sent - ONLY if NOT IN TEST MODE (or maybe we want to test status update too? User said "Rebuild --test... sends to Admin". Usually updating status invalidates real user data).
@@ -183,7 +187,9 @@ async function run() {
                     memberId: record.id,
                     status: 'Failed',
                     content: message,
-                    error: err.message
+                    error: err.message,
+                    tgUsername: record.fields.Tg_Username,
+                    tgId: userTgId
                 });
                 skippedCount++;
             }

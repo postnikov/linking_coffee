@@ -176,12 +176,12 @@ async function sendFeedbackRequests() {
 
             // Send to Member 1 if Feedback1 is empty
             if (isF1Empty) {
-                await sendToMember(matchId, 1, m1TgId, m1Id, m2Username, m2Name, m1Lang);
+                await sendToMember(matchId, 1, m1TgId, m1Id, m1Username, m2Username, m2Name, m1Lang);
             }
 
             // Send to Member 2 if Feedback2 is empty
             if (isF2Empty) {
-                await sendToMember(matchId, 2, m2TgId, m2Id, m1Username, m1Name, m2Lang);
+                await sendToMember(matchId, 2, m2TgId, m2Id, m2Username, m1Username, m1Name, m2Lang);
             }
 
             // Mark checked
@@ -215,7 +215,7 @@ async function markWeekendChecked(matchId) {
     }
 }
 
-async function sendToMember(matchId, role, memberTgId, memberId, partnerUsername, partnerName, language = 'En') {
+async function sendToMember(matchId, role, memberTgId, memberId, memberUsername, partnerUsername, partnerName, language = 'En') {
     if (!memberTgId) {
         console.log(`No Telegram ID for Member ${role} in match ${matchId}. Skipping.`);
         return;
@@ -258,7 +258,9 @@ ${t.question(partnerName, cleanPartnerHandle, partnerLink)}`;
             memberId: memberId,
             status: 'Dry Run',
             content: message,
-            matchId: matchId
+            matchId: matchId,
+            tgUsername: memberUsername,
+            tgId: memberTgId
         });
         return;
     }
@@ -270,7 +272,9 @@ ${t.question(partnerName, cleanPartnerHandle, partnerLink)}`;
             memberId: memberId,
             status: 'Sent',
             content: message,
-            matchId: matchId
+            matchId: matchId,
+            tgUsername: memberUsername,
+            tgId: memberTgId
         });
         // Delay to avoid hitting rate limits
         await new Promise(resolve => setTimeout(resolve, 100));
@@ -281,7 +285,9 @@ ${t.question(partnerName, cleanPartnerHandle, partnerLink)}`;
             status: 'Failed',
             content: message,
             matchId: matchId,
-            error: error.message
+            error: error.message,
+            tgUsername: memberUsername,
+            tgId: memberTgId
         });
     }
 }

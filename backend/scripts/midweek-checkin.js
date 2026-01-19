@@ -146,10 +146,10 @@ async function sendFeedbackRequests() {
             const m2Lang = await getMemberLanguage(m2Id);
 
             // Send to Member 1
-            await sendToMember(matchId, 1, m1TgId, m1Id, m2Username, m1Lang);
+            await sendToMember(matchId, 1, m1TgId, m1Id, m1Username, m2Username, m1Lang);
 
             // Send to Member 2
-            await sendToMember(matchId, 2, m2TgId, m2Id, m1Username, m2Lang);
+            await sendToMember(matchId, 2, m2TgId, m2Id, m2Username, m1Username, m2Lang);
 
             // Update match record to mark as checked in
             // Logic: Not Dry Run AND Not Test Mode (to preserve real state)
@@ -179,7 +179,7 @@ async function sendFeedbackRequests() {
     }
 }
 
-async function sendToMember(matchId, role, memberTgId, memberId, partnerUsername, language = 'En') {
+async function sendToMember(matchId, role, memberTgId, memberId, memberUsername, partnerUsername, language = 'En') {
     if (!memberTgId) {
         console.log(`No Telegram ID for Member ${role} in match ${matchId}. Skipping.`);
         return;
@@ -220,7 +220,9 @@ ${t.body(partnerLink)}`;
             memberId: memberId,
             status: 'Dry Run',
             content: message,
-            matchId: matchId
+            matchId: matchId,
+            tgUsername: memberUsername,
+            tgId: memberTgId
         });
         return;
     }
@@ -232,7 +234,9 @@ ${t.body(partnerLink)}`;
             memberId: memberId,
             status: 'Sent',
             content: message,
-            matchId: matchId
+            matchId: matchId,
+            tgUsername: memberUsername,
+            tgId: memberTgId
         });
         // Delay to avoid hitting rate limits
         await new Promise(resolve => setTimeout(resolve, 100));
@@ -243,7 +247,9 @@ ${t.body(partnerLink)}`;
             status: 'Failed',
             content: message,
             matchId: matchId,
-            error: error.message
+            error: error.message,
+            tgUsername: memberUsername,
+            tgId: memberTgId
         });
     }
 }
