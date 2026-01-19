@@ -139,7 +139,8 @@ async function notifyMember(member, partner, introField, viewToken = null, match
             status: 'Failed',
             content: 'No Telegram ID',
             matchId: matchId,
-            error: 'Missing Tg_ID'
+            error: 'Missing Tg_ID',
+            tgUsername: member.fields.Tg_Username
         });
         return false;
     }
@@ -166,7 +167,9 @@ async function notifyMember(member, partner, introField, viewToken = null, match
             memberId: member.id,
             status: 'Dry Run',
             content: message,
-            matchId: matchId
+            matchId: matchId,
+            tgUsername: member.fields.Tg_Username,
+            tgId: recipientId
         });
         return true;
     } else {
@@ -189,7 +192,9 @@ async function notifyMember(member, partner, introField, viewToken = null, match
                 memberId: member.id,
                 status: 'Sent',
                 content: message,
-                matchId: matchId
+                matchId: matchId,
+                tgUsername: member.fields.Tg_Username,
+                tgId: recipientId
             });
             return true;
         } catch (error) {
@@ -199,7 +204,9 @@ async function notifyMember(member, partner, introField, viewToken = null, match
                 status: 'Failed',
                 content: message,
                 matchId: matchId,
-                error: error.message
+                error: error.message,
+                tgUsername: member.fields.Tg_Username,
+                tgId: recipientId
             });
             return false;
         }

@@ -6,7 +6,7 @@ const LOGS_TABLE_ID = 'tbln4rLHEgXUkL9Jh'; // From SCHEMA
 
 /**
  * Logs a message event to the database and console.
- * 
+ *
  * @param {Object} params
  * @param {string} params.scriptName - Name of the calling script (e.g. 'midweek-checkin')
  * @param {string} params.memberId - Airtable Record ID of the Member
@@ -14,12 +14,24 @@ const LOGS_TABLE_ID = 'tbln4rLHEgXUkL9Jh'; // From SCHEMA
  * @param {string} params.content - The message content (truncated if necessary)
  * @param {string} [params.matchId] - (Optional) Airtable Record ID of the Match
  * @param {string} [params.error] - (Optional) Error message if failed
+ * @param {string} [params.tgUsername] - (Optional) Telegram username for readable logs
+ * @param {string} [params.tgId] - (Optional) Telegram ID for readable logs
  */
-async function logMessage({ scriptName, memberId, status, content, matchId = null, error = null }) {
+async function logMessage({ scriptName, memberId, status, content, matchId = null, error = null, tgUsername = null, tgId = null }) {
 
     // 1. Console Output
     const icon = status === 'Sent' ? '✅' : status === 'Dry Run' ? '📝' : '❌';
-    let logText = `${icon} [${scriptName}] ${status}: Member ${memberId}`;
+
+    // Build member identifier string with Telegram info if available
+    let memberInfo = memberId;
+    if (tgUsername || tgId) {
+        const tgParts = [];
+        if (tgUsername) tgParts.push(`@${tgUsername}`);
+        if (tgId) tgParts.push(`TgID:${tgId}`);
+        memberInfo = `${memberId} (${tgParts.join(', ')})`;
+    }
+
+    let logText = `${icon} [${scriptName}] ${status}: Member ${memberInfo}`;
     if (matchId) logText += ` | Match ${matchId}`;
     if (error) logText += ` | Error: ${error}`;
 
