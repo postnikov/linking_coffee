@@ -239,6 +239,15 @@ GOOGLE_AI_API_KEY=        # For match image generation (Gemini + Imagen)
 PORT=3001                 # Backend port
 BACKUP_DIR=               # Optional backup directory (default: backend/backups)
 
+# OAuth (used by both backend and frontend build)
+GOOGLE_CLIENT_ID=         # Google OAuth client ID for login
+LINKEDIN_CLIENT_ID=       # LinkedIn OAuth client ID
+LINKEDIN_CLIENT_SECRET=   # LinkedIn OAuth client secret
+LINKEDIN_REDIRECT_URI=    # LinkedIn callback URL (https://linked.coffee/auth/linkedin/callback)
+
+# Frontend Build Args (passed via docker-compose.prod.yml)
+REACT_APP_TELEGRAM_BOT_NAME=Linked_Coffee_Bot  # Telegram bot name for widget
+
 # Script Logging (Optional)
 MAX_LOG_SIZE=10485760     # Max log file size in bytes (default: 10MB)
 MAX_ROTATIONS=5           # Number of rotated log files to keep (default: 5)
@@ -360,3 +369,10 @@ No formal test suite currently exists. Manual testing recommended for:
 - Logs persisted to `/opt/linking-coffee/logs` on host
 - Environment variables loaded from `.env` file
 - Health checks configured for backend service
+
+**Frontend Build-Time Variables (CRITICAL):**
+React apps require environment variables at **build time**, not runtime. Variables are embedded into the JavaScript bundle during `npm run build`. In Docker:
+- Variables must be passed as `args` in `docker-compose.prod.yml` (not `environment`)
+- The `frontend/Dockerfile` declares them as `ARG` and sets them as `ENV` before build
+- Currently passed: `REACT_APP_GOOGLE_CLIENT_ID`, `REACT_APP_TELEGRAM_BOT_NAME`
+- If adding new `REACT_APP_*` variables, update BOTH `frontend/Dockerfile` AND `docker-compose.prod.yml`
