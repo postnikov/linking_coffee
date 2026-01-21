@@ -58,7 +58,7 @@ fi
 # 3. Trigger deployment on server
 # 3. Copy production docker-compose file AND .env to server
 echo "📡 Connecting to server ($SERVER_IP) to deploy..."
-scp docker-compose.prod.yml $SERVER_USER@$SERVER_IP:$SERVER_DIR/docker-compose.yml
+# scp docker-compose.prod.yml $SERVER_USER@$SERVER_IP:$SERVER_DIR/docker-compose.yml
 scp .env $SERVER_USER@$SERVER_IP:$SERVER_DIR/.env
 
 if [ $? -ne 0 ]; then
@@ -66,7 +66,7 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-ssh $SERVER_USER@$SERVER_IP "cd $SERVER_DIR && git pull && cp linking-coffee.config.js backend/ && docker compose -f docker-compose.prod.yml down && docker compose -f docker-compose.prod.yml up -d --build"
+ssh $SERVER_USER@$SERVER_IP "cd $SERVER_DIR && git checkout docker-compose.yml && git pull && cp linking-coffee.config.js backend/ && docker compose -f docker-compose.prod.yml down && docker compose -f docker-compose.prod.yml up -d --build"
 
 if [ $? -eq 0 ]; then
     echo "✅ Deployment completed successfully!"
