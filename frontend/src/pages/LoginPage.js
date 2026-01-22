@@ -19,6 +19,7 @@ const LoginPage = ({ onLogin }) => {
     const [hasTelegramId, setHasTelegramId] = useState(false);
     const [showGdprModal, setShowGdprModal] = useState(false);
     const [pendingUser, setPendingUser] = useState(null);
+    const [codeFromUrl, setCodeFromUrl] = useState(false); // Track if code came from URL
 
     // Get return URL from state or default to dashboard
     const from = location.state?.from?.pathname || '/';
@@ -35,6 +36,7 @@ const LoginPage = ({ onLogin }) => {
         }
         if (codeParam) {
             setOtp(codeParam);
+            setCodeFromUrl(true); // Mark that code came from URL
         }
     }, [location.search]);
 
@@ -217,23 +219,27 @@ const LoginPage = ({ onLogin }) => {
             <div className="glass-card" style={{ maxWidth: '400px', width: '100%', margin: '0 12px' }}>
                 <div className="card-header">
                     <h2 className="card-title">{step === 1 ? 'Login' : t('form.step2_title')}</h2>
-                    <p className="card-subtitle">
-                        {step === 1 ? (
-                            t('form.welcome_back')
-                        ) : (
-                            hasTelegramId ? (
-                                t('form.verify_existing')
+                    {/* Hide subtitle when code is pre-filled from URL */}
+                    {!(step === 2 && codeFromUrl) && (
+                        <p className="card-subtitle">
+                            {step === 1 ? (
+                                t('form.welcome_back')
                             ) : (
-                                <Trans
-                                    i18nKey="form.step2_subtitle"
-                                    components={{
-                                        1: <strong />
-                                    }}
-                                />
-                            )
-                        )}
-                    </p>
-                    {step === 2 && (
+                                hasTelegramId ? (
+                                    t('form.verify_existing')
+                                ) : (
+                                    <Trans
+                                        i18nKey="form.step2_subtitle"
+                                        components={{
+                                            1: <strong />
+                                        }}
+                                    />
+                                )
+                            )}
+                        </p>
+                    )}
+                    {/* Hide "Open LC Bot" link when code is pre-filled from URL */}
+                    {step === 2 && !codeFromUrl && (
                         <a
                             href="https://t.me/Linked_Coffee_Bot"
                             target="_blank"
@@ -381,8 +387,8 @@ const LoginPage = ({ onLogin }) => {
                             </div>
                         </div>
 
-                        {/* Important: Verify New User Instructions */}
-                        {!hasTelegramId && (
+                        {/* Important: Verify New User Instructions - hide when code is from URL */}
+                        {!hasTelegramId && !codeFromUrl && (
                             <div style={{
                                 margin: '1.5rem 0',
                                 textAlign: 'center',
@@ -405,7 +411,8 @@ const LoginPage = ({ onLogin }) => {
                             </div>
                         )}
 
-                        {hasTelegramId && (
+                        {/* Hide help text when code is from URL */}
+                        {hasTelegramId && !codeFromUrl && (
                             <div style={{ margin: '1rem 0', textAlign: 'center', fontSize: '0.95rem' }}>
                                 <Trans
                                     i18nKey="form.launch_bot_help"
