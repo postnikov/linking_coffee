@@ -76,6 +76,7 @@ function App() {
                     <MainLayout>
                         <Routes>
                             <Route path="/" element={user ? <Dashboard /> : <Home onLogin={handleLogin} />} />
+                            <Route path="/dashboard" element={user ? <Dashboard /> : <Navigate to="/login" state={{ from: { pathname: '/dashboard' } }} replace />} />
                             <Route path="/view/:token" element={<TokenProfile />} />
                             <Route path="/auth/linkedin/callback" element={<LinkedinCallback onLogin={handleLogin} />} />
                             <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />

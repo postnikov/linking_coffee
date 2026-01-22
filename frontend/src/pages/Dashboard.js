@@ -201,19 +201,24 @@ const Dashboard = () => {
     }, [user]);
 
     // Check for Telegram connect URL params (from bot link)
+    // Use window.location.search as fallback for full page loads
     useEffect(() => {
-        const params = new URLSearchParams(location.search);
+        const searchString = location.search || window.location.search;
+        const params = new URLSearchParams(searchString);
         const connectCode = params.get('connectCode');
         const connectUser = params.get('connectUser');
 
+        console.log('Dashboard URL params check:', { searchString, connectCode, connectUser });
+
         if (connectCode && connectUser) {
+            console.log('Opening Telegram connect modal with pre-filled code');
             setTelegramConnectUsername(connectUser);
             setTelegramConnectOtp(connectCode);
             setTelegramConnectStep(2);
             setConnectCodeFromUrl(true);
             setShowTelegramConnectModal(true);
             // Clean URL to avoid re-triggering on refresh
-            window.history.replaceState({}, '', '/dashboard');
+            window.history.replaceState({}, '', window.location.pathname);
         }
     }, [location.search]);
 
