@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import ReactDOM from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { GoogleLogin } from '@react-oauth/google';
@@ -45,6 +45,7 @@ const getAvatarUrl = (avatarPath) => {
 
 const Dashboard = () => {
     const { t, i18n } = useTranslation();
+    const location = useLocation();
     const [formData, setFormData] = useState({
         name: '',
         family: '',
@@ -120,6 +121,8 @@ const Dashboard = () => {
     const [telegramConnectUsername, setTelegramConnectUsername] = useState('');
     const [telegramConnectOtp, setTelegramConnectOtp] = useState('');
     const [telegramConnectError, setTelegramConnectError] = useState('');
+    const [telegramConnectStep, setTelegramConnectStep] = useState(1); // 1: username, 2: OTP
+    const [connectCodeFromUrl, setConnectCodeFromUrl] = useState(false); // Track if code came from URL
     const [showDisconnectTelegramModal, setShowDisconnectTelegramModal] = useState(false);
     const [showMergeConfirmModal, setShowMergeConfirmModal] = useState(false);
     const [pendingMergeProfile, setPendingMergeProfile] = useState(null);
@@ -196,6 +199,23 @@ const Dashboard = () => {
             }));
         }
     }, [user]);
+
+    // Check for Telegram connect URL params (from bot link)
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const connectCode = params.get('connectCode');
+        const connectUser = params.get('connectUser');
+
+        if (connectCode && connectUser) {
+            setTelegramConnectUsername(connectUser);
+            setTelegramConnectOtp(connectCode);
+            setTelegramConnectStep(2);
+            setConnectCodeFromUrl(true);
+            setShowTelegramConnectModal(true);
+            // Clean URL to avoid re-triggering on refresh
+            window.history.replaceState({}, '', '/dashboard');
+        }
+    }, [location.search]);
 
     const showCompletionBlock = !allFieldsDone || showCompletionSuccess;
 
@@ -670,9 +690,22 @@ const Dashboard = () => {
 
     // Connect Telegram Handlers
     const handleConnectTelegram = () => {
+        setTelegramConnectUsername('');
         setTelegramConnectOtp('');
         setTelegramConnectError('');
+        setTelegramConnectStep(1); // Start at step 1
+        setConnectCodeFromUrl(false);
         setShowTelegramConnectModal(true);
+    };
+
+    // Step 1 → Step 2 transition
+    const handleUsernameSubmit = () => {
+        if (!telegramConnectUsername.trim()) {
+            setTelegramConnectError(t('dashboard.connect_telegram.error_username_required', 'Username is required'));
+            return;
+        }
+        setTelegramConnectError('');
+        setTelegramConnectStep(2);
     };
 
     const handleVerifyTelegramOtp = async () => {
@@ -2925,7 +2958,7 @@ const Dashboard = () => {
                 </div>
             )}
 
-            {/* Connect Telegram Modal */}
+            {/* Connect Telegram Modal - Two-Step Flow */}
             {showTelegramConnectModal && (
                 <div style={{
                     position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
@@ -2939,72 +2972,155 @@ const Dashboard = () => {
                         <h3 style={{ marginBottom: '1rem', fontSize: '1.25rem', fontWeight: '600', color: '#1f2937' }}>
                             {t('dashboard.connect_telegram.modal_title', 'Connect Telegram')}
                         </h3>
-                        <p style={{ marginBottom: '1.5rem', color: '#6b7280', fontSize: '0.9rem' }}>
-                            {t('dashboard.connect_telegram.instructions', 'Please start the @Linked_Coffee_Bot on Telegram and enter the OTP code along with your username below.')}
-                        </p>
 
-                        {telegramConnectError && (
-                            <div style={{ marginBottom: '1rem', padding: '0.75rem', backgroundColor: '#fee2e2', color: '#991b1b', borderRadius: '0.5rem', fontSize: '0.875rem' }}>
-                                {telegramConnectError}
-                            </div>
+                        {/* Step 1: Enter Username */}
+                        {telegramConnectStep === 1 && (
+                            <>
+                                <p style={{ marginBottom: '1.5rem', color: '#6b7280', fontSize: '0.9rem' }}>
+                                    {t('dashboard.connect_telegram.step1_instructions', 'Enter your Telegram username to get started.')}
+                                </p>
+
+                                {telegramConnectError && (
+                                    <div style={{ marginBottom: '1rem', padding: '0.75rem', backgroundColor: '#fee2e2', color: '#991b1b', borderRadius: '0.5rem', fontSize: '0.875rem' }}>
+                                        {telegramConnectError}
+                                    </div>
+                                )}
+
+                                <div style={{ marginBottom: '1.5rem' }}>
+                                    <label className="form-label" style={{ marginBottom: '0.5rem', display: 'block' }}>Telegram Username</label>
+                                    <div className="input-wrapper">
+                                        <span className="input-prefix">@</span>
+                                        <input
+                                            type="text"
+                                            className="form-input"
+                                            placeholder="username"
+                                            value={telegramConnectUsername}
+                                            onChange={(e) => setTelegramConnectUsername(e.target.value)}
+                                            onKeyDown={(e) => e.key === 'Enter' && handleUsernameSubmit()}
+                                            style={{ width: '100%' }}
+                                            autoFocus
+                                        />
+                                    </div>
+                                </div>
+
+                                <div style={{ display: 'flex', gap: '1rem' }}>
+                                    <button
+                                        onClick={() => setShowTelegramConnectModal(false)}
+                                        style={{
+                                            flex: 1, padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '0.5rem',
+                                            background: 'white', color: '#4b5563', cursor: 'pointer', fontWeight: '500'
+                                        }}
+                                    >
+                                        {t('common.cancel')}
+                                    </button>
+                                    <button
+                                        onClick={handleUsernameSubmit}
+                                        style={{
+                                            flex: 1, padding: '0.75rem', border: 'none', borderRadius: '0.5rem',
+                                            background: '#7c3aed', color: 'white', cursor: 'pointer', fontWeight: '500'
+                                        }}
+                                    >
+                                        {t('common.continue', 'Continue')}
+                                    </button>
+                                </div>
+                            </>
                         )}
 
-                        <div style={{ marginBottom: '1rem' }}>
-                            <label className="form-label" style={{ marginBottom: '0.5rem', display: 'block' }}>Telegram Username</label>
-                            <div className="input-wrapper">
-                                <span className="input-prefix">@</span>
-                                <input
-                                    type="text"
-                                    className="form-input"
-                                    placeholder="username"
-                                    value={telegramConnectUsername}
-                                    onChange={(e) => setTelegramConnectUsername(e.target.value)}
-                                    style={{ width: '100%' }}
-                                />
-                            </div>
-                        </div>
+                        {/* Step 2: Enter OTP */}
+                        {telegramConnectStep === 2 && (
+                            <>
+                                {/* Hide instructions when code came from URL */}
+                                {!connectCodeFromUrl && (
+                                    <p style={{ marginBottom: '1.5rem', color: '#6b7280', fontSize: '0.9rem' }}>
+                                        {t('dashboard.connect_telegram.step2_instructions', 'Open the bot below and send /start to get your verification code.')}
+                                    </p>
+                                )}
 
-                        <div style={{ marginBottom: '1.5rem' }}>
-                            <label className="form-label" style={{ marginBottom: '0.5rem', display: 'block' }}>OTP Code</label>
-                            <input
-                                type="text"
-                                className="form-input"
-                                placeholder="123456"
-                                value={telegramConnectOtp}
-                                onChange={(e) => setTelegramConnectOtp(e.target.value)}
-                                style={{ width: '100%', letterSpacing: '2px', textAlign: 'center', fontSize: '1.2rem' }}
-                            />
-                        </div>
+                                {telegramConnectError && (
+                                    <div style={{ marginBottom: '1rem', padding: '0.75rem', backgroundColor: '#fee2e2', color: '#991b1b', borderRadius: '0.5rem', fontSize: '0.875rem' }}>
+                                        {telegramConnectError}
+                                    </div>
+                                )}
 
-                        <div style={{ display: 'flex', gap: '1rem' }}>
-                            <button
-                                onClick={() => setShowTelegramConnectModal(false)}
-                                style={{
-                                    flex: 1, padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '0.5rem',
-                                    background: 'white', color: '#4b5563', cursor: 'pointer', fontWeight: '500'
-                                }}
-                            >
-                                {t('common.cancel')}
-                            </button>
-                            <button
-                                onClick={handleVerifyTelegramOtp}
-                                style={{
-                                    flex: 1, padding: '0.75rem', border: 'none', borderRadius: '0.5rem',
-                                    background: '#7c3aed', color: 'white', cursor: 'pointer', fontWeight: '500'
-                                }}
-                            >
-                                {t('common.verify')}
-                            </button>
-                        </div>
+                                {/* Show username (read-only) */}
+                                <div style={{ marginBottom: '1rem' }}>
+                                    <label className="form-label" style={{ marginBottom: '0.5rem', display: 'block', color: '#9ca3af' }}>Telegram Username</label>
+                                    <div style={{
+                                        padding: '0.75rem',
+                                        backgroundColor: '#f3f4f6',
+                                        borderRadius: '0.5rem',
+                                        color: '#6b7280',
+                                        fontSize: '0.95rem'
+                                    }}>
+                                        @{telegramConnectUsername}
+                                    </div>
+                                </div>
 
-                        <a
-                            href="https://t.me/Linked_Coffee_Bot"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{ display: 'block', marginTop: '1rem', textAlign: 'center', color: '#7c3aed', fontSize: '0.875rem' }}
-                        >
-                            Open Telegram Bot
-                        </a>
+                                <div style={{ marginBottom: '1.5rem' }}>
+                                    <label className="form-label" style={{ marginBottom: '0.5rem', display: 'block' }}>
+                                        {t('dashboard.connect_telegram.otp_label', 'Verification Code')}
+                                    </label>
+                                    <input
+                                        type="text"
+                                        className="form-input"
+                                        placeholder="123456"
+                                        value={telegramConnectOtp}
+                                        onChange={(e) => setTelegramConnectOtp(e.target.value)}
+                                        onKeyDown={(e) => e.key === 'Enter' && handleVerifyTelegramOtp()}
+                                        style={{ width: '100%', letterSpacing: '2px', textAlign: 'center', fontSize: '1.2rem' }}
+                                        autoFocus={connectCodeFromUrl}
+                                    />
+                                </div>
+
+                                {/* Open Bot link - hide when code came from URL */}
+                                {!connectCodeFromUrl && (
+                                    <a
+                                        href="https://t.me/Linked_Coffee_Bot"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        style={{
+                                            display: 'block',
+                                            marginBottom: '1.5rem',
+                                            textAlign: 'center',
+                                            color: '#7c3aed',
+                                            fontSize: '0.95rem',
+                                            fontWeight: '500',
+                                            textDecoration: 'none'
+                                        }}
+                                    >
+                                        Open Telegram Bot
+                                    </a>
+                                )}
+
+                                <div style={{ display: 'flex', gap: '1rem' }}>
+                                    <button
+                                        onClick={() => {
+                                            if (connectCodeFromUrl) {
+                                                setShowTelegramConnectModal(false);
+                                            } else {
+                                                setTelegramConnectStep(1);
+                                                setTelegramConnectError('');
+                                            }
+                                        }}
+                                        style={{
+                                            flex: 1, padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '0.5rem',
+                                            background: 'white', color: '#4b5563', cursor: 'pointer', fontWeight: '500'
+                                        }}
+                                    >
+                                        {connectCodeFromUrl ? t('common.cancel') : t('common.back', 'Back')}
+                                    </button>
+                                    <button
+                                        onClick={handleVerifyTelegramOtp}
+                                        style={{
+                                            flex: 1, padding: '0.75rem', border: 'none', borderRadius: '0.5rem',
+                                            background: '#7c3aed', color: 'white', cursor: 'pointer', fontWeight: '500'
+                                        }}
+                                    >
+                                        {t('common.verify')}
+                                    </button>
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
             )}

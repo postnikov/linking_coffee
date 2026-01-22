@@ -214,8 +214,16 @@ const handleConnect = (ctx) => {
   console.log(`✅ Generated OTP for ${cleanUsername}: ${otp}`);
   logAuth(`Generated OTP for ${cleanUsername}: ${otp}`);
 
-  const verifyUrl = `https://linked.coffee/login?code=${otp}&user=${encodeURIComponent(cleanUsername)}`;
-  ctx.reply(`☕️☕️☕️\nYour verification code for Linked.Coffee is:\n\n\`${otp}\`\n\nEnter this code on the website or click below:\n${verifyUrl}`, { parse_mode: 'Markdown' });
+  // Provide both login link (for new users) and dashboard link (for Gmail users connecting Telegram)
+  const loginUrl = `https://linked.coffee/login?code=${otp}&user=${encodeURIComponent(cleanUsername)}`;
+  const dashboardUrl = `https://linked.coffee/dashboard?connectCode=${otp}&connectUser=${encodeURIComponent(cleanUsername)}`;
+
+  ctx.reply(
+    `☕️☕️☕️\nYour verification code for Linked.Coffee is:\n\n\`${otp}\`\n\nClick below to verify:\n` +
+    `[New user? Click here](${loginUrl})\n` +
+    `[Already logged in? Click here](${dashboardUrl})`,
+    { parse_mode: 'Markdown' }
+  );
 };
 
 // Register both /start and /connect commands
@@ -512,8 +520,17 @@ app.post('/api/register', async (req, res) => {
         });
 
         try {
-          const verifyUrl = `https://linked.coffee/login?code=${otp}&user=${encodeURIComponent(cleanUsername)}`;
-          await bot.telegram.sendMessage(tgId, `☕️☕️☕️\nYour verification code for Linked.Coffee is:\n\n\`${otp}\`\n\nEnter this code on the website or click below:\n${verifyUrl}`, { parse_mode: 'Markdown' });
+          // Provide both login link (for new users) and dashboard link (for Gmail users connecting Telegram)
+          const loginUrl = `https://linked.coffee/login?code=${otp}&user=${encodeURIComponent(cleanUsername)}`;
+          const dashboardUrl = `https://linked.coffee/dashboard?connectCode=${otp}&connectUser=${encodeURIComponent(cleanUsername)}`;
+
+          await bot.telegram.sendMessage(
+            tgId,
+            `☕️☕️☕️\nYour verification code for Linked.Coffee is:\n\n\`${otp}\`\n\nClick below to verify:\n` +
+            `[New user? Click here](${loginUrl})\n` +
+            `[Already logged in? Click here](${dashboardUrl})`,
+            { parse_mode: 'Markdown' }
+          );
           logConnection(`Proactive OTP successfully sent to @${cleanUsername} (${tgId})`, 'SUCCESS');
         } catch (botError) {
           console.error('❌ Failed to send proactive OTP:', botError);
