@@ -17,7 +17,7 @@ const GRADES = [
     "C-Level Executive", "Founder", "Entrepreneur"
 ];
 
-const LANGUAGES = ["English", "Russian", "Spanish", "French", "German"];
+const LANGUAGES = ["English", "Russian", "Spanish", "French", "German", "Italian", "Swedish", "Ukrainian", "Arabic", "Catalan"];
 
 const COFFEE_GOALS = ["Casual Chat", "Professional Chat"];
 
