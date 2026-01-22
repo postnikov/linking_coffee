@@ -3121,7 +3121,7 @@ const Dashboard = () => {
                                             background: '#7c3aed', color: 'white', cursor: 'pointer', fontWeight: '500'
                                         }}
                                     >
-                                        {t('common.verify')}
+                                        {t('common.verify', 'Verify')}
                                     </button>
                                 </div>
                             </>
