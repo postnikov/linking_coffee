@@ -700,9 +700,68 @@ app.post('/api/verify', async (req, res) => {
         }
       });
     } else {
-      // Should not happen if Step 1 worked, but handle it
-      console.log(`❌ No record found for username: ${cleanUsername}`);
-      res.status(404).json({ success: false, message: 'User record not found.' });
+      // Bot-first user: No record exists yet, create one automatically
+      console.log(`🆕 No record found for ${cleanUsername}. Creating new user (bot-first flow)...`);
+      logAuth(`Bot-first registration: Creating new record for ${cleanUsername}`);
+
+      // We need a valid Telegram ID to create a bot-first user
+      if (!telegramId || telegramId === 0) {
+        console.log(`❌ Cannot create bot-first user without valid Telegram ID`);
+        return res.status(400).json({
+          success: false,
+          message: 'Please start the bot first to get your verification code.'
+        });
+      }
+
+      // Create new record with data from bot interaction
+      const newRecordFields = {
+        Tg_Username: cleanUsername,
+        Tg_ID: telegramId,
+        Status: 'EarlyBird',
+        Created_At: new Date().toISOString().split('T')[0]
+      };
+
+      if (firstName) newRecordFields.Name = firstName;
+      if (lastName) newRecordFields.Family = lastName;
+
+      // Try to fetch Telegram Avatar for new user
+      try {
+        console.log(`📸 Fetching Telegram profile photos for new user ${telegramId}...`);
+        const userProfilePhotos = await bot.telegram.getUserProfilePhotos(telegramId, 0, 1);
+
+        if (userProfilePhotos.total_count > 0) {
+          const photos = userProfilePhotos.photos[0];
+          const largestPhoto = photos[photos.length - 1];
+          const fileLink = await bot.telegram.getFileLink(largestPhoto.file_id);
+          const avatarUrl = typeof fileLink === 'string' ? fileLink : fileLink.href;
+
+          console.log(`📸 Found Telegram avatar: ${avatarUrl}`);
+          newRecordFields.Avatar = [{ url: avatarUrl }];
+        }
+      } catch (avatarError) {
+        console.error('⚠️ Failed to fetch Telegram avatar for new user:', avatarError);
+        // Non-fatal, continue with creation
+      }
+
+      const createdRecords = await base(process.env.AIRTABLE_MEMBERS_TABLE).create([
+        { fields: newRecordFields }
+      ], { typecast: true });
+
+      const newRecord = createdRecords[0];
+      console.log(`✅ Created new record ${newRecord.id} for bot-first user ${cleanUsername}`);
+      logAuth(`Bot-first registration complete: ${cleanUsername} (Record: ${newRecord.id})`);
+
+      res.json({
+        success: true,
+        message: 'Account created and linked! Please complete your profile.',
+        user: {
+          username: cleanUsername,
+          status: 'EarlyBird',
+          consentGdpr: false, // New users need GDPR consent
+          firstName: firstName || '',
+          lastName: lastName || ''
+        }
+      });
     }
   } catch (error) {
     console.error('❌ Verify error:', error);
