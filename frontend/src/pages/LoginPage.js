@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { GoogleLogin } from '@react-oauth/google';
@@ -22,6 +22,21 @@ const LoginPage = ({ onLogin }) => {
 
     // Get return URL from state or default to dashboard
     const from = location.state?.from?.pathname || '/';
+
+    // Parse URL parameters for pre-filled verification (from Telegram link)
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const codeParam = params.get('code');
+        const userParam = params.get('user');
+
+        if (userParam) {
+            setTelegramUsername(userParam);
+            setStep(2); // Skip to OTP entry
+        }
+        if (codeParam) {
+            setOtp(codeParam);
+        }
+    }, [location.search]);
 
     const handleUsernameSubmit = async (e) => {
         e.preventDefault();

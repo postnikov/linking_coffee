@@ -213,7 +213,9 @@ const handleConnect = (ctx) => {
 
   console.log(`✅ Generated OTP for ${cleanUsername}: ${otp}`);
   logAuth(`Generated OTP for ${cleanUsername}: ${otp}`);
-  ctx.reply(`☕️☕️☕️\nYour verification code for Linked.Coffee is:\n\n\`${otp}\`\n\nPlease enter this code on the website.`, { parse_mode: 'Markdown' });
+
+  const verifyUrl = `https://linked.coffee/login?code=${otp}&user=${encodeURIComponent(cleanUsername)}`;
+  ctx.reply(`☕️☕️☕️\nYour verification code for Linked.Coffee is:\n\n\`${otp}\`\n\nEnter this code on the website or click below:\n${verifyUrl}`, { parse_mode: 'Markdown' });
 };
 
 // Register both /start and /connect commands
@@ -510,7 +512,8 @@ app.post('/api/register', async (req, res) => {
         });
 
         try {
-          await bot.telegram.sendMessage(tgId, `☕️☕️☕️\nYour verification code for Linked.Coffee is:\n\n\`${otp}\`\n\nPlease enter this code on the website.`, { parse_mode: 'Markdown' });
+          const verifyUrl = `https://linked.coffee/login?code=${otp}&user=${encodeURIComponent(cleanUsername)}`;
+          await bot.telegram.sendMessage(tgId, `☕️☕️☕️\nYour verification code for Linked.Coffee is:\n\n\`${otp}\`\n\nEnter this code on the website or click below:\n${verifyUrl}`, { parse_mode: 'Markdown' });
           logConnection(`Proactive OTP successfully sent to @${cleanUsername} (${tgId})`, 'SUCCESS');
         } catch (botError) {
           console.error('❌ Failed to send proactive OTP:', botError);
