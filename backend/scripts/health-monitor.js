@@ -1,0 +1,124 @@
+/**
+ * Health Monitor Script
+ *
+ * Periodically pings the /api/health endpoint and tracks consecutive failures.
+ * Sends critical alert after 3 consecutive failures.
+ *
+ * Usage:
+ *   node backend/scripts/health-monitor.js
+ *
+ * Environment Variables:
+ *   - ENABLE_MONITORING (default: true)
+ *   - HEALTH_CHECK_URL (default: http://localhost:3001/api/health)
+ *   - HEALTH_CHECK_TIMEOUT (default: 5000ms)
+ *
+ * Scheduled via scheduler.json:
+ *   {"name": "Health Monitor", "script": "health-monitor.js", "cron": "*​/5 * * * *"}
+ * (Note: cron runs every 5 minutes)
+ */
+
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '../../.env') });
+const axios = require('axios');
+const { sendCriticalAlert, queueWarning } = require('../utils/alerting');
+const {
+  recordHealthFailure,
+  resetHealthFailures,
+  getConsecutiveHealthFailures
+} = require('../utils/alertState');
+
+// Configuration
+const HEALTH_CHECK_URL = process.env.HEALTH_CHECK_URL || 'http://localhost:3001/api/health';
+const TIMEOUT = parseInt(process.env.HEALTH_CHECK_TIMEOUT) || 5000;
+const CRITICAL_THRESHOLD = 3; // Alert after this many consecutive failures
+
+/**
+ * Check server health
+ */
+async function checkHealth() {
+  console.log(`🏥 Health check: ${HEALTH_CHECK_URL}`);
+
+  const startTime = Date.now();
+
+  try {
+    const response = await axios.get(HEALTH_CHECK_URL, {
+      timeout: TIMEOUT,
+      validateStatus: (status) => status === 200
+    });
+
+    const responseTime = Date.now() - startTime;
+
+    if (response.data.status === 'ok') {
+      console.log(`✅ Health check passed (${responseTime}ms)`);
+
+      // Reset failure counter
+      const previousFailures = getConsecutiveHealthFailures();
+      resetHealthFailures();
+
+      // If we just recovered from failures, queue recovery notice
+      if (previousFailures >= CRITICAL_THRESHOLD) {
+        queueWarning(
+          'Health',
+          `Server recovered after ${previousFailures} failed checks`,
+          { responseTime }
+        );
+      }
+
+      // Warn about slow response (but don't alert)
+      if (responseTime > 5000) {
+        queueWarning(
+          'Performance',
+          `Slow health check response: ${responseTime}ms`,
+          { url: HEALTH_CHECK_URL }
+        );
+      }
+
+      process.exit(0);
+    } else {
+      throw new Error(`Unexpected status: ${response.data.status}`);
+    }
+  } catch (error) {
+    const responseTime = Date.now() - startTime;
+    console.error(`❌ Health check failed: ${error.message} (${responseTime}ms)`);
+
+    // Record failure
+    recordHealthFailure();
+    const consecutiveFailures = getConsecutiveHealthFailures();
+
+    console.log(`   Consecutive failures: ${consecutiveFailures}`);
+
+    // Send critical alert on threshold
+    if (consecutiveFailures >= CRITICAL_THRESHOLD && process.env.ENABLE_MONITORING !== 'false') {
+      await sendCriticalAlert(
+        'Server Health Check Failed',
+        `**Consecutive Failures:** ${consecutiveFailures}\n` +
+        `**URL:** ${HEALTH_CHECK_URL}\n` +
+        `**Error:** ${error.message}\n` +
+        `**Response Time:** ${responseTime}ms\n` +
+        `**Time:** ${new Date().toISOString()}\n\n` +
+        `⚠️ Server may be down or unresponsive!`
+      );
+    } else if (consecutiveFailures === 1) {
+      // First failure - just queue warning
+      queueWarning(
+        'Health',
+        `Health check failed (1 failure): ${error.message}`,
+        { responseTime, url: HEALTH_CHECK_URL }
+      );
+    }
+
+    process.exit(1); // Non-zero exit triggers scheduler alert
+  }
+}
+
+// Check if monitoring enabled
+if (process.env.ENABLE_MONITORING === 'false') {
+  console.log('⏸️  Monitoring disabled (ENABLE_MONITORING=false)');
+  process.exit(0);
+}
+
+// Run check
+checkHealth().catch(error => {
+  console.error('💥 Unexpected error in health monitor:', error);
+  process.exit(1);
+});

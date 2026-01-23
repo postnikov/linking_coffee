@@ -2925,9 +2925,14 @@ app.post('/api/admin/regenerate-image', async (req, res) => {
   });
 });
 
-// Start server (existing)
-app.listen(PORT, () => {
-  console.log(`🚀 Linked.Coffee API server running on port ${PORT}`);
-});
+// Start server only if this file is run directly (not required as module)
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`🚀 Linked.Coffee API server running on port ${PORT}`);
+  });
+}
+
+// Export bot instance for alerting module
+module.exports = { bot };
 
 

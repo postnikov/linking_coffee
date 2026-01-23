@@ -2,6 +2,8 @@ const cron = require('node-cron');
 const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
+const { sendCriticalAlert } = require('./utils/alerting');
+const { recordScriptFailure, recordScriptSuccess } = require('./utils/alertState');
 
 class Scheduler {
   constructor(defaultConfigFile, runtimeConfigFile) {
@@ -168,7 +170,7 @@ class Scheduler {
       });
     });
 
-    child.on('close', (code) => {
+    child.on('close', async (code) => {
       const duration = ((Date.now() - startTime) / 1000).toFixed(1);
       const status = code === 0 ? 'SUCCESS' : 'FAILED';
       const endLog = `[${new Date().toISOString()}] [INFO] [${child.pid}] Script completed in ${duration}s (exit code: ${code}) - ${status}\n`;
@@ -183,11 +185,74 @@ class Scheduler {
       config.lastRun = new Date().toISOString();
       config.lastStatus = status;
       this.saveConfig(); // Persist last run status (optional, maybe too much IO?)
-      // Actually modifying the config file on every run might be risky if concurrent edits happen.
-      // For now, let's keep runtime state in memory or separate status file?
-      // The requirement says "modify cron", implies config editing.
-      // Let's blindly save for now, but be aware.
+
+      // Alert on failure
+      if (code !== 0 && process.env.ENABLE_MONITORING !== 'false') {
+        try {
+          // Record failure in state
+          recordScriptFailure(config.script);
+
+          // Get last 10 lines of log for context
+          const logTail = await this.getLogTail(scriptLogPath, 10);
+
+          // Send critical alert
+          await sendCriticalAlert(
+            'Script Failure',
+            `**Script:** ${config.name}\n` +
+            `**File:** ${config.script}\n` +
+            `**Exit Code:** ${code}\n` +
+            `**Duration:** ${duration}s\n` +
+            `**Time:** ${new Date().toISOString()}\n\n` +
+            `**📋 Last 10 Lines of Log:**\n\`\`\`\n${logTail}\n\`\`\``,
+            { scriptName: config.script }
+          );
+        } catch (alertError) {
+          console.error('❌ Failed to send failure alert:', alertError.message);
+        }
+      } else if (code === 0) {
+        // Record success (resets consecutive failures)
+        recordScriptSuccess(config.script);
+      }
     });
+
+    // Add error handler for spawn failures
+    child.on('error', async (error) => {
+      console.error(`[${config.name}] Failed to start: ${error.message}`);
+
+      if (logStream) {
+        const errorLog = `[${new Date().toISOString()}] [ERROR] [${child.pid || 'N/A'}] Failed to spawn: ${error.message}\n`;
+        logStream.write(errorLog);
+        logStream.end();
+      }
+
+      if (process.env.ENABLE_MONITORING !== 'false') {
+        try {
+          await sendCriticalAlert(
+            'Script Failed to Start',
+            `**Script:** ${config.name}\n` +
+            `**File:** ${config.script}\n` +
+            `**Error:** ${error.message}\n` +
+            `**Time:** ${new Date().toISOString()}`
+          );
+        } catch (alertError) {
+          console.error('❌ Failed to send spawn error alert:', alertError.message);
+        }
+      }
+    });
+  }
+
+  // Helper method to read last N lines of log file
+  async getLogTail(logPath, numLines = 10) {
+    try {
+      if (!fs.existsSync(logPath)) return '(Log file not found)';
+
+      const content = fs.readFileSync(logPath, 'utf8');
+      const lines = content.split('\n').filter(l => l.trim());
+      const tail = lines.slice(-numLines);
+      return tail.join('\n');
+    } catch (error) {
+      return `(Error reading log: ${error.message})`;
+    }
   }
 
   // Admin API Methods

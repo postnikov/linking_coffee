@@ -1,1 +1,18 @@
-[]
+[
+  {
+    "name": "Health Monitor",
+    "script": "health-monitor.js",
+    "cron": "*/5 * * * *",
+    "enabled": true,
+    "lastRun": null,
+    "lastStatus": null
+  },
+  {
+    "name": "Daily Summary",
+    "script": "daily-summary.js",
+    "cron": "0 9 * * *",
+    "enabled": true,
+    "lastRun": null,
+    "lastStatus": null
+  }
+]
