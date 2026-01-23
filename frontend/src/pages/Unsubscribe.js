@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import './Unsubscribe.css';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001';
+const API_URL = process.env.REACT_APP_API_URL || '';
 
 function Unsubscribe() {
   const [searchParams] = useSearchParams();
@@ -23,9 +23,16 @@ function Unsubscribe() {
 
   const handleUnsubscribe = async (emailToUnsubscribe) => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/unsubscribe`, {
+      console.log('Unsubscribe request:', {
+        url: `${API_URL}/api/unsubscribe`,
         email: emailToUnsubscribe
       });
+
+      const response = await axios.post(`${API_URL}/api/unsubscribe`, {
+        email: emailToUnsubscribe
+      });
+
+      console.log('Unsubscribe response:', response.data);
 
       if (response.data.success) {
         setStatus('success');
@@ -35,15 +42,23 @@ function Unsubscribe() {
         setMessage(response.data.message || 'Failed to unsubscribe. Please try again.');
       }
     } catch (error) {
+      console.error('Unsubscribe error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        url: `${API_URL}/api/unsubscribe`
+      });
+
       setStatus('error');
       if (error.response?.data?.message) {
         setMessage(error.response.data.message);
       } else if (error.response?.status === 404) {
         setMessage('Email address not found in our system.');
+      } else if (error.code === 'ERR_NETWORK' || error.message.includes('Network')) {
+        setMessage('Cannot connect to server. Please check your internet connection.');
       } else {
-        setMessage('An error occurred. Please try again later.');
+        setMessage(`An error occurred: ${error.message}`);
       }
-      console.error('Unsubscribe error:', error);
     }
   };
 
