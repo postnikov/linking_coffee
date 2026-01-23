@@ -188,6 +188,12 @@ textarea.form-control {
   .dashboard-container {
     padding: 1rem 0.5rem;
   }
+
+  .profile-section.glass-card,
+  .dashboard-container .glass-card {
+    margin: 0 0.25rem;
+    width: calc(100% - 0.5rem);
+  }
 }
 
 .spinner-small {

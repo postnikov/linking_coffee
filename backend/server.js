@@ -590,6 +590,52 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
+// Dev Login - Only for local development testing
+app.post('/api/dev-login', async (req, res) => {
+  // Only allow in development
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(403).json({ success: false, message: 'Dev login disabled in production' });
+  }
+
+  const { username } = req.body;
+  if (!username) {
+    return res.status(400).json({ success: false, message: 'Username is required' });
+  }
+
+  const cleanUsername = username.replace('@', '').trim().toLowerCase();
+  console.log(`🔧 Dev login attempt for: ${cleanUsername}`);
+
+  try {
+    const records = await base(process.env.AIRTABLE_MEMBERS_TABLE)
+      .select({
+        filterByFormula: `{Tg_Username} = '${cleanUsername}'`,
+        maxRecords: 1
+      })
+      .firstPage();
+
+    if (records.length === 0) {
+      console.log(`❌ Dev login: User not found: ${cleanUsername}`);
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const record = records[0];
+    console.log(`✅ Dev login success for: ${cleanUsername}`);
+    res.json({
+      success: true,
+      user: {
+        username: cleanUsername,
+        status: record.fields.Status,
+        consentGdpr: record.fields.Consent_GDPR,
+        firstName: record.fields.Name,
+        lastName: record.fields.Family
+      }
+    });
+  } catch (error) {
+    console.error('Dev login error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
 // Step 2: Verify OTP and Update Tg_ID
 app.post('/api/verify', async (req, res) => {
   const { telegramUsername, otp } = req.body;

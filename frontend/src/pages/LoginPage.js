@@ -20,6 +20,7 @@ const LoginPage = ({ onLogin }) => {
     const [showGdprModal, setShowGdprModal] = useState(false);
     const [pendingUser, setPendingUser] = useState(null);
     const [codeFromUrl, setCodeFromUrl] = useState(false); // Track if code came from URL
+    const [devUsername, setDevUsername] = useState(''); // Dev login username input
 
     // Get return URL from state or default to dashboard
     const from = location.state?.from?.pathname || '/';
@@ -212,6 +213,35 @@ const LoginPage = ({ onLogin }) => {
         }
     };
 
+    // Dev login handler - only works on localhost
+    const handleDevLogin = async (username) => {
+        setIsLoading(true);
+        try {
+            const response = await fetch(`${API_URL}/api/dev-login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username }),
+            });
+            const data = await response.json();
+            if (data.success) {
+                if (data.user.consentGdpr) {
+                    onLogin(data.user);
+                    navigate(from, { replace: true });
+                } else {
+                    setPendingUser(data.user);
+                    setShowGdprModal(true);
+                }
+            } else {
+                alert(data.message || 'Dev login failed');
+            }
+        } catch (e) {
+            console.error('Dev login error:', e);
+            alert('Dev login error');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     return (
         <main className="main-content" style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-start', paddingTop: '120px', minHeight: 'calc(100vh - 80px)' }}>
             {showGdprModal && <GdprModal onAccept={handleGdprAccept} onClose={handleGdprClose} initialName={pendingUser?.firstName} initialFamily={pendingUser?.lastName} />}
@@ -318,6 +348,80 @@ const LoginPage = ({ onLogin }) => {
                                 />
                                 Continue with LinkedIn
                             </button>
+
+                            {/* Dev Login - Only on localhost */}
+                            {window.location.hostname === 'localhost' && (
+                                <div style={{
+                                    marginTop: '16px',
+                                    padding: '12px',
+                                    border: '2px dashed #f59e0b',
+                                    borderRadius: '12px',
+                                    backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                                    width: '300px'
+                                }}>
+                                    <div style={{ fontSize: '12px', color: '#92400e', marginBottom: '8px', fontWeight: '600', textAlign: 'center' }}>
+                                        🔧 DEV MODE ONLY
+                                    </div>
+
+                                    {/* Quick login button */}
+                                    <button
+                                        type="button"
+                                        onClick={() => handleDevLogin('max_postnikov')}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            width: '100%',
+                                            height: '40px',
+                                            backgroundColor: '#f59e0b',
+                                            color: 'white',
+                                            border: 'none',
+                                            borderRadius: '20px',
+                                            cursor: 'pointer',
+                                            fontSize: '14px',
+                                            fontWeight: '500',
+                                            marginBottom: '8px'
+                                        }}
+                                        disabled={isLoading}
+                                    >
+                                        Quick Login (@max_postnikov)
+                                    </button>
+
+                                    {/* Custom username input */}
+                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                        <input
+                                            type="text"
+                                            placeholder="Other username..."
+                                            value={devUsername}
+                                            onChange={(e) => setDevUsername(e.target.value)}
+                                            style={{
+                                                flex: 1,
+                                                padding: '8px 12px',
+                                                border: '1px solid #d1d5db',
+                                                borderRadius: '8px',
+                                                fontSize: '14px'
+                                            }}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => devUsername && handleDevLogin(devUsername)}
+                                            disabled={!devUsername || isLoading}
+                                            style={{
+                                                padding: '8px 16px',
+                                                backgroundColor: devUsername ? '#f59e0b' : '#e5e7eb',
+                                                color: devUsername ? 'white' : '#9ca3af',
+                                                border: 'none',
+                                                borderRadius: '8px',
+                                                cursor: devUsername ? 'pointer' : 'not-allowed',
+                                                fontSize: '14px',
+                                                fontWeight: '500'
+                                            }}
+                                        >
+                                            Login
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '24px 0 16px' }}>
