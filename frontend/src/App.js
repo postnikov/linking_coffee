@@ -12,6 +12,7 @@ import PublicProfile from './pages/PublicProfile';
 import AdminPage from './pages/AdminPage';
 import TokenProfile from './pages/TokenProfile';
 import LinkedinCallback from './pages/LinkedinCallback';
+import Unsubscribe from './pages/Unsubscribe';
 // import AdminHealth from './pages/AdminHealth'; // Now integrated
 
 
@@ -70,6 +71,9 @@ function App() {
             <Routes>
                 {/* Admin Route - Standalone */}
                 <Route path="/admin" element={<AdminPage />} />
+
+                {/* Unsubscribe Route - Standalone (no header/footer) */}
+                <Route path="/unsubscribe" element={<Unsubscribe />} />
 
                 {/* Main App Routes - Wrapped in Layout */}
                 <Route path="*" element={

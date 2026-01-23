@@ -971,6 +971,46 @@ app.post('/api/consent', async (req, res) => {
   }
 });
 
+// Unsubscribe from marketing emails
+app.post('/api/unsubscribe', async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ success: false, message: 'Email is required' });
+  }
+
+  try {
+    // Find user by email
+    const records = await base(process.env.AIRTABLE_MEMBERS_TABLE).select({
+      filterByFormula: `{Email} = '${email}'`,
+      maxRecords: 1
+    }).firstPage();
+
+    if (records.length === 0) {
+      return res.status(404).json({ success: false, message: 'Email not found' });
+    }
+
+    const record = records[0];
+
+    // Update No_Spam flag to true
+    await base(process.env.AIRTABLE_MEMBERS_TABLE).update([
+      {
+        id: record.id,
+        fields: {
+          No_Spam: true
+        }
+      }
+    ]);
+
+    logAuth(`Unsubscribed: ${email}`, 'INFO');
+    res.json({ success: true, message: 'Successfully unsubscribed from marketing emails' });
+
+  } catch (error) {
+    console.error('Unsubscribe error:', error);
+    res.status(500).json({ success: false, message: 'Failed to process unsubscribe request' });
+  }
+});
+
 // Google OAuth Authentication
 app.post('/api/auth/google', async (req, res) => {
   const { token } = req.body;
