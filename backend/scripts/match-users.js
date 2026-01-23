@@ -178,11 +178,18 @@ async function main() {
             return Math.floor(msDiff / (1000 * 60 * 60 * 24 * 7));
         };
 
-        // Helper to get Timezone offset (e.g. "Europe/Moscow (UTC+3)" -> 3)
+        // Helper to get Timezone offset (e.g. "Europe/Moscow (UTC+3)" -> 3, "Asia/Kolkata (UTC+5:30)" -> 5.5)
         const getTzOffset = (tzStr) => {
             if (!tzStr) return null;
-            const match = tzStr.match(/\(UTC([+-]?\d+(?:\.\d+)?)\)/);
-            return match ? parseFloat(match[1]) : null;
+            const match = tzStr.match(/\(UTC([+-]?\d+)(?::(\d+))?\)/);
+            if (!match) return null;
+            let offset = parseFloat(match[1]);
+            if (match[2]) {
+                // Convert minutes to decimal (e.g., :30 -> 0.5)
+                const minuteFraction = parseInt(match[2]) / 60;
+                offset += Math.sign(offset || 1) * minuteFraction;
+            }
+            return offset;
         };
 
         // Parse Max Matches Flag

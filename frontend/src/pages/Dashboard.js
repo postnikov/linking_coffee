@@ -6,11 +6,58 @@ import { GoogleLogin } from '@react-oauth/google';
 import './Dashboard.css';
 
 const TIMEZONES = [
-    "HST (UTC-10)", "AKST (UTC-9)", "PST (UTC-8)", "MST (UTC-7)", "CST (UTC-6)", "EST (UTC-5)",
-    "AST (UTC-4)", "GMT (UTC+0)", "UTC (UTC+0)", "BST (UTC+1)", "CET (UTC+1)", "CEST (UTC+2)",
-    "EET (UTC+2)", "EEST (UTC+3)", "MSK (UTC+3)", "IST (UTC+5.5)", "AWST (UTC+8)", "JST (UTC+9)",
-    "KST (UTC+9)", "ACST (UTC+9.5)", "AEST (UTC+10)", "NZST (UTC+12)"
+    "Pacific/Midway (UTC-11)",
+    "Pacific/Honolulu (UTC-10)",
+    "America/Anchorage (UTC-9)",
+    "America/Los_Angeles (UTC-8)",
+    "America/Denver (UTC-7)",
+    "America/Chicago (UTC-6)",
+    "America/New_York (UTC-5)",
+    "America/Halifax (UTC-4)",
+    "America/Sao_Paulo (UTC-3)",
+    "Atlantic/South_Georgia (UTC-2)",
+    "Atlantic/Azores (UTC-1)",
+    "Europe/London (UTC+0)",
+    "Europe/Paris (UTC+1)",
+    "Europe/Helsinki (UTC+2)",
+    "Europe/Moscow (UTC+3)",
+    "Asia/Dubai (UTC+4)",
+    "Asia/Karachi (UTC+5)",
+    "Asia/Kolkata (UTC+5:30)",
+    "Asia/Dhaka (UTC+6)",
+    "Asia/Bangkok (UTC+7)",
+    "Asia/Singapore (UTC+8)",
+    "Asia/Tokyo (UTC+9)",
+    "Australia/Sydney (UTC+10)",
+    "Pacific/Noumea (UTC+11)",
+    "Pacific/Auckland (UTC+12)"
 ];
+
+// Map old abbreviation-style timezones to new IANA-style for backward compatibility
+const TIMEZONE_ALIASES = {
+    "HST (UTC-10)": "Pacific/Honolulu (UTC-10)",
+    "AKST (UTC-9)": "America/Anchorage (UTC-9)",
+    "PST (UTC-8)": "America/Los_Angeles (UTC-8)",
+    "MST (UTC-7)": "America/Denver (UTC-7)",
+    "CST (UTC-6)": "America/Chicago (UTC-6)",
+    "EST (UTC-5)": "America/New_York (UTC-5)",
+    "AST (UTC-4)": "America/Halifax (UTC-4)",
+    "GMT (UTC+0)": "Europe/London (UTC+0)",
+    "UTC (UTC+0)": "Europe/London (UTC+0)",
+    "BST (UTC+1)": "Europe/Paris (UTC+1)",
+    "CET (UTC+1)": "Europe/Paris (UTC+1)",
+    "CEST (UTC+2)": "Europe/Helsinki (UTC+2)",
+    "EET (UTC+2)": "Europe/Helsinki (UTC+2)",
+    "EEST (UTC+3)": "Europe/Moscow (UTC+3)",
+    "MSK (UTC+3)": "Europe/Moscow (UTC+3)",
+    "IST (UTC+5.5)": "Asia/Kolkata (UTC+5:30)",
+    "AWST (UTC+8)": "Asia/Singapore (UTC+8)",
+    "JST (UTC+9)": "Asia/Tokyo (UTC+9)",
+    "KST (UTC+9)": "Asia/Tokyo (UTC+9)",
+    "ACST (UTC+9.5)": "Australia/Sydney (UTC+10)",
+    "AEST (UTC+10)": "Australia/Sydney (UTC+10)",
+    "NZST (UTC+12)": "Pacific/Auckland (UTC+12)"
+};
 
 const GRADES = [
     "Prefer not to say", "Junior", "Middle", "Senior", "Lead / Head of",
@@ -51,7 +98,7 @@ const Dashboard = () => {
         family: '',
         country: null,
         city: null,
-        timezone: 'UTC (UTC+0)',
+        timezone: 'Europe/London (UTC+0)',
         bestMeetingDays: [],
         languages: [],
         profession: '',
@@ -329,11 +376,16 @@ const Dashboard = () => {
                 const data = await response.json();
 
                 if (data.success) {
+                    // Map old timezone abbreviations to new IANA-style format
+                    const mappedTimezone = data.profile.timezone
+                        ? (TIMEZONE_ALIASES[data.profile.timezone] || data.profile.timezone)
+                        : formData.timezone;
+
                     const profileData = {
                         ...formData, // Keep defaults for missing fields
-                        ...data.profile
+                        ...data.profile,
+                        timezone: mappedTimezone
                     };
-                    setFormData(profileData);
                     setFormData(profileData);
                     setInitialFormData(profileData);
 
