@@ -1,0 +1,9 @@
+{
+  "lastDailySummary": "2026-01-23T23:24:53.483Z",
+  "consecutiveHealthFailures": 0,
+  "scriptFailures": {},
+  "healthChecks": {
+    "lastSuccess": "2026-01-23T23:24:42.354Z",
+    "lastFailure": null
+  }
+}
