@@ -139,13 +139,9 @@ function generateEmailHTML(name, language, email) {
                 <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); max-width: 600px;">
                     <!-- Header -->
                     <tr>
-                        <td style="padding: 40px 40px 20px 40px; text-align: center;">
-                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 0 auto;">
-                                <tr>
-                                    <td style="font-size: 24px; line-height: 24px; vertical-align: middle; padding-right: 8px;">☕️</td>
-                                    <td style="color: #333333; font-size: 24px; font-weight: 600; line-height: 24px; vertical-align: middle;">Linked.Coffee</td>
-                                </tr>
-                            </table>
+                        <td style="padding: 40px 40px 20px 40px; text-align: center; font-size: 0; line-height: 0;">
+                            <span style="display: inline-block; font-size: 28px; line-height: 28px; vertical-align: middle; margin-right: 8px; margin-top: -2px;">☕️</span>
+                            <span style="display: inline-block; color: #333333; font-size: 24px; font-weight: 600; line-height: 28px; vertical-align: middle; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">Linked.Coffee</span>
                         </td>
                     </tr>
 
