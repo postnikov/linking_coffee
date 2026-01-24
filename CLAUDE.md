@@ -437,6 +437,52 @@ No formal test suite currently exists. Manual testing recommended for:
 - Notification delivery (`notify-matches.js`)
 - Feedback collection workflow (midweek + weekend)
 
+### 🧪 Local Dev Login (FOR AGENTS)
+
+**IMPORTANT FOR ALL AGENTS**: When testing locally as a specific user, use the built-in dev login feature. **DO NOT** create mock auth systems or modify production code.
+
+**How to test as any user locally:**
+
+1. **Start local servers**: `./start_local.sh`
+2. **Go to**: http://localhost:3000/login
+3. **Use the orange DEV panel** at the bottom - click "Quick Login (@username)"
+
+**Or use the helper script:**
+```bash
+cd backend && node scripts/test-get-user.js <username>
+# Example: node scripts/test-get-user.js max_postnikov
+# Outputs user data and browser console command
+```
+
+**Manual localStorage method** (browser console on localhost:3000):
+```javascript
+localStorage.setItem('user', JSON.stringify({
+  Tg_Username: 'max_postnikov',
+  Tg_ID: '123456789'  // Get real ID from Airtable or test-get-user.js
+}));
+window.location.reload();
+```
+
+**Why this is safe:**
+| Protection | How |
+|------------|-----|
+| Frontend-only on localhost | Dev panel checks `window.location.hostname === 'localhost'` ([LoginPage.js:353](frontend/src/pages/LoginPage.js#L353)) |
+| Backend requires dev mode | `/api/dev-login` requires `NODE_ENV=development` ([server.js:611](backend/server.js#L611)) |
+| No Telegram OTP sent | Bypasses bot entirely |
+| No data modified | Read-only from Airtable |
+| Production protected | Won't work on https://linked.coffee |
+
+**Logout when done:**
+```javascript
+localStorage.removeItem('user');
+window.location.reload();
+```
+
+**Key files:**
+- [backend/scripts/test-get-user.js](backend/scripts/test-get-user.js) - Fetches user data from Airtable
+- [frontend/src/pages/LoginPage.js](frontend/src/pages/LoginPage.js) - Dev login UI (lines 350-380)
+- [backend/server.js](backend/server.js) - `/api/dev-login` endpoint (line 611)
+
 ## Deployment Notes
 
 ### Production Deployment Script (`deploy-prod.sh`)

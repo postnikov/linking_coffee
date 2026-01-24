@@ -13,6 +13,7 @@ import AdminPage from './pages/AdminPage';
 import TokenProfile from './pages/TokenProfile';
 import LinkedinCallback from './pages/LinkedinCallback';
 import Unsubscribe from './pages/Unsubscribe';
+import Privacy from './pages/Privacy';
 // import AdminHealth from './pages/AdminHealth'; // Now integrated
 
 
@@ -87,6 +88,7 @@ function App() {
                             <Route path="/about" element={<About />} />
                             <Route path="/rules" element={<Rules />} />
                             <Route path="/prices" element={<Prices user={user} />} />
+                            <Route path="/privacy" element={<Privacy />} />
                             <Route path="/profile/:username" element={
                                 <RequireAuth user={user}>
                                     <PublicProfile />
