@@ -376,3 +376,8 @@ React apps require environment variables at **build time**, not runtime. Variabl
 - The `frontend/Dockerfile` declares them as `ARG` and sets them as `ENV` before build
 - Currently passed: `REACT_APP_GOOGLE_CLIENT_ID`, `REACT_APP_TELEGRAM_BOT_NAME`
 - If adding new `REACT_APP_*` variables, update BOTH `frontend/Dockerfile` AND `docker-compose.prod.yml`
+
+**Production Build Configuration:**
+- `.env.production` disables webpack-dev-server WebSocket (prevents "ws://localhost:3000/ws" errors in production)
+- Settings: `WDS_SOCKET_PORT=0` and `FAST_REFRESH=false`
+- These only apply to production builds, not local development
