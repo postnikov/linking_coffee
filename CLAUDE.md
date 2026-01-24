@@ -2,6 +2,24 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## 🔒 SECURITY FIRST
+
+**MANDATORY:** Before writing ANY code, read:
+- **[Security Quick Reference](docs/technical/SECURITY-QUICK-REFERENCE.md)** ← Start here
+- **[Full Security Guidelines](docs/technical/SECURITY-GUIDELINES.md)** ← Comprehensive rules
+- **[Security Audit Template](docs/technical/SECURITY-AUDIT-TEMPLATE.md)** ← For code reviews
+
+**Critical Rules:**
+1. **ALL database queries MUST use sanitization** from `/backend/utils/airtable-sanitizer.js`
+2. **Admin endpoints MUST use `checkAdmin` middleware**
+3. **Never log passwords, OTP codes, or API keys**
+4. **All secrets MUST come from `process.env`**
+5. **Validate ALL user input before processing**
+
+See [SECURITY-QUICK-REFERENCE.md](docs/technical/SECURITY-QUICK-REFERENCE.md) for copy-paste patterns.
+
+---
+
 ## Project Overview
 
 Linked.Coffee is a web service that connects people for meaningful conversations through Telegram using Random Coffee mechanics. It consists of a React frontend, Node.js/Express backend, and Airtable database integration.

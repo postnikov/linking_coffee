@@ -2363,6 +2363,60 @@ app.get('/api/admin/scripts', checkAdmin, (req, res) => {
   }
 });
 
+// Deployment Tests - View test results
+app.get('/api/admin/tests', checkAdmin, (req, res) => {
+  const testLogFile = path.join(logDir, 'deployment-tests.log');
+
+  if (!fs.existsSync(testLogFile)) {
+    return res.json({ logs: '', lastRun: null, fileSize: 0 });
+  }
+
+  try {
+    const logs = fs.readFileSync(testLogFile, 'utf8');
+    const stats = fs.statSync(testLogFile);
+
+    // Parse last test run
+    const lines = logs.split('\n').filter(line => line.includes('TEST RUN START'));
+    const lastRun = lines.length > 0 ? lines[lines.length - 1].match(/\[(.*?)\]/)?.[1] : null;
+
+    // Return last 100 lines
+    const logLines = logs.split('\n');
+    const last100 = logLines.slice(-100).join('\n');
+
+    res.json({
+      success: true,
+      logs: last100,
+      lastRun,
+      fileSize: stats.size
+    });
+  } catch (error) {
+    console.error('Error reading deployment test logs:', error);
+    res.status(500).json({ success: false, message: 'Failed to read test logs' });
+  }
+});
+
+// Deployment Tests - Trigger tests manually
+app.post('/api/admin/tests/run', checkAdmin, async (req, res) => {
+  const { spawn } = require('child_process');
+
+  res.json({ success: true, status: 'started', message: 'Smoke tests initiated' });
+
+  // Run tests in background
+  const testProcess = spawn('npm', ['test', '--', '--testPathPattern=smoke'], {
+    cwd: __dirname,
+    env: {
+      ...process.env,
+      API_URL: 'http://localhost:3001/api',
+      FRONTEND_URL: 'http://localhost:8181'
+    }
+  });
+
+  testProcess.on('exit', (code) => {
+    const status = code === 0 ? 'passed' : 'failed';
+    console.log(`Smoke tests ${status} (exit code: ${code})`);
+  });
+});
+
 
 // Step 3.5: Get Interests
 app.get('/api/interests', (req, res) => {

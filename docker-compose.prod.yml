@@ -1,6 +1,7 @@
 services:
   # Backend API
   backend:
+    image: linking-coffee-backend:latest
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -45,6 +46,7 @@ services:
 
   # Frontend
   frontend:
+    image: linking-coffee-frontend:latest
     build:
       context: ./frontend
       dockerfile: Dockerfile

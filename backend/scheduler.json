@@ -14,5 +14,13 @@
     "enabled": true,
     "lastRun": null,
     "lastStatus": null
+  },
+  {
+    "name": "Check Deployment Logs",
+    "script": "check-deployment-health.js",
+    "cron": "*/10 * * * *",
+    "enabled": true,
+    "lastRun": null,
+    "lastStatus": null
   }
 ]
