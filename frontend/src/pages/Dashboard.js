@@ -84,6 +84,28 @@ const DAY_COLORS = {
     'Sunday': '#fae8ff'
 };
 
+// Desaturated background colors for chips
+const CHIP_BG_COLORS = [
+    '#fef3f2',  // Very light red/pink
+    '#fff7ed',  // Very light orange
+    '#fefce8',  // Very light yellow
+    '#f0fdf4',  // Very light green
+    '#eff6ff',  // Very light blue
+    '#faf5ff',  // Very light purple
+    '#fdf4ff',  // Very light magenta
+];
+
+// Bright text colors for chips
+const CHIP_TEXT_COLORS = [
+    '#dc2626',  // Bright red
+    '#ea580c',  // Bright orange
+    '#ca8a04',  // Bright yellow/gold
+    '#16a34a',  // Bright green
+    '#2563eb',  // Bright blue
+    '#7c3aed',  // Bright purple
+    '#c026d3',  // Bright magenta
+];
+
 const getAvatarUrl = (avatarPath) => {
     if (!avatarPath) return null;
     if (avatarPath.startsWith('http') || avatarPath.startsWith('data:')) return avatarPath;
@@ -148,6 +170,8 @@ const Dashboard = () => {
     const [savedSections, setSavedSections] = useState({});
     const [isEditMode, setIsEditMode] = useState(false);
     const [imageError, setImageError] = useState(false);
+    const [showSaveIndicator, setShowSaveIndicator] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
     const [showLinkModal, setShowLinkModal] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -278,33 +302,98 @@ const Dashboard = () => {
     }, [formData.avatar]);
 
     useEffect(() => {
-        // Fetch countries
-        const fetchCountries = async () => {
+        // Fetch all initial data in parallel (eliminates waterfall)
+        const fetchInitialData = async () => {
             try {
-                const response = await fetch(`${API_URL}/api/countries`);
-                const data = await response.json();
-                if (data.success) {
-                    setCountries(data.countries);
-                }
-            } catch (error) {
-                console.error('Failed to fetch countries:', error);
-            }
-        };
-        fetchCountries();
+                const storedUser = localStorage.getItem('user');
 
-        // Fetch interests
-        const fetchInterests = async () => {
-            try {
-                const response = await fetch(`${API_URL}/api/interests`);
-                const data = await response.json();
-                if (data.success) {
-                    setInterests(data.interests);
+                // Build parallel fetch array
+                const fetchPromises = [
+                    fetch(`${API_URL}/api/countries`),
+                    fetch(`${API_URL}/api/interests`)
+                ];
+
+                // Add profile fetch if user is authenticated
+                let profileUrl = null;
+                if (storedUser) {
+                    const user = JSON.parse(storedUser);
+                    if (user.username || user.id || user.email) {
+                        setIsLoading(true);
+                        if (user.username) {
+                            profileUrl = `${API_URL}/api/profile?username=${user.username}&requester=${user.username}`;
+                        } else if (user.id) {
+                            profileUrl = `${API_URL}/api/profile?id=${user.id}`;
+                        } else if (user.email) {
+                            profileUrl = `${API_URL}/api/profile?email=${user.email}`;
+                        }
+                        if (profileUrl) {
+                            fetchPromises.push(fetch(profileUrl));
+                        }
+                    }
+                }
+
+                const responses = await Promise.all(fetchPromises);
+                const [countriesResponse, interestsResponse, profileResponse] = responses;
+
+                // Parse all responses in parallel
+                const parsePromises = [
+                    countriesResponse.json(),
+                    interestsResponse.json()
+                ];
+                if (profileResponse) {
+                    parsePromises.push(profileResponse.json());
+                }
+
+                const parsedData = await Promise.all(parsePromises);
+                const [countriesData, interestsData, profileData] = parsedData;
+
+                // Update state with fetched data
+                if (countriesData.success) {
+                    setCountries(countriesData.countries);
+                }
+
+                if (interestsData.success) {
+                    setInterests(interestsData.interests);
+                }
+
+                // Handle profile data if it was fetched
+                if (profileData && profileData.success) {
+                    // Map old timezone abbreviations to new IANA-style format
+                    const mappedTimezone = profileData.profile.timezone
+                        ? (TIMEZONE_ALIASES[profileData.profile.timezone] || profileData.profile.timezone)
+                        : formData.timezone;
+
+                    const profileFormData = {
+                        ...formData,
+                        ...profileData.profile,
+                        timezone: mappedTimezone
+                    };
+                    setFormData(profileFormData);
+                    setInitialFormData(profileFormData);
+
+                    // Update user state with email if it exists in profile
+                    if (profileData.profile.email) {
+                        setUser(prevUser => ({ ...prevUser, email: profileData.profile.email }));
+                    }
+
+                    // Force edit mode if profile is incomplete
+                    if (!isProfileComplete(profileFormData)) {
+                        setIsEditMode(true);
+                    }
+
+                    if (profileData.currentMatch) {
+                        setCurrentMatch(profileData.currentMatch);
+                    }
                 }
             } catch (error) {
-                console.error('Failed to fetch interests:', error);
+                console.error('Failed to fetch initial data:', error);
+            } finally {
+                setIsLoading(false);
             }
         };
-        fetchInterests();
+
+        fetchInitialData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // Prevent body scroll when any modal is open
@@ -354,67 +443,6 @@ const Dashboard = () => {
             return () => clearTimeout(timer);
         }
     }, [message]);
-
-    useEffect(() => {
-        const fetchProfile = async () => {
-            const storedUser = localStorage.getItem('user');
-            if (!storedUser) return;
-
-            const user = JSON.parse(storedUser);
-            // Relaxed check: need username OR id OR email
-            if (!user.username && !user.id && !user.email) return;
-
-            try {
-                setIsLoading(true);
-                // Construct URL with available identifiers
-                let url = `${API_URL}/api/profile?`;
-                if (user.username) url += `username=${user.username}&requester=${user.username}`;
-                else if (user.id) url += `id=${user.id}`;
-                else if (user.email) url += `email=${user.email}`;
-
-                const response = await fetch(url);
-                const data = await response.json();
-
-                if (data.success) {
-                    // Map old timezone abbreviations to new IANA-style format
-                    const mappedTimezone = data.profile.timezone
-                        ? (TIMEZONE_ALIASES[data.profile.timezone] || data.profile.timezone)
-                        : formData.timezone;
-
-                    const profileData = {
-                        ...formData, // Keep defaults for missing fields
-                        ...data.profile,
-                        timezone: mappedTimezone
-                    };
-                    setFormData(profileData);
-                    setInitialFormData(profileData);
-
-                    // Update user state with email if it exists in profile
-                    if (data.profile.email) {
-                        setUser(prevUser => ({ ...prevUser, email: data.profile.email }));
-                    }
-
-                    // Force edit mode if profile is incomplete
-                    if (!isProfileComplete(profileData)) {
-                        setIsEditMode(true);
-                        // Optional: show a message explaining why
-                        // setMessage({ type: 'info', text: t('dashboard.profile.please_complete', 'Please complete your profile to continue.') });
-                    }
-
-                    if (data.currentMatch) {
-                        setCurrentMatch(data.currentMatch);
-                    }
-                }
-            } catch (error) {
-                console.error('Failed to fetch profile:', error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchProfile();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
 
     // Check for changes whenever formData updates
     useEffect(() => {
@@ -505,6 +533,19 @@ const Dashboard = () => {
         return colors[index];
     };
 
+    // Helper to get chip styling (desaturated background + bright text)
+    const getChipStyle = (str) => {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            hash = str.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        const index = Math.abs(hash) % CHIP_BG_COLORS.length;
+        return {
+            backgroundColor: CHIP_BG_COLORS[index],
+            color: CHIP_TEXT_COLORS[index]
+        };
+    };
+
     const handleRemoveOtherInterest = (field, interestToRemove) => {
         const currentString = formData[field];
         const items = currentString.split(/[,.;]+/).map(s => s.trim()).filter(s => s.length > 0);
@@ -514,6 +555,29 @@ const Dashboard = () => {
         const updatedData = { ...formData, [field]: newString };
         setFormData(updatedData);
         autoSaveProfile(updatedData, field);
+    };
+
+    // Calculate profile completion percentage
+    const calculateProfileProgress = () => {
+        const fields = [
+            { value: formData.name, weight: 1 },
+            { value: formData.family, weight: 1 },
+            { value: formData.country, weight: 1 },
+            { value: formData.city, weight: 1 },
+            { value: formData.timezone, weight: 1 },
+            { value: formData.languages?.length > 0, weight: 1 },
+            { value: formData.profession, weight: 1 },
+            { value: formData.professionalDesc, weight: 1 },
+            { value: formData.personalDesc, weight: 1 },
+            { value: formData.professionalInterests?.length > 0 || formData.otherProfessionalInterests, weight: 1 },
+            { value: formData.personalInterests?.length > 0 || formData.otherPersonalInterests, weight: 1 },
+            { value: formData.bestMeetingDays?.length > 0, weight: 1 },
+        ];
+
+        const completed = fields.filter(f => f.value).reduce((sum, f) => sum + f.weight, 0);
+        const total = fields.reduce((sum, f) => sum + f.weight, 0);
+
+        return Math.round((completed / total) * 100);
     };
 
     const getCurrentWeekDateRange = () => {
@@ -605,6 +669,10 @@ const Dashboard = () => {
         const user = JSON.parse(storedUser);
 
         try {
+            // Show saving indicator
+            setIsSaving(true);
+            setShowSaveIndicator(true);
+
             const response = await fetch(`${API_URL}/api/profile`, {
                 method: 'PUT',
                 headers: {
@@ -623,15 +691,27 @@ const Dashboard = () => {
             if (data.success) {
                 setInitialFormData(updatedData);
 
+                // Show saved indicator
+                setIsSaving(false);
+
                 setSavedSections(prev => ({ ...prev, [section]: true }));
                 setTimeout(() => {
                     setSavedSections(prev => ({ ...prev, [section]: false }));
                 }, 3000);
+
+                // Hide sticky indicator after 2 seconds
+                setTimeout(() => {
+                    setShowSaveIndicator(false);
+                }, 2000);
             } else {
                 console.error('Auto-save failed:', data.message);
+                setIsSaving(false);
+                setShowSaveIndicator(false);
             }
         } catch (error) {
             console.error('Auto-save error:', error);
+            setIsSaving(false);
+            setShowSaveIndicator(false);
         }
     };
 
@@ -959,6 +1039,17 @@ const Dashboard = () => {
 
                         {isEditMode ? (
                             <form onSubmit={handleSubmit} className="profile-form">
+                                {/* Progress Indicator */}
+                                <div className="profile-progress">
+                                    <div className="progress-header">
+                                        <span className="progress-label">{t('dashboard.profile.completion', 'Profile Completion')}</span>
+                                        <span className="progress-percentage">{calculateProfileProgress()}%</span>
+                                    </div>
+                                    <div className="progress-bar-container">
+                                        <div className="progress-bar-fill" style={{ width: `${calculateProfileProgress()}%` }}></div>
+                                    </div>
+                                </div>
+
                                 {/* Avatar and Name Row */}
                                 <div className="avatar-name-container">
                                     {/* Avatar */}
@@ -1245,7 +1336,7 @@ const Dashboard = () => {
                                                     </h4>
                                                     <div className="language-chips">
                                                         {formData.professionalInterests.map(interest => (
-                                                            <div key={interest} className="chip" style={{ backgroundColor: getInterestColor(interest) }}>
+                                                            <div key={interest} className="chip" style={getChipStyle(interest)}>
                                                                 {getLocalizedInterest(interest, 'professional')}
                                                                 <button
                                                                     type="button"
@@ -1316,7 +1407,7 @@ const Dashboard = () => {
                                                     </h4>
                                                     <div className="language-chips">
                                                         {formData.personalInterests.map(interest => (
-                                                            <div key={interest} className="chip" style={{ backgroundColor: getInterestColor(interest) }}>
+                                                            <div key={interest} className="chip" style={getChipStyle(interest)}>
                                                                 {getLocalizedInterest(interest, 'personal')}
                                                                 <button
                                                                     type="button"
@@ -1690,6 +1781,7 @@ const Dashboard = () => {
                                         onBlur={() => handleInputBlur('professionalDesc')}
                                     />
                                 </div>
+
                                 <div className="form-group">
                                     <label>
                                         {t('dashboard.profile.personal_desc', 'Personal Description')}
@@ -1713,7 +1805,7 @@ const Dashboard = () => {
                                     <label>{t('dashboard.profile.professional_interests', 'Professional Interests')}</label>
                                     <div className="language-chips" style={{ marginBottom: '1rem' }}>
                                         {formData.professionalInterests.map(interest => (
-                                            <div key={interest} className="chip" style={{ backgroundColor: getInterestColor(interest) }}>
+                                            <div key={interest} className="chip" style={getChipStyle(interest)}>
                                                 {getLocalizedInterest(interest, 'professional')}
                                                 <button
                                                     type="button"
@@ -1725,7 +1817,7 @@ const Dashboard = () => {
                                             </div>
                                         ))}
                                         {formData.otherProfessionalInterests.split(/[,.;]+/).map(item => item.trim()).filter(item => item.length > 0).map((item, index) => (
-                                            <div key={`other-${index}`} className="chip" style={{ backgroundColor: getInterestColor(item) }}>
+                                            <div key={`other-${index}`} className="chip" style={getChipStyle(item)}>
                                                 {item}
                                                 <button
                                                     type="button"
@@ -1780,7 +1872,7 @@ const Dashboard = () => {
                                     <label>{t('dashboard.profile.personal_interests', 'Personal Interests')}</label>
                                     <div className="language-chips" style={{ marginBottom: '1rem' }}>
                                         {formData.personalInterests.map(interest => (
-                                            <div key={interest} className="chip" style={{ backgroundColor: getInterestColor(interest) }}>
+                                            <div key={interest} className="chip" style={getChipStyle(interest)}>
                                                 {getLocalizedInterest(interest, 'personal')}
                                                 <button
                                                     type="button"
@@ -1792,7 +1884,7 @@ const Dashboard = () => {
                                             </div>
                                         ))}
                                         {formData.otherPersonalInterests.split(/[,.;]+/).map(item => item.trim()).filter(item => item.length > 0).map((item, index) => (
-                                            <div key={`other-${index}`} className="chip" style={{ backgroundColor: getInterestColor(item) }}>
+                                            <div key={`other-${index}`} className="chip" style={getChipStyle(item)}>
                                                 {item}
                                                 <button
                                                     type="button"
@@ -1853,17 +1945,26 @@ const Dashboard = () => {
                                             </span>
                                         )}
                                     </label>
-                                    <div style={{ display: 'flex', gap: '1rem' }}>
-                                        {COFFEE_GOALS.map(goal => (
-                                            <label key={goal} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                                                <input
-                                                    type="checkbox"
-                                                    checked={formData.coffeeGoals.includes(goal)}
-                                                    onChange={() => handleMultiSelectChange('coffeeGoals', goal)}
-                                                />
-                                                {goal}
-                                            </label>
-                                        ))}
+                                    <div className="language-chips">
+                                        {COFFEE_GOALS.map(goal => {
+                                            const isSelected = formData.coffeeGoals.includes(goal);
+                                            return (
+                                                <label
+                                                    key={goal}
+                                                    className={`language-option ${isSelected ? 'selected' : ''}`}
+                                                    style={{ cursor: 'pointer' }}
+                                                >
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={isSelected}
+                                                        onChange={() => handleMultiSelectChange('coffeeGoals', goal)}
+                                                        style={{ display: 'none' }}
+                                                    />
+                                                    {goal}
+                                                    {isSelected && <span className="check-icon">✓</span>}
+                                                </label>
+                                            );
+                                        })}
                                     </div>
                                 </div>
 
@@ -1938,12 +2039,12 @@ const Dashboard = () => {
                                                     <h4>{t('dashboard.profile.professional_interests')}</h4>
                                                     <div className="language-chips" style={{ flexWrap: 'wrap' }}>
                                                         {formData.professionalInterests.map(item => (
-                                                            <span key={item} className="chip" style={{ backgroundColor: getInterestColor(item) }}>
+                                                            <span key={item} className="chip" style={getChipStyle(item)}>
                                                                 {getLocalizedInterest(item, 'professional')}
                                                             </span>
                                                         ))}
                                                         {formData.otherProfessionalInterests && formData.otherProfessionalInterests.split(/[,.;]+/).map(item => item.trim()).filter(item => item).map((item, index) => (
-                                                            <span key={`other-${index}`} className="chip" style={{ backgroundColor: getInterestColor(item) }}>
+                                                            <span key={`other-${index}`} className="chip" style={getChipStyle(item)}>
                                                                 {item}
                                                             </span>
                                                         ))}
@@ -1955,12 +2056,12 @@ const Dashboard = () => {
                                                     <h4>{t('dashboard.profile.personal_interests')}</h4>
                                                     <div className="language-chips" style={{ flexWrap: 'wrap' }}>
                                                         {formData.personalInterests.map(item => (
-                                                            <span key={item} className="chip" style={{ backgroundColor: getInterestColor(item) }}>
+                                                            <span key={item} className="chip" style={getChipStyle(item)}>
                                                                 {getLocalizedInterest(item, 'personal')}
                                                             </span>
                                                         ))}
                                                         {formData.otherPersonalInterests && formData.otherPersonalInterests.split(/[,.;]+/).map(item => item.trim()).filter(item => item).map((item, index) => (
-                                                            <span key={`other-${index}`} className="chip" style={{ backgroundColor: getInterestColor(item) }}>
+                                                            <span key={`other-${index}`} className="chip" style={getChipStyle(item)}>
                                                                 {item}
                                                             </span>
                                                         ))}
@@ -1973,7 +2074,13 @@ const Dashboard = () => {
                                     {formData.coffeeGoals && formData.coffeeGoals.length > 0 && (
                                         <div className="profile-section-block">
                                             <h4>{t('dashboard.profile.coffee_goals')}</h4>
-                                            <p>{Array.isArray(formData.coffeeGoals) ? formData.coffeeGoals.join(', ') : formData.coffeeGoals}</p>
+                                            <div className="language-chips" style={{ flexWrap: 'wrap' }}>
+                                                {(Array.isArray(formData.coffeeGoals) ? formData.coffeeGoals : [formData.coffeeGoals]).map((goal, index) => (
+                                                    <span key={index} className="chip" style={getChipStyle(goal)}>
+                                                        {goal}
+                                                    </span>
+                                                ))}
+                                            </div>
                                         </div>
                                     )}
 
@@ -3530,6 +3637,28 @@ const Dashboard = () => {
                             </button>
                         </div>
                     </div>
+                </div>
+            )}
+
+            {/* Sticky Save Indicator */}
+            {showSaveIndicator && (
+                <div className={`sticky-save-indicator ${isSaving ? 'saving' : ''}`}>
+                    {isSaving ? (
+                        <>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ animation: 'spin 1s linear infinite' }}>
+                                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" opacity="0.25"/>
+                                <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="4" strokeLinecap="round"/>
+                            </svg>
+                            {t('common.saving', 'Saving...')}
+                        </>
+                    ) : (
+                        <>
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                            {t('common.all_changes_saved', 'All changes saved')}
+                        </>
+                    )}
                 </div>
             )}
         </main>

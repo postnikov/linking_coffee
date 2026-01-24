@@ -114,13 +114,16 @@ const AdminPage = () => {
             const user = JSON.parse(storedUser);
 
             try {
-                // Fetch Data
-                const response = await fetch(`${API_URL}/api/admin/data?requester=${user.username}`);
-                const result = await response.json();
+                // Fetch Data and Config in parallel (eliminates waterfall)
+                const [dataResponse, configResponse] = await Promise.all([
+                    fetch(`${API_URL}/api/admin/data?requester=${user.username}`),
+                    fetch(`${API_URL}/api/admin/config`)
+                ]);
 
-                // Fetch Config
-                const configRes = await fetch(`${API_URL}/api/admin/config`);
-                const configResult = await configRes.json();
+                const [result, configResult] = await Promise.all([
+                    dataResponse.json(),
+                    configResponse.json()
+                ]);
 
                 if (result.success) {
                     setData({ users: result.users, matches: result.matches });
@@ -137,7 +140,7 @@ const AdminPage = () => {
                     }
                 } else {
                     setError(result.message);
-                    if (response.status === 403) {
+                    if (dataResponse.status === 403) {
                         setTimeout(() => navigate('/'), 3000); // Redirect after 3s
                     }
                 }
