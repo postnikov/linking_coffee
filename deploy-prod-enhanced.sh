@@ -126,13 +126,13 @@ ssh $SERVER_USER@$SERVER_IP << 'ENDSSH'
   echo "📦 Installing test dependencies in container..."
   docker exec linking-coffee-backend sh -c "cd /app && npm install --save-dev jest@29.7.0 jest-junit@16.0.0" > /dev/null 2>&1
 
-  # Run tests inside the container with production environment using npx
+  # Run tests inside the container with production environment using local jest
   docker exec \
     -e API_URL="https://linked.coffee/api" \
     -e FRONTEND_URL="https://linked.coffee" \
     -w /app \
     linking-coffee-backend \
-    sh -c "npx jest --testPathPatterns=smoke"
+    sh -c "npm test -- --testPathPatterns=smoke"
 
   echo $? > /tmp/test_exit_code
 ENDSSH
