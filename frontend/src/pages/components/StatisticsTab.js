@@ -427,7 +427,7 @@ const UserAnalyticsView = ({ stats }) => {
 
 // Match Performance View Component
 const MatchPerformanceView = ({ stats }) => {
-  const { matchPerformance } = stats;
+  const { matchPerformance, weekly } = stats;
 
   return (
     <div className="match-performance-view">
@@ -451,7 +451,39 @@ const MatchPerformanceView = ({ stats }) => {
       </div>
 
       <div className="stat-section">
-        <h3>Meeting Status Breakdown</h3>
+        <h3>Weekly Match Breakdown</h3>
+        <div className="table-container">
+          <table className="stat-table">
+            <thead>
+              <tr>
+                <th>Week Start</th>
+                <th>Matches</th>
+                <th>Met</th>
+                <th>Scheduled</th>
+                <th>No</th>
+                <th>Fail</th>
+                <th>Response Rate</th>
+              </tr>
+            </thead>
+            <tbody>
+              {weekly.map(week => (
+                <tr key={week.weekStart}>
+                  <td>{week.weekStart}</td>
+                  <td>{week.matchesCreated}</td>
+                  <td>{week.feedback.met}</td>
+                  <td>{week.feedback.scheduled}</td>
+                  <td>{week.feedback.no}</td>
+                  <td>{week.feedback.fail}</td>
+                  <td>{week.feedback.responseRate}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="stat-section">
+        <h3>Overall Meeting Status Breakdown</h3>
         <div className="progress-bars">
           {Object.entries(matchPerformance.statusBreakdown).map(([status, data]) => (
             <div key={status} className="progress-row">
