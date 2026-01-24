@@ -1585,9 +1585,9 @@ app.post('/api/connect-telegram', async (req, res) => {
       // Preserve Name/Family if Target missing them
       if (!targetRecord.fields.Name && sourceRecord.fields.Name) updates.Name = sourceRecord.fields.Name;
       if (!targetRecord.fields.Family && sourceRecord.fields.Family) updates.Family = sourceRecord.fields.Family;
-      // Preserve Avatar if Target missing
-      if ((!targetRecord.fields.Avatar || targetRecord.fields.Avatar.length === 0) && sourceRecord.fields.Avatar) {
-        updates.Avatar = sourceRecord.fields.Avatar;
+      // Preserve Avatar if Target missing (extract URL only - Airtable requires { url } format for updates)
+      if ((!targetRecord.fields.Avatar || targetRecord.fields.Avatar.length === 0) && sourceRecord.fields.Avatar && sourceRecord.fields.Avatar[0]?.url) {
+        updates.Avatar = [{ url: sourceRecord.fields.Avatar[0].url }];
       }
       // Ensure ID is set
       if (!targetRecord.fields.Tg_ID && telegramId) updates.Tg_ID = telegramId;
