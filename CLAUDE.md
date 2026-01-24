@@ -274,6 +274,47 @@ const dateStr = date.toISOString().split('T')[0];
 
 Using `.toISOString()` converts to UTC, which can shift the date by -1 day in positive timezones, causing data mismatches in match queries and scheduling logic.
 
+### Telegram Bot Instance Management
+
+**CRITICAL**: The Telegram Bot API only allows **one active polling session per bot token**. Multiple polling sessions will cause `409 Conflict: terminated by other getUpdates request` errors and break all bot functionality (callbacks, commands, etc.).
+
+**How We Prevent This:**
+
+1. **Single Launch Point**: `bot.launch()` is only called in [server.js](backend/server.js) when it's the main module:
+   ```javascript
+   // Only launch bot if running as main process (not when imported as module)
+   if (require.main === module) {
+     bot.launch().then(() => {
+       console.log('🤖 Telegram bot started');
+     });
+   }
+   ```
+
+2. **Shared Bot Instance**: Scripts that need to send messages (via [alerting.js](backend/utils/alerting.js)) reuse the bot instance from server.js:
+   ```javascript
+   const server = require('../server');
+   botInstance = server.bot;  // Reuses existing instance
+   ```
+
+3. **Send-Only Pattern**: Scripts NEVER call `bot.launch()` - they only use `bot.telegram.sendMessage()` which doesn't start polling.
+
+**Rules for Developers:**
+
+- ✅ **DO**: Use `bot.telegram.sendMessage()`, `bot.telegram.sendPhoto()`, etc. for sending messages
+- ✅ **DO**: Import bot instance from server.js via alerting.js utilities
+- ✅ **DO**: Register callback handlers with `bot.action()` in server.js
+- ❌ **DON'T**: Call `bot.launch()` anywhere except server.js main module check
+- ❌ **DON'T**: Call `bot.startPolling()` or `bot.handleUpdate()` in scripts
+- ❌ **DON'T**: Create multiple `new Telegraf()` instances that call launch()
+
+**Debugging 409 Errors:**
+
+If you see `409 Conflict` errors:
+1. Check if multiple processes are running the same bot token
+2. Clear pending updates: `curl -X POST "https://api.telegram.org/bot<TOKEN>/deleteWebhook?drop_pending_updates=true"`
+3. Restart the backend service
+4. Verify only one `bot.launch()` call exists in the codebase
+
 ### Authentication Flow
 1. User enters Telegram username → `POST /api/register`
 2. Backend sends OTP to user via Telegram bot (valid 10 minutes)

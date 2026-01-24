@@ -17,7 +17,21 @@ let botInstance = null;
 
 /**
  * Get or create Telegram bot instance
- * Tries to reuse bot from server.js, falls back to creating new instance
+ *
+ * IMPORTANT: This function reuses the bot instance from server.js to avoid
+ * creating multiple polling sessions which would cause 409 Conflict errors.
+ *
+ * How it works:
+ * 1. When server.js is running, require('../server') imports the module and
+ *    reuses the existing bot instance (server.js has require.main check to
+ *    prevent bot.launch() when imported as module)
+ * 2. For standalone scripts, creates a new bot instance but NEVER calls
+ *    bot.launch() - only uses bot.telegram.sendMessage() for sending
+ *
+ * WARNING: NEVER call bot.launch() on the returned instance! This would
+ * create a second polling session and cause 409 Conflict errors.
+ *
+ * @returns {Telegraf|null} Bot instance (for sending messages only)
  */
 function getBotInstance() {
   if (!botInstance) {
@@ -34,6 +48,7 @@ function getBotInstance() {
     }
 
     // Fallback: Create new instance for standalone scripts
+    // NOTE: This instance is for sending messages only, NOT for polling!
     const { Telegraf } = require('telegraf');
     const botToken = process.env.NODE_ENV === 'production'
       ? process.env.BOT_TOKEN
@@ -45,7 +60,7 @@ function getBotInstance() {
     }
 
     botInstance = new Telegraf(botToken);
-    console.log('📱 Created new bot instance for alerting');
+    console.log('📱 Created new bot instance for alerting (send-only, no polling)');
   }
   return botInstance;
 }

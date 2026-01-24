@@ -184,6 +184,9 @@ scheduler.init();
 
 
 // Initialize Telegram Bot
+// IMPORTANT: This bot instance is exported for use by scripts (via alerting.js)
+// but bot.launch() is only called when this file is the main module (see bottom of file)
+// to prevent multiple polling sessions which cause 409 Conflict errors.
 const botToken = process.env.NODE_ENV === 'production' ? process.env.BOT_TOKEN : process.env.ADMIN_BOT_TOKEN;
 console.log(`🤖 Initializing Bot in ${process.env.NODE_ENV} mode`);
 console.log(`🔑 Using Bot Token starting with: ${botToken ? botToken.substring(0, 5) + '...' : 'UNDEFINED'}`);
