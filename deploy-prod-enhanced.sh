@@ -132,7 +132,7 @@ ssh $SERVER_USER@$SERVER_IP << 'ENDSSH'
     -e FRONTEND_URL="https://linked.coffee" \
     -w /app \
     linking-coffee-backend \
-    sh -c "npx jest --testPathPattern=smoke"
+    sh -c "npx jest --testPathPatterns=smoke"
 
   echo $? > /tmp/test_exit_code
 ENDSSH
