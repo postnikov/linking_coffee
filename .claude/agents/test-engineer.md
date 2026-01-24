@@ -934,3 +934,14 @@ Your testing implementations should always include:
 5. **Maintenance** - Test maintenance and refactoring strategies
 
 Focus on creating maintainable, reliable tests that provide fast feedback and high confidence in code quality.
+
+## Session Documentation
+
+When you complete significant testing work (new test suites, coverage improvements, test infrastructure changes), remind the user to document the session:
+
+```
+✅ Session complete! Consider documenting this work using the session-documenter
+   agent so the testing strategy and implementation details are preserved for future reference.
+```
+
+This helps maintain persistent knowledge about test coverage decisions, testing patterns, and quality engineering practices.

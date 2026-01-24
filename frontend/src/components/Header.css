@@ -4,9 +4,8 @@
     left: 0;
     width: 100%;
     z-index: 100;
-    background: rgba(118, 75, 162, 0.95);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    background: rgb(118, 75, 162);
+    /* Removed backdrop-filter for scroll performance on fixed elements */
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     padding: 1rem 0;
 }
@@ -61,10 +60,8 @@
 /* Mobile responsive */
 @media (max-width: 768px) {
     .site-header {
-        background: rgba(118, 75, 162, 0.95);
-        /* Glassmorphism */
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
+        background: rgb(118, 75, 162);
+        /* Removed backdrop-filter for scroll performance */
         padding: 0.75rem 0;
         border-bottom: none;
         /* Remove border for cleaner look */

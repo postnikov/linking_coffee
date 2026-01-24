@@ -90,9 +90,8 @@ code {
 }
 
 .glass-effect {
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.95);
+  /* Removed backdrop-filter for scroll performance */
   border: 1px solid rgba(255, 255, 255, 0.3);
 }
 

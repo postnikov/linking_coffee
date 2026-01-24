@@ -20,6 +20,30 @@ See [SECURITY-QUICK-REFERENCE.md](docs/technical/SECURITY-QUICK-REFERENCE.md) fo
 
 ---
 
+## 📝 AGENT SESSION DOCUMENTATION
+
+**FOR ALL SPECIALIZED AGENTS:** When you complete significant work, remind users to document the session.
+
+**What qualifies as significant:**
+- ✅ Multiple files created or modified
+- ✅ Important design or architectural decisions made
+- ✅ Complex problems solved or analyzed
+- ✅ New patterns or strategies established
+
+**Reminder format (at end of session):**
+```
+✅ Session complete! Consider documenting this work using the session-documenter
+   agent so the [insights/decisions/strategy] are preserved for future reference.
+```
+
+**Documentation system:**
+- Sessions documented in `docs/agent-sessions/`
+- Use `session-documenter` agent to create structured summaries
+- See [docs/agent-sessions/README.md](docs/agent-sessions/README.md) for details
+- Helps maintain context across conversation boundaries
+
+---
+
 ## Project Overview
 
 Linked.Coffee is a web service that connects people for meaningful conversations through Telegram using Random Coffee mechanics. It consists of a React frontend, Node.js/Express backend, and Airtable database integration.

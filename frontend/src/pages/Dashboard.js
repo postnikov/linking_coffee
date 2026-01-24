@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import ReactDOM from 'react-dom';
 import { useTranslation } from 'react-i18next';
@@ -396,18 +396,18 @@ const Dashboard = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // Prevent body scroll when any modal is open
+    // Prevent body scroll when any modal is open - use CSS class toggle to avoid layout thrashing
     useEffect(() => {
         const isAnyModalOpen = showLanguageModal || showTimezoneModal || showDaysModal || showCountryModal || showCityModal || showProfessionalInterestsModal || showPersonalInterestsModal;
 
         if (isAnyModalOpen) {
-            document.body.style.overflow = 'hidden';
+            document.body.classList.add('modal-open');
         } else {
-            document.body.style.overflow = 'unset';
+            document.body.classList.remove('modal-open');
         }
 
         return () => {
-            document.body.style.overflow = 'unset';
+            document.body.classList.remove('modal-open');
         };
     }, [showLanguageModal, showTimezoneModal, showDaysModal, showCountryModal, showCityModal, showProfessionalInterestsModal, showPersonalInterestsModal]);
 
@@ -452,10 +452,68 @@ const Dashboard = () => {
         // const isChanged = JSON.stringify(formData) !== JSON.stringify(initialFormData);
     }, [formData, initialFormData]);
 
-    const handleChange = (e) => {
+    const handleChange = useCallback((e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
-    };
+    }, []);
+
+    // Auto-save profile to server - memoized for stable reference
+    const autoSaveProfile = useCallback(async (updatedData, section) => {
+        // Prevent saving if mandatory fields were somehow cleared (e.g. valid data loss bug)
+        if (!updatedData || !updatedData.name || !updatedData.family) {
+            return;
+        }
+
+        const storedUser = localStorage.getItem('user');
+        if (!storedUser) return;
+        const user = JSON.parse(storedUser);
+
+        try {
+            // Show saving indicator
+            setIsSaving(true);
+            setShowSaveIndicator(true);
+
+            const response = await fetch(`${API_URL}/api/profile`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    username: user.username,
+                    id: user.id,
+                    email: user.email,
+                    profile: updatedData
+                }),
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                setInitialFormData(updatedData);
+
+                // Show saved indicator
+                setIsSaving(false);
+
+                setSavedSections(prev => ({ ...prev, [section]: true }));
+                setTimeout(() => {
+                    setSavedSections(prev => ({ ...prev, [section]: false }));
+                }, 3000);
+
+                // Hide sticky indicator after 2 seconds
+                setTimeout(() => {
+                    setShowSaveIndicator(false);
+                }, 2000);
+            } else {
+                console.error('Auto-save failed:', data.message);
+                setIsSaving(false);
+                setShowSaveIndicator(false);
+            }
+        } catch (error) {
+            console.error('Auto-save error:', error);
+            setIsSaving(false);
+            setShowSaveIndicator(false);
+        }
+    }, []);
 
     // Keep ref in sync with formData to avoid stale closures in onBlur
     const formDataRef = useRef(formData);
@@ -463,23 +521,24 @@ const Dashboard = () => {
         formDataRef.current = formData;
     }, [formData]);
 
-    const handleInputBlur = (section) => {
+    const handleInputBlur = useCallback((section) => {
         autoSaveProfile(formDataRef.current, section);
-    };
+    }, [autoSaveProfile]);
 
-    const handleMultiSelectChange = (name, value) => {
-        const current = formData[name] || [];
-        let newValues;
-        if (current.includes(value)) {
-            newValues = current.filter(item => item !== value);
-        } else {
-            newValues = [...current, value];
-        }
-        const updatedData = { ...formData, [name]: newValues };
-
-        setFormData(updatedData);
-        autoSaveProfile(updatedData, name);
-    };
+    const handleMultiSelectChange = useCallback((name, value) => {
+        setFormData(prev => {
+            const current = prev[name] || [];
+            let newValues;
+            if (current.includes(value)) {
+                newValues = current.filter(item => item !== value);
+            } else {
+                newValues = [...current, value];
+            }
+            const updatedData = { ...prev, [name]: newValues };
+            autoSaveProfile(updatedData, name);
+            return updatedData;
+        });
+    }, [autoSaveProfile]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -522,29 +581,25 @@ const Dashboard = () => {
         return item && i18n.language === 'ru' ? item.name_ru : nameEn;
     };
 
-    // Helper to get a consistent color for an interest string
-    const getInterestColor = (str) => {
-        const colors = Object.values(DAY_COLORS);
-        let hash = 0;
-        for (let i = 0; i < str.length; i++) {
-            hash = str.charCodeAt(i) + ((hash << 5) - hash);
-        }
-        const index = Math.abs(hash) % colors.length;
-        return colors[index];
-    };
-
     // Helper to get chip styling (desaturated background + bright text)
-    const getChipStyle = (str) => {
+    // Memoized to avoid recalculating hash on every render
+    const chipStyleCache = useMemo(() => new Map(), []);
+    const getChipStyle = useCallback((str) => {
+        if (chipStyleCache.has(str)) {
+            return chipStyleCache.get(str);
+        }
         let hash = 0;
         for (let i = 0; i < str.length; i++) {
             hash = str.charCodeAt(i) + ((hash << 5) - hash);
         }
         const index = Math.abs(hash) % CHIP_BG_COLORS.length;
-        return {
+        const style = {
             backgroundColor: CHIP_BG_COLORS[index],
             color: CHIP_TEXT_COLORS[index]
         };
-    };
+        chipStyleCache.set(str, style);
+        return style;
+    }, [chipStyleCache]);
 
     const handleRemoveOtherInterest = (field, interestToRemove) => {
         const currentString = formData[field];
@@ -655,63 +710,6 @@ const Dashboard = () => {
             setMessage({ type: 'error', text: 'An error occurred while uploading' });
         } finally {
             setIsLoading(false);
-        }
-    };
-
-    const autoSaveProfile = async (updatedData, section) => {
-        // Prevent saving if mandatory fields were somehow cleared (e.g. valid data loss bug)
-        if (!updatedData || !updatedData.name || !updatedData.family) {
-            return;
-        }
-
-        const storedUser = localStorage.getItem('user');
-        if (!storedUser) return;
-        const user = JSON.parse(storedUser);
-
-        try {
-            // Show saving indicator
-            setIsSaving(true);
-            setShowSaveIndicator(true);
-
-            const response = await fetch(`${API_URL}/api/profile`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    username: user.username,
-                    id: user.id,
-                    email: user.email,
-                    profile: updatedData
-                }),
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
-                setInitialFormData(updatedData);
-
-                // Show saved indicator
-                setIsSaving(false);
-
-                setSavedSections(prev => ({ ...prev, [section]: true }));
-                setTimeout(() => {
-                    setSavedSections(prev => ({ ...prev, [section]: false }));
-                }, 3000);
-
-                // Hide sticky indicator after 2 seconds
-                setTimeout(() => {
-                    setShowSaveIndicator(false);
-                }, 2000);
-            } else {
-                console.error('Auto-save failed:', data.message);
-                setIsSaving(false);
-                setShowSaveIndicator(false);
-            }
-        } catch (error) {
-            console.error('Auto-save error:', error);
-            setIsSaving(false);
-            setShowSaveIndicator(false);
         }
     };
 
@@ -2128,12 +2126,11 @@ const Dashboard = () => {
                                     alignItems: 'center',
                                     justifyContent: 'space-between',
                                     padding: '1.25rem',
-                                    background: 'rgba(255, 255, 255, 0.8)',
-                                    backdropFilter: 'blur(10px)',
+                                    background: 'rgba(255, 255, 255, 0.95)',
                                     borderRadius: '12px',
                                     border: '1px solid rgba(124, 58, 237, 0.2)',
                                     boxShadow: '0 4px 6px rgba(0, 0, 0, 0.07)',
-                                    transition: 'all 0.3s ease'
+                                    transition: 'transform 0.2s ease, box-shadow 0.2s ease'
                                 }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                         <div style={{
@@ -2199,8 +2196,7 @@ const Dashboard = () => {
                                     alignItems: 'center',
                                     justifyContent: 'space-between',
                                     padding: '1.25rem',
-                                    background: 'rgba(254, 242, 242, 0.9)',
-                                    backdropFilter: 'blur(10px)',
+                                    background: 'rgba(254, 242, 242, 0.98)',
                                     borderRadius: '12px',
                                     border: '1px solid rgba(239, 68, 68, 0.3)',
                                     boxShadow: '0 4px 6px rgba(0, 0, 0, 0.07)',
@@ -2257,12 +2253,11 @@ const Dashboard = () => {
                                     alignItems: 'center',
                                     justifyContent: 'space-between',
                                     padding: '1.25rem',
-                                    background: 'rgba(255, 255, 255, 0.8)',
-                                    backdropFilter: 'blur(10px)',
+                                    background: 'rgba(255, 255, 255, 0.95)',
                                     borderRadius: '12px',
                                     border: '1px solid rgba(34, 197, 94, 0.2)',
                                     boxShadow: '0 4px 6px rgba(0, 0, 0, 0.07)',
-                                    transition: 'all 0.3s ease'
+                                    transition: 'transform 0.2s ease, box-shadow 0.2s ease'
                                 }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                         <div style={{
@@ -2325,12 +2320,11 @@ const Dashboard = () => {
                                     alignItems: 'center',
                                     justifyContent: 'space-between',
                                     padding: '1.25rem',
-                                    background: 'rgba(255, 255, 255, 0.6)',
-                                    backdropFilter: 'blur(10px)',
+                                    background: 'rgba(255, 255, 255, 0.95)',
                                     borderRadius: '12px',
                                     border: '1px dashed rgba(156, 163, 175, 0.5)',
                                     boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
-                                    transition: 'all 0.3s ease'
+                                    transition: 'transform 0.2s ease, box-shadow 0.2s ease'
                                 }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                         <div style={{
@@ -2391,12 +2385,11 @@ const Dashboard = () => {
                                     alignItems: 'center',
                                     justifyContent: 'space-between',
                                     padding: '1.25rem',
-                                    background: 'rgba(255, 255, 255, 0.8)',
-                                    backdropFilter: 'blur(10px)',
+                                    background: 'rgba(255, 255, 255, 0.95)',
                                     borderRadius: '12px',
                                     border: '1px solid rgba(0, 119, 181, 0.2)', // LinkedIn Blue
                                     boxShadow: '0 4px 6px rgba(0, 0, 0, 0.07)',
-                                    transition: 'all 0.3s ease'
+                                    transition: 'transform 0.2s ease, box-shadow 0.2s ease'
                                 }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                         <div style={{
@@ -2484,12 +2477,11 @@ const Dashboard = () => {
                                     alignItems: 'center',
                                     justifyContent: 'space-between',
                                     padding: '1.25rem',
-                                    background: 'rgba(255, 255, 255, 0.6)',
-                                    backdropFilter: 'blur(10px)',
+                                    background: 'rgba(255, 255, 255, 0.95)',
                                     borderRadius: '12px',
                                     border: '1px dashed rgba(156, 163, 175, 0.5)',
                                     boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
-                                    transition: 'all 0.3s ease'
+                                    transition: 'transform 0.2s ease, box-shadow 0.2s ease'
                                 }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                         <div style={{
@@ -3354,12 +3346,11 @@ const Dashboard = () => {
                     left: 0,
                     right: 0,
                     bottom: 0,
-                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                    backgroundColor: 'rgba(0, 0, 0, 0.6)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    zIndex: 1001,
-                    backdropFilter: 'blur(4px)'
+                    zIndex: 1001
                 }}>
                     <div style={{
                         backgroundColor: 'white',
@@ -3440,12 +3431,11 @@ const Dashboard = () => {
                     left: 0,
                     right: 0,
                     bottom: 0,
-                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                    backgroundColor: 'rgba(0, 0, 0, 0.6)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    zIndex: 1001,
-                    backdropFilter: 'blur(4px)'
+                    zIndex: 1001
                 }}>
                     <div style={{
                         backgroundColor: 'white',
@@ -3532,12 +3522,11 @@ const Dashboard = () => {
                     left: 0,
                     right: 0,
                     bottom: 0,
-                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                    backgroundColor: 'rgba(0, 0, 0, 0.6)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    zIndex: 1001,
-                    backdropFilter: 'blur(4px)'
+                    zIndex: 1001
                 }}>
                     <div style={{
                         backgroundColor: 'white',

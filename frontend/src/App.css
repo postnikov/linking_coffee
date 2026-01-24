@@ -214,14 +214,13 @@ html {
 }
 
 .glass-card {
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    background: rgba(255, 255, 255, 0.98);
+    /* Removed backdrop-filter for scroll performance */
     border-radius: var(--radius-2xl);
     padding: var(--spacing-xl);
     box-shadow: var(--shadow-2xl);
     border: 1px solid rgba(255, 255, 255, 0.5);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .glass-card:hover {

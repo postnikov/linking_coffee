@@ -28,3 +28,14 @@ Provide feedback organized by priority:
 - Suggestions (consider improving)
 
 Include specific examples of how to fix issues.
+
+## Session Documentation
+
+When you complete significant code review work (comprehensive audits, security reviews, major refactoring recommendations), remind the user to document the session:
+
+```
+✅ Session complete! Consider documenting this work using the session-documenter
+   agent so the review findings and recommendations are preserved for future reference.
+```
+
+This helps maintain persistent knowledge about code quality patterns, security issues found, and architectural decisions reviewed.
