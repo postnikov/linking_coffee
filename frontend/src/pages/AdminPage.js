@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import './Dashboard.css'; // Reusing dashboard styles for now
 import './AdminPage.css'; // Admin specific overrides
 import AdminHealth from './AdminHealth';
+import StatisticsTab from './components/StatisticsTab';
 
 const API_URL = process.env.REACT_APP_API_URL || '';
 
@@ -254,6 +255,20 @@ const AdminPage = () => {
                         >
                             AI Matcher
                         </button>
+                        <button
+                            onClick={() => setActiveTab('statistics')}
+                            style={{
+                                background: 'none',
+                                border: 'none',
+                                fontSize: '1.1rem',
+                                fontWeight: activeTab === 'statistics' ? 'bold' : 'normal',
+                                color: activeTab === 'statistics' ? '#6366f1' : '#4b5563',
+                                cursor: 'pointer',
+                                padding: '0.5rem 1rem'
+                            }}
+                        >
+                            Statistics
+                        </button>
                     </div>
 
                     {activeTab === 'users' && (
@@ -463,10 +478,17 @@ const AdminPage = () => {
                         const stored = localStorage.getItem('user');
                         const user = stored ? JSON.parse(stored) : null;
                         if (!user) return null;
-                        // Determine tg_username: locally it seems user.username is used in fetchAdminData, 
+                        // Determine tg_username: locally it seems user.username is used in fetchAdminData,
                         // so we assume user.username is the telegram username.
                         const adminUser = { ...user, tg_username: user.username };
                         return <AdminHealth user={adminUser} isAdmin={true} />;
+                    })()}
+
+                    {activeTab === 'statistics' && (() => {
+                        const stored = localStorage.getItem('user');
+                        const user = stored ? JSON.parse(stored) : null;
+                        if (!user) return null;
+                        return <StatisticsTab user={user} />;
                     })()}
                 </div>
             </div>

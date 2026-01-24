@@ -9,6 +9,7 @@ const Airtable = require('airtable');
 const { Telegraf, Markup } = require('telegraf');
 const fs = require('fs');
 const { spawn } = require('child_process');
+const statisticsUtils = require('./utils/statistics');
 
 const logDir = path.join(__dirname, 'logs');
 console.log('📂 Log Directory:', logDir);
@@ -2130,6 +2131,113 @@ app.get('/api/admin/logs/scripts/:scriptName/download', checkAdmin, async (req, 
   } catch (error) {
     console.error('Error downloading script log:', error);
     res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Statistics
+app.get('/api/admin/statistics', checkAdmin, async (req, res) => {
+  try {
+    const period = parseInt(req.query.period) || 30;
+
+    // Validate period
+    if (period < 1 || period > 365) {
+      return res.status(400).json({
+        success: false,
+        message: 'Period must be between 1 and 365 days'
+      });
+    }
+
+    console.log(`📊 Fetching statistics for ${period} days...`);
+
+    // Fetch data from Airtable in parallel
+    const [membersRecords, matchesRecords, countriesRecords, citiesRecords] = await Promise.all([
+      // Members with Consent_GDPR
+      base(process.env.AIRTABLE_MEMBERS_TABLE).select({
+        filterByFormula: '{Consent_GDPR}',
+        fields: [
+          'Created_At', 'Tg_ID', 'Linkedin_ID', 'Status',
+          'Name', 'Family', 'Avatar', 'Profession', 'Grade',
+          'Professional_Description', 'Personal_Description',
+          'Languages', 'Professional_Interests', 'Personal_Interests',
+          'Coffee_Goals', 'Countries', 'City_Link', 'Time_Zone',
+          'Best_Meetings_Days', 'Next_Week_Status', 'Current_Week_Status'
+        ]
+      }).all(),
+
+      // Matches within period (fetch all to get historical data)
+      base(process.env.AIRTABLE_MATCHES_TABLE).select({
+        fields: [
+          'Week_Start', 'Member1', 'Member2', 'Status',
+          'We_Met_1', 'We_Met_2', 'Feedback1', 'Feedback2',
+          'Notifications', 'Midweek_Checkin', 'Weekend_Checkin'
+        ]
+      }).all(),
+
+      // Countries for geographic analysis
+      base(process.env.AIRTABLE_COUNTRIES_TABLE).select({
+        fields: ['ISO_Code', 'Name_en']
+      }).all(),
+
+      // Cities for geographic analysis
+      base(process.env.AIRTABLE_CITIES_TABLE).select({
+        fields: ['Slug', 'name_en', 'country_iso']
+      }).all()
+    ]);
+
+    console.log(`✅ Fetched ${membersRecords.length} members, ${matchesRecords.length} matches`);
+
+    // Create lookup maps for countries and cities
+    const countriesMap = new Map(countriesRecords.map(r => [r.id, r]));
+    const citiesMap = new Map(citiesRecords.map(r => [r.id, r]));
+
+    // Calculate all statistics in parallel
+    const [
+      dailyMetrics,
+      weeklyMetrics,
+      profileCompletion,
+      matchPerformance,
+      userStatus,
+      geography,
+      languages
+    ] = await Promise.all([
+      Promise.resolve(statisticsUtils.calculateDailyMetrics(membersRecords, period)),
+      Promise.resolve(statisticsUtils.calculateWeeklyMetrics(membersRecords, matchesRecords, period)),
+      Promise.resolve(statisticsUtils.analyzeProfileCompletion(membersRecords)),
+      Promise.resolve(statisticsUtils.analyzeMatchPerformance(matchesRecords)),
+      Promise.resolve(statisticsUtils.analyzeUserStatus(membersRecords)),
+      Promise.resolve(statisticsUtils.analyzeGeography(membersRecords, countriesMap, citiesMap)),
+      Promise.resolve(statisticsUtils.analyzeLanguages(membersRecords))
+    ]);
+
+    // Calculate overview
+    const overview = statisticsUtils.calculateOverview(
+      membersRecords,
+      matchesRecords,
+      matchPerformance
+    );
+
+    console.log('✅ Statistics calculated successfully');
+
+    res.json({
+      success: true,
+      data: {
+        overview,
+        daily: dailyMetrics,
+        weekly: weeklyMetrics,
+        userStatus,
+        profileCompletion,
+        geography,
+        languages,
+        matchPerformance
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching statistics:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch statistics',
+      error: error.message
+    });
   }
 });
 
