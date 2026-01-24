@@ -116,22 +116,22 @@ fi
 
 echo "✅ Deployment completed. Starting smoke tests..."
 
-# 4. Run smoke tests on server
-echo "🧪 Running smoke tests against production..."
+# 4. Run smoke tests inside Docker container
+echo "🧪 Running smoke tests against production (inside container)..."
 
 ssh $SERVER_USER@$SERVER_IP << 'ENDSSH'
-  cd /opt/linking-coffee/backend
+  cd /opt/linking-coffee
 
-  # Install test dependencies if not present
-  if ! npm list jest > /dev/null 2>&1; then
-    echo "📦 Installing test dependencies..."
-    npm install --save-dev jest@29.7.0 jest-junit@16.0.0
-  fi
+  # Install test dependencies inside the backend container
+  echo "📦 Installing test dependencies in container..."
+  docker exec linking-coffee-backend npm install --save-dev jest@29.7.0 jest-junit@16.0.0 > /dev/null 2>&1
 
-  # Run tests with production environment
-  API_URL="https://linked.coffee/api" \
-  FRONTEND_URL="https://linked.coffee" \
-  npm test -- --testPathPattern=smoke
+  # Run tests inside the container with production environment
+  docker exec \
+    -e API_URL="https://linked.coffee/api" \
+    -e FRONTEND_URL="https://linked.coffee" \
+    linking-coffee-backend \
+    npm test -- --testPathPattern=smoke
 
   echo $? > /tmp/test_exit_code
 ENDSSH
