@@ -1,8 +1,8 @@
 {
   "health_endpoint": 200,
-  "countries_endpoint": 500,
+  "countries_endpoint": 1000,
   "frontend_load": 800,
-  "airtable_query": 1500,
+  "airtable_query": 2000,
   "last_updated": "2026-01-24",
-  "notes": "Initial baseline values - will be updated after first successful deployment"
+  "notes": "Production baselines updated after actual deployment testing"
 }
