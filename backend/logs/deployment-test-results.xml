@@ -1,61 +1,61 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="jest tests" tests="24" failures="0" errors="0" time="6.424">
-  <testsuite name="Smoke Tests: Backend API" errors="0" failures="0" skipped="0" timestamp="2026-01-24T17:04:32" time="4.197" tests="8">
-    <testcase classname="Smoke Tests: Backend API" name="Health endpoint responds OK" time="0.128">
+<testsuites name="jest tests" tests="24" failures="0" errors="0" time="6.441">
+  <testsuite name="Smoke Tests: Backend API" errors="0" failures="0" skipped="0" timestamp="2026-01-24T17:23:16" time="4.219" tests="8">
+    <testcase classname="Smoke Tests: Backend API" name="Health endpoint responds OK" time="0.051">
     </testcase>
-    <testcase classname="Smoke Tests: Backend API" name="Countries endpoint returns valid data" time="0.83">
+    <testcase classname="Smoke Tests: Backend API" name="Countries endpoint returns valid data" time="0.813">
     </testcase>
-    <testcase classname="Smoke Tests: Backend API" name="Interests endpoint returns valid categories" time="0.011">
+    <testcase classname="Smoke Tests: Backend API" name="Interests endpoint returns valid categories" time="0.008">
     </testcase>
-    <testcase classname="Smoke Tests: Backend API" name="Cities endpoint returns approved cities" time="1.265">
+    <testcase classname="Smoke Tests: Backend API" name="Cities endpoint returns approved cities" time="1.347">
     </testcase>
-    <testcase classname="Smoke Tests: Backend API" name="Admin data endpoint exists and responds" time="0.03">
+    <testcase classname="Smoke Tests: Backend API" name="Admin data endpoint exists and responds" time="0.032">
     </testcase>
     <testcase classname="Smoke Tests: Backend API" name="Profile endpoint requires authentication" time="0.003">
     </testcase>
     <testcase classname="Smoke Tests: Backend API" name="Invalid endpoint returns 404" time="0.002">
     </testcase>
-    <testcase classname="Smoke Tests: Backend API" name="Critical endpoints respond within 2s average" time="1.759">
+    <testcase classname="Smoke Tests: Backend API" name="Critical endpoints respond within 2s average" time="1.669">
     </testcase>
   </testsuite>
-  <testsuite name="Smoke Tests: Frontend" errors="0" failures="0" skipped="0" timestamp="2026-01-24T17:04:36" time="0.23" tests="5">
-    <testcase classname="Smoke Tests: Frontend" name="Frontend homepage is accessible (200 OK)" time="0.017">
+  <testsuite name="Smoke Tests: Airtable Database" errors="0" failures="0" skipped="0" timestamp="2026-01-24T17:23:20" time="1.353" tests="5">
+    <testcase classname="Smoke Tests: Airtable Database" name="Airtable API key is valid" time="0.524">
     </testcase>
-    <testcase classname="Smoke Tests: Frontend" name="Dashboard route returns HTML" time="0.033">
+    <testcase classname="Smoke Tests: Airtable Database" name="Members table is accessible" time="0.18">
+    </testcase>
+    <testcase classname="Smoke Tests: Airtable Database" name="Countries table is accessible" time="0.22">
+    </testcase>
+    <testcase classname="Smoke Tests: Airtable Database" name="Matches table is accessible" time="0.187">
+    </testcase>
+    <testcase classname="Smoke Tests: Airtable Database" name="Airtable response time is acceptable (&lt;3s)" time="0.172">
+    </testcase>
+  </testsuite>
+  <testsuite name="Smoke Tests: Performance Benchmarks" errors="0" failures="0" skipped="0" timestamp="2026-01-24T17:23:22" time="0.439" tests="2">
+    <testcase classname="Smoke Tests: Performance Benchmarks" name="Health endpoint performance regression (&lt;20% slower)" time="0.007">
+    </testcase>
+    <testcase classname="Smoke Tests: Performance Benchmarks" name="Countries endpoint performance regression" time="0.397">
+    </testcase>
+  </testsuite>
+  <testsuite name="Smoke Tests: Telegram Bot" errors="0" failures="0" skipped="0" timestamp="2026-01-24T17:23:22" time="0.237" tests="4">
+    <testcase classname="Smoke Tests: Telegram Bot" name="Bot token is valid (getMe)" time="0.108">
+    </testcase>
+    <testcase classname="Smoke Tests: Telegram Bot" name="Bot webhook configuration is valid" time="0.033">
+    </testcase>
+    <testcase classname="Smoke Tests: Telegram Bot" name="Bot commands are registered" time="0.042">
+    </testcase>
+    <testcase classname="Smoke Tests: Telegram Bot" name="Bot can access Telegram API (no 401/403)" time="0.031">
+    </testcase>
+  </testsuite>
+  <testsuite name="Smoke Tests: Frontend" errors="0" failures="0" skipped="0" timestamp="2026-01-24T17:23:22" time="0.127" tests="5">
+    <testcase classname="Smoke Tests: Frontend" name="Frontend homepage is accessible (200 OK)" time="0.028">
+    </testcase>
+    <testcase classname="Smoke Tests: Frontend" name="Dashboard route returns HTML" time="0.041">
     </testcase>
     <testcase classname="Smoke Tests: Frontend" name="Static assets are served (nginx working)" time="0.005">
     </testcase>
-    <testcase classname="Smoke Tests: Frontend" name="Frontend response time is acceptable (&lt;1s)" time="0.006">
+    <testcase classname="Smoke Tests: Frontend" name="Frontend response time is acceptable (&lt;1s)" time="0.005">
     </testcase>
-    <testcase classname="Smoke Tests: Frontend" name="CORS headers are present for API requests" time="0.005">
-    </testcase>
-  </testsuite>
-  <testsuite name="Smoke Tests: Airtable Database" errors="0" failures="0" skipped="0" timestamp="2026-01-24T17:04:36" time="1.246" tests="5">
-    <testcase classname="Smoke Tests: Airtable Database" name="Airtable API key is valid" time="0.502">
-    </testcase>
-    <testcase classname="Smoke Tests: Airtable Database" name="Members table is accessible" time="0.167">
-    </testcase>
-    <testcase classname="Smoke Tests: Airtable Database" name="Countries table is accessible" time="0.162">
-    </testcase>
-    <testcase classname="Smoke Tests: Airtable Database" name="Matches table is accessible" time="0.171">
-    </testcase>
-    <testcase classname="Smoke Tests: Airtable Database" name="Airtable response time is acceptable (&lt;3s)" time="0.181">
-    </testcase>
-  </testsuite>
-  <testsuite name="Smoke Tests: Performance Benchmarks" errors="0" failures="0" skipped="0" timestamp="2026-01-24T17:04:37" time="0.419" tests="2">
-    <testcase classname="Smoke Tests: Performance Benchmarks" name="Health endpoint performance regression (&lt;20% slower)" time="0.006">
-    </testcase>
-    <testcase classname="Smoke Tests: Performance Benchmarks" name="Countries endpoint performance regression" time="0.374">
-    </testcase>
-  </testsuite>
-  <testsuite name="Smoke Tests: Telegram Bot" errors="0" failures="0" skipped="0" timestamp="2026-01-24T17:04:38" time="0.254" tests="4">
-    <testcase classname="Smoke Tests: Telegram Bot" name="Bot token is valid (getMe)" time="0.112">
-    </testcase>
-    <testcase classname="Smoke Tests: Telegram Bot" name="Bot webhook configuration is valid" time="0.032">
-    </testcase>
-    <testcase classname="Smoke Tests: Telegram Bot" name="Bot commands are registered" time="0.043">
-    </testcase>
-    <testcase classname="Smoke Tests: Telegram Bot" name="Bot can access Telegram API (no 401/403)" time="0.033">
+    <testcase classname="Smoke Tests: Frontend" name="CORS headers are present for API requests" time="0.016">
     </testcase>
   </testsuite>
 </testsuites>

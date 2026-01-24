@@ -15,7 +15,8 @@ describe('Smoke Tests: Frontend', () => {
     try {
       const response = await axios.get(`${FRONTEND_URL}/dashboard`);
       expect(response.status).toBe(200);
-      expect(response.data).toContain('<!DOCTYPE html>');
+      // Case-insensitive check for doctype (can be uppercase or lowercase)
+      expect(response.data.toLowerCase()).toContain('<!doctype html>');
     } catch (error) {
       // If route doesn't exist or frontend not running, accept 404
       if (error.response?.status === 404) {
