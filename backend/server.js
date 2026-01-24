@@ -10,6 +10,7 @@ const { Telegraf, Markup } = require('telegraf');
 const fs = require('fs');
 const { spawn } = require('child_process');
 const statisticsUtils = require('./utils/statistics');
+const { sanitizeForAirtable, sanitizeUsername, sanitizeEmail, sanitizeTelegramId } = require('./utils/airtable-sanitizer');
 
 const logDir = path.join(__dirname, 'logs');
 console.log('📂 Log Directory:', logDir);
@@ -252,9 +253,10 @@ bot.action('participate_yes', async (ctx) => {
 
   try {
     // Find user by Tg_ID
+    const safeTelegramId = sanitizeTelegramId(telegramId);
     const records = await base(process.env.AIRTABLE_MEMBERS_TABLE)
       .select({
-        filterByFormula: `{Tg_ID} = '${telegramId}'`,
+        filterByFormula: `{Tg_ID} = '${safeTelegramId}'`,
         maxRecords: 1
       })
       .firstPage();
@@ -308,9 +310,10 @@ bot.action('participate_no', async (ctx) => {
 
   try {
     // Find user by Tg_ID to check status first
+    const safeTelegramId = sanitizeTelegramId(telegramId);
     const records = await base(process.env.AIRTABLE_MEMBERS_TABLE)
       .select({
-        filterByFormula: `{Tg_ID} = '${telegramId}'`,
+        filterByFormula: `{Tg_ID} = '${safeTelegramId}'`,
         maxRecords: 1
       })
       .firstPage();
@@ -467,15 +470,20 @@ bot.telegram.setMyCommands([
   console.error('Failed to set bot commands:', err);
 });
 
-bot.launch().then(() => {
-  console.log('🤖 Telegram bot started');
-}).catch(err => {
-  console.error('❌ Telegram bot failed to start:', err);
-});
+// Only launch bot if running as main process (not when imported as module)
+if (require.main === module) {
+  bot.launch().then(() => {
+    console.log('🤖 Telegram bot started');
+  }).catch(err => {
+    console.error('❌ Telegram bot failed to start:', err);
+  });
 
-// Enable graceful stop
-process.once('SIGINT', () => bot.stop('SIGINT'));
-process.once('SIGTERM', () => bot.stop('SIGTERM'));
+  // Enable graceful stop
+  process.once('SIGINT', () => bot.stop('SIGINT'));
+  process.once('SIGTERM', () => bot.stop('SIGTERM'));
+} else {
+  console.log('📦 Bot instance created (not launching - imported as module)');
+}
 
 
 // Health check endpoint
@@ -495,10 +503,13 @@ app.post('/api/register', async (req, res) => {
   const cleanUsername = telegramUsername.replace('@', '').trim().toLowerCase();
 
   try {
+    // Validate and sanitize username
+    const safeUsername = sanitizeUsername(cleanUsername);
+
     // Check if user already registered
     const existingRecords = await base(process.env.AIRTABLE_MEMBERS_TABLE)
       .select({
-        filterByFormula: `{Tg_Username} = '${cleanUsername}'`,
+        filterByFormula: `{Tg_Username} = '${safeUsername}'`,
         maxRecords: 1
       })
       .firstPage();
@@ -607,9 +618,12 @@ app.post('/api/dev-login', async (req, res) => {
   console.log(`🔧 Dev login attempt for: ${cleanUsername}`);
 
   try {
+    // Validate and sanitize username
+    const safeUsername = sanitizeUsername(cleanUsername);
+
     const records = await base(process.env.AIRTABLE_MEMBERS_TABLE)
       .select({
-        filterByFormula: `{Tg_Username} = '${cleanUsername}'`,
+        filterByFormula: `{Tg_Username} = '${safeUsername}'`,
         maxRecords: 1
       })
       .firstPage();
@@ -695,11 +709,14 @@ app.post('/api/verify', async (req, res) => {
   }
 
   try {
+    // Validate and sanitize username
+    const safeUsername = sanitizeUsername(cleanUsername);
+
     // Find record to update
     console.log(`🔍 Searching Airtable for username: ${cleanUsername}`);
     const records = await base(process.env.AIRTABLE_MEMBERS_TABLE)
       .select({
-        filterByFormula: `{Tg_Username} = '${cleanUsername}'`,
+        filterByFormula: `{Tg_Username} = '${safeUsername}'`,
         maxRecords: 1
       })
       .firstPage();
@@ -856,8 +873,9 @@ app.post('/api/consent', async (req, res) => {
 
     // 2. Try finding by Email
     if (!record && email) {
+      const safeEmail = sanitizeEmail(email);
       const emailRecords = await base(process.env.AIRTABLE_MEMBERS_TABLE).select({
-        filterByFormula: `{Email} = '${email}'`,
+        filterByFormula: `{Email} = '${safeEmail}'`,
         maxRecords: 1
       }).firstPage();
       if (emailRecords.length > 0) record = emailRecords[0];
@@ -866,8 +884,9 @@ app.post('/api/consent', async (req, res) => {
     // 3. Try finding by Username
     if (!record && username) {
       const cleanUsername = username.replace('@', '').trim().toLowerCase();
+      const safeUsername = sanitizeUsername(cleanUsername);
       const usernameRecords = await base(process.env.AIRTABLE_MEMBERS_TABLE).select({
-        filterByFormula: `{Tg_Username} = '${cleanUsername}'`,
+        filterByFormula: `{Tg_Username} = '${safeUsername}'`,
         maxRecords: 1
       }).firstPage();
       if (usernameRecords.length > 0) record = usernameRecords[0];
@@ -2778,8 +2797,9 @@ app.put('/api/profile', async (req, res) => {
 
     // 2. Try finding by Email
     if (!record && email) {
+      const safeEmail = sanitizeEmail(email);
       const emailRecords = await base(process.env.AIRTABLE_MEMBERS_TABLE).select({
-        filterByFormula: `{Email} = '${email}'`,
+        filterByFormula: `{Email} = '${safeEmail}'`,
         maxRecords: 1
       }).firstPage();
       if (emailRecords.length > 0) record = emailRecords[0];
@@ -2787,9 +2807,10 @@ app.put('/api/profile', async (req, res) => {
 
     // 3. Try finding by Username
     if (!record && cleanUsername) {
+      const safeUsername = sanitizeUsername(cleanUsername);
       const records = await base(process.env.AIRTABLE_MEMBERS_TABLE)
         .select({
-          filterByFormula: `{Tg_Username} = '${cleanUsername}'`,
+          filterByFormula: `{Tg_Username} = '${safeUsername}'`,
           maxRecords: 1
         })
         .firstPage();
@@ -2872,10 +2893,13 @@ app.post('/api/upload-avatar', upload.single('avatar'), async (req, res) => {
   console.log(`📤 Avatar uploaded for ${cleanUsername}: ${fileUrl}`);
 
   try {
+    // Validate and sanitize username
+    const safeUsername = sanitizeUsername(cleanUsername);
+
     // Verify user exists
     const records = await base(process.env.AIRTABLE_MEMBERS_TABLE)
       .select({
-        filterByFormula: `{Tg_Username} = '${cleanUsername}'`,
+        filterByFormula: `{Tg_Username} = '${safeUsername}'`,
         maxRecords: 1
       })
       .firstPage();
