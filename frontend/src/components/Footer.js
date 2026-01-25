@@ -14,7 +14,7 @@ const Footer = () => {
                     <p className="copyright">
                         © {currentYear} Linked.Coffee. {t('footer.rights')}
                     </p>
-                    <Link to="/privacy" className="footer-link">
+                    <Link to="/terms_and_privacy" className="footer-link">
                         {t('footer.gdpr')}
                     </Link>
                 </div>

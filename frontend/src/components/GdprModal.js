@@ -160,7 +160,7 @@ const GdprModal = ({ onAccept, onClose, initialName, initialFamily }) => {
                             <CheckIcon checked={agreements.terms} />
                         </div>
                         <span style={{ fontSize: '1rem', lineHeight: '1.5', color: '#374151', textAlign: 'left' }}>
-                            I accept the <a href="/GDPR.pdf" target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} style={{ color: '#7c3aed', textDecoration: 'underline', fontWeight: '600' }}>Terms of Service and Privacy Policy</a>, as may be modified from time to time.
+                            I accept the <a href="/terms_and_privacy" target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} style={{ color: '#7c3aed', textDecoration: 'underline', fontWeight: '600' }}>Terms of Service and Privacy Policy</a>, as may be modified from time to time.
                         </span>
                     </div>
 

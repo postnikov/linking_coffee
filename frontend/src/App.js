@@ -88,7 +88,7 @@ function App() {
                             <Route path="/about" element={<About />} />
                             <Route path="/rules" element={<Rules />} />
                             <Route path="/prices" element={<Prices user={user} />} />
-                            <Route path="/privacy" element={<Privacy />} />
+                            <Route path="/terms_and_privacy" element={<Privacy />} />
                             <Route path="/profile/:username" element={
                                 <RequireAuth user={user}>
                                     <PublicProfile />
