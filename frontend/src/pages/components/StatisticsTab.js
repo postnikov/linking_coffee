@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './StatisticsTab.css';
 
 const API_URL = process.env.REACT_APP_API_URL || '';
@@ -10,11 +10,7 @@ const StatisticsTab = ({ user }) => {
   const [period, setPeriod] = useState(30);
   const [activeView, setActiveView] = useState('overview');
 
-  useEffect(() => {
-    fetchStatistics();
-  }, [period]);
-
-  const fetchStatistics = async () => {
+  const fetchStatistics = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -34,7 +30,11 @@ const StatisticsTab = ({ user }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [period, user.username]);
+
+  useEffect(() => {
+    fetchStatistics();
+  }, [fetchStatistics]);
 
   if (loading) {
     return (

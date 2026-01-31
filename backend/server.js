@@ -11,6 +11,8 @@ const fs = require('fs');
 const { spawn } = require('child_process');
 const statisticsUtils = require('./utils/statistics');
 const { sanitizeForAirtable, sanitizeUsername, sanitizeEmail, sanitizeTelegramId } = require('./utils/airtable-sanitizer');
+const { findPotentialDuplicates } = require('./utils/name-matcher');
+const { sendWarningAlert } = require('./utils/alerting');
 
 const logDir = path.join(__dirname, 'logs');
 console.log('📂 Log Directory:', logDir);
@@ -38,6 +40,7 @@ try {
 const debugLogFile = path.join(logDir, 'debug.log');
 const authLogFile = path.join(logDir, 'auth.log');
 const connectionsLogFile = path.join(logDir, 'connections.log');
+const duplicatesLogFile = path.join(logDir, 'duplicates.log');
 
 // Ensure backups directory exists
 const backupDir = process.env.BACKUP_DIR || path.join(__dirname, 'backups');
@@ -91,6 +94,18 @@ function logConnection(msg, type = 'INFO') {
     logAuth(msg, type);
   } catch (e) {
     console.error('Connection Logging error:', e);
+  }
+}
+
+function logDuplicate(msg, type = 'INFO') {
+  const time = new Date().toISOString();
+  // Standard format: [DUP] TYPE: Message
+  const formattedMsg = `[DUP] ${type.toUpperCase()}: ${msg}`;
+  try {
+    fs.appendFileSync(duplicatesLogFile, `[${time}] ${formattedMsg}\n`);
+    console.log(`${formattedMsg}`);
+  } catch (e) {
+    console.error('Duplicate Logging error:', e);
   }
 }
 
@@ -1239,7 +1254,116 @@ app.post('/api/auth/linkedin', async (req, res) => {
       }
 
       if (!record) {
-        // Create New
+        // DUPLICATE DETECTION: Check for potential duplicates by name before creating new user
+        const potentialDuplicates = await findPotentialDuplicates(
+          given_name || name,
+          family_name || '',
+          base,
+          process.env.AIRTABLE_MEMBERS_TABLE
+        );
+
+        if (potentialDuplicates.length > 0) {
+          const topMatch = potentialDuplicates[0];
+          const { record: duplicateRecord, confidence, matchReason } = topMatch;
+
+          const duplicateInfo = {
+            id: duplicateRecord.id,
+            name: `${duplicateRecord.fields.Name || ''} ${duplicateRecord.fields.Family || ''}`.trim(),
+            email: duplicateRecord.fields.Email || 'N/A',
+            telegram: duplicateRecord.fields.Tg_Username ? `@${duplicateRecord.fields.Tg_Username}` : 'Not linked',
+            tgId: duplicateRecord.fields.Tg_ID || 'N/A'
+          };
+
+          // Log duplicate detection
+          logDuplicate(
+            `Potential duplicate detected for LinkedIn login ${email}:\n` +
+            `  Input: ${given_name || name} ${family_name || ''}\n` +
+            `  Match: ${duplicateInfo.name} (${duplicateInfo.id})\n` +
+            `  Confidence: ${confidence}%\n` +
+            `  Reason: ${matchReason}\n` +
+            `  Existing Email: ${duplicateInfo.email}\n` +
+            `  Existing Telegram: ${duplicateInfo.telegram}`,
+            'WARN'
+          );
+
+          // Handle based on confidence level
+          if (confidence >= 90) {
+            // HIGH CONFIDENCE: Very likely the same person
+            // Send admin notification for review
+            try {
+              await sendWarningAlert(
+                '🚨 High-Confidence Duplicate Detected',
+                `**LinkedIn Login Duplicate Alert**\n\n` +
+                `**New Login Attempt:**\n` +
+                `• Email: ${email}\n` +
+                `• Name: ${given_name || name} ${family_name || ''}\n` +
+                `• LinkedIn Sub: ${sub}\n\n` +
+                `**Potential Existing Account:**\n` +
+                `• Record ID: ${duplicateInfo.id}\n` +
+                `• Name: ${duplicateInfo.name}\n` +
+                `• Email: ${duplicateInfo.email}\n` +
+                `• Telegram: ${duplicateInfo.telegram}\n\n` +
+                `**Match Details:**\n` +
+                `• Confidence: ${confidence}%\n` +
+                `• Reason: ${matchReason}\n\n` +
+                `⚠️ **Action:** New account was NOT created. User should be directed to link accounts.`
+              );
+            } catch (alertError) {
+              console.error('Failed to send duplicate alert:', alertError);
+            }
+
+            // Return error response asking user to link accounts
+            return res.status(409).json({
+              success: false,
+              duplicateDetected: true,
+              message: `We found an existing account for ${duplicateInfo.name}. Please contact support to link your accounts.`,
+              potentialMatch: {
+                name: duplicateInfo.name,
+                hasTelegram: !!duplicateRecord.fields.Tg_ID,
+                telegram: duplicateInfo.telegram
+              }
+            });
+
+          } else if (confidence >= 70) {
+            // MEDIUM CONFIDENCE: Likely duplicate but create account + notify admin
+            logDuplicate(
+              `Medium-confidence duplicate - creating account but flagging for review: ${email}`,
+              'WARN'
+            );
+
+            try {
+              await sendWarningAlert(
+                '⚠️ Medium-Confidence Duplicate Created',
+                `**LinkedIn Login Duplicate Alert**\n\n` +
+                `**New Account Created:**\n` +
+                `• Email: ${email}\n` +
+                `• Name: ${given_name || name} ${family_name || ''}\n` +
+                `• LinkedIn Sub: ${sub}\n\n` +
+                `**Potential Existing Account:**\n` +
+                `• Record ID: ${duplicateInfo.id}\n` +
+                `• Name: ${duplicateInfo.name}\n` +
+                `• Email: ${duplicateInfo.email}\n` +
+                `• Telegram: ${duplicateInfo.telegram}\n\n` +
+                `**Match Details:**\n` +
+                `• Confidence: ${confidence}%\n` +
+                `• Reason: ${matchReason}\n\n` +
+                `ℹ️ **Action:** New account was created but may be duplicate. Please review and merge if needed.`
+              );
+            } catch (alertError) {
+              console.error('Failed to send duplicate alert:', alertError);
+            }
+
+            // Continue with account creation (fall through to creation logic below)
+          } else {
+            // LOW CONFIDENCE (60-69): Log only, create account
+            logDuplicate(
+              `Low-confidence potential duplicate - creating account: ${email} (confidence: ${confidence}%)`,
+              'INFO'
+            );
+          }
+        }
+
+        // Create New User
         isNew = true;
         const newFields = {
           Email: email,

@@ -13,7 +13,7 @@ let lastProcessedCode = null;
 const LinkedinCallback = ({ onLogin }) => {
     const navigate = useNavigate();
     const location = useLocation();
-    const { t } = useTranslation();
+    useTranslation();
     const [error, setError] = useState(null);
     const [showGdprModal, setShowGdprModal] = useState(false);
     const [pendingUser, setPendingUser] = useState(null);

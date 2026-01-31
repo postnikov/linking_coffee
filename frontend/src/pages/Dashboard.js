@@ -251,6 +251,7 @@ const Dashboard = () => {
             }, 5000);
             return () => clearTimeout(timer);
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [allFieldsDone, wasIncomplete, formData.nextWeekStatus, formData, initialFormData]);
 
     useEffect(() => {
