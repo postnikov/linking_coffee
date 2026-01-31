@@ -154,6 +154,7 @@
         "launch_bot_help": "Чтобы получить код — запустите <1>@Linked_Coffee_Bot</1> в Telegram."
     },
     "header": {
+        "dashboard": "Мой дэшборд",
         "about": "О проекте",
         "rules": "Правила",
         "prices": "Цены",

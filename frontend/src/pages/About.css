@@ -1,0 +1,211 @@
+.about-main {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding-top: 120px;
+}
+
+.about-container {
+    display: flex;
+    gap: 2rem;
+    max-width: 1200px;
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding: 0 2rem;
+}
+
+.about-left-column {
+    flex: 2 1 600px;
+    padding: 3rem;
+}
+
+.about-title {
+    font-size: 2.5rem;
+    margin-bottom: 2rem;
+    background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.about-content {
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: var(--text-primary);
+}
+
+.about-content p {
+    margin-bottom: 1.5rem;
+}
+
+.about-content p:last-child {
+    margin-bottom: 0;
+}
+
+.about-right-column {
+    flex: 1 1 300px;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.about-slogan-card {
+    padding: 1.5rem;
+    text-align: left;
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+.about-slogan-text {
+    font-size: 1.1rem;
+    font-weight: bold;
+    background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 1rem;
+}
+
+.about-slogan-text p {
+    margin-bottom: 0.2rem;
+}
+
+.about-slogan-text p:last-child {
+    margin-bottom: 0;
+}
+
+.about-slogan-copyright {
+    font-size: 0.85rem;
+    color: var(--gray-600);
+    font-style: italic;
+    text-align: right;
+}
+
+.about-how-it-works-card {
+    padding: 2rem;
+    height: fit-content;
+}
+
+.about-how-it-works-title {
+    font-size: 1.8rem;
+    margin-bottom: 1.5rem;
+    background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.about-steps-list {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.about-step-item {
+    display: flex;
+    gap: 1rem;
+    font-size: 1rem;
+    line-height: 1.5;
+    color: var(--text-secondary);
+}
+
+.about-step-number {
+    color: #6366f1;
+    font-weight: bold;
+    min-width: 1.5rem;
+}
+
+.about-step-link {
+    color: #6366f1;
+    text-decoration: underline;
+}
+
+/* Tablet breakpoint */
+@media (max-width: 1024px) {
+    .about-main {
+        padding-top: calc(var(--header-height-desktop) + 2rem);
+    }
+
+    .about-container {
+        padding: 0 1rem;
+    }
+
+    .about-left-column {
+        padding: 2rem;
+    }
+
+    .about-title {
+        font-size: 2rem;
+    }
+
+    .about-content {
+        font-size: 1rem;
+    }
+}
+
+/* Mobile breakpoint */
+@media (max-width: 768px) {
+    .about-main {
+        padding-top: calc(var(--header-height-mobile) + 2rem);
+    }
+
+    .about-container {
+        flex-direction: column;
+        gap: 1.5rem;
+        padding: 0 1.25rem;
+    }
+
+    .about-left-column {
+        flex: 1 1 auto;
+        padding: 1.75rem;
+    }
+
+    .about-right-column {
+        flex: 1 1 auto;
+    }
+
+    .about-title {
+        font-size: clamp(1.75rem, 5vw, 2.5rem);
+        margin-bottom: 1.5rem;
+    }
+
+    .about-content {
+        font-size: clamp(1.0625rem, 2.5vw, 1.125rem);
+        line-height: 1.75;
+    }
+
+    .about-content p {
+        margin-bottom: 1.5rem;
+    }
+
+    .about-slogan-card {
+        padding: 1.25rem;
+    }
+
+    .about-slogan-text {
+        font-size: clamp(1.0625rem, 2.5vw, 1.125rem);
+    }
+
+    .about-how-it-works-card {
+        padding: 1.75rem;
+    }
+
+    .about-how-it-works-title {
+        font-size: clamp(1.5rem, 4vw, 1.75rem);
+    }
+
+    .about-step-item {
+        font-size: clamp(1rem, 2.25vw, 1.0625rem);
+        line-height: 1.6;
+    }
+}
+
+@media (max-width: 640px) {
+    .about-container {
+        gap: 1.25rem;
+    }
+}

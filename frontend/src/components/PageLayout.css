@@ -7,8 +7,9 @@
     width: 100%;
 }
 
-.page-card {
-    padding: 3rem !important;
+.page-container .page-card,
+.page-card.glass-card {
+    padding: 3rem;
 }
 
 .page-title {
@@ -35,14 +36,15 @@
 
 @media (max-width: 768px) {
     .page-container {
-        padding: 120px 1rem 2rem 1rem;
+        padding: calc(var(--header-height-mobile) + 2rem) 1rem 2rem 1rem;
     }
 
-    .page-card {
-        padding: 1.5rem !important;
+    .page-container .page-card,
+    .page-card.glass-card {
+        padding: 1.5rem;
     }
 
     .page-title {
-        font-size: 2rem;
+        font-size: var(--font-xl);
     }
 }

@@ -7,6 +7,7 @@ const Header = ({ user, onLogout }) => {
     const { t, i18n } = useTranslation();
     const location = useLocation();
     const [profileName, setProfileName] = useState('');
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     useEffect(() => {
         if (user && user.username) {
@@ -32,6 +33,23 @@ const Header = ({ user, onLogout }) => {
         i18n.changeLanguage(lng);
     };
 
+    // Lock body scroll when mobile menu is open
+    useEffect(() => {
+        if (mobileMenuOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [mobileMenuOpen]);
+
+    // Close menu when route changes
+    useEffect(() => {
+        setMobileMenuOpen(false);
+    }, [location.pathname]);
+
     return (
         <header className="site-header">
             <div className="header-container">
@@ -40,7 +58,21 @@ const Header = ({ user, onLogout }) => {
                         Linked.Coffee
                     </Link>
 
-                    <nav className="header-nav">
+                    <button
+                        className="hamburger-btn"
+                        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                        aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+                        aria-expanded={mobileMenuOpen}
+                    >
+                        {mobileMenuOpen ? '✕' : '☰'}
+                    </button>
+
+                    <nav className={`header-nav ${mobileMenuOpen ? 'open' : ''}`}>
+                        {user && (
+                            <Link to="/dashboard" className={`nav-link ${location.pathname === '/dashboard' ? 'active' : ''}`}>
+                                {t('header.dashboard')}
+                            </Link>
+                        )}
                         <Link to="/about" className={`nav-link ${location.pathname === '/about' ? 'active' : ''}`}>
                             {t('header.about')}
                         </Link>
@@ -55,12 +87,29 @@ const Header = ({ user, onLogout }) => {
                                 Admin Dashboard
                              </Link>
                         )}
+
+                        {/* Language switcher in mobile drawer */}
+                        <div className="language-switcher-header mobile-only">
+                            <button
+                                className={`lang-btn ${i18n.language === 'en' ? 'active' : ''}`}
+                                onClick={() => changeLanguage('en')}
+                            >
+                                EN
+                            </button>
+                            <span className="lang-divider">|</span>
+                            <button
+                                className={`lang-btn ${i18n.language === 'ru' ? 'active' : ''}`}
+                                onClick={() => changeLanguage('ru')}
+                            >
+                                RU
+                            </button>
+                        </div>
                     </nav>
                 </div>
 
-                <div className="header-actions" style={{ display: 'flex', alignItems: 'baseline', gap: '1rem' }}>
+                <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                     {user && (
-                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '1rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                             {profileName && (
                                 <Link to="/" style={{ color: 'white', fontWeight: 500, textDecoration: 'none' }}>
                                     {profileName}
@@ -75,14 +124,14 @@ const Header = ({ user, onLogout }) => {
                                     cursor: 'pointer',
                                     padding: '0',
                                     display: 'flex',
-                                    alignItems: 'baseline',
+                                    alignItems: 'center',
                                     gap: '0.5rem',
                                     fontSize: '1rem',
                                     color: 'rgba(255, 255, 255, 0.8)',
                                     marginRight: '1.5rem'
                                 }}
                             >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: 'translateY(2px)' }}>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
                                     <polyline points="16 17 21 12 16 7"></polyline>
                                     <line x1="21" y1="12" x2="9" y2="12"></line>
@@ -109,6 +158,15 @@ const Header = ({ user, onLogout }) => {
                     </div>
                 </div>
             </div>
+
+            {/* Mobile menu backdrop */}
+            {mobileMenuOpen && (
+                <div
+                    className="mobile-menu-backdrop visible"
+                    onClick={() => setMobileMenuOpen(false)}
+                    aria-hidden="true"
+                />
+            )}
         </header>
     );
 };

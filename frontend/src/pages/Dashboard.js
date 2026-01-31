@@ -993,21 +993,21 @@ const Dashboard = () => {
 
     if (isLoading) {
         return (
-            <main className="main-content" style={{ paddingTop: '8rem', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
-                <div className="spinner" style={{ width: '40px', height: '40px', border: '4px solid rgba(0,0,0,0.1)', borderLeftColor: '#7c3aed', borderRadius: '50%' }}></div>
+            <main className="main-content dashboard-main-loading">
+                <div className="spinner"></div>
             </main>
         );
     }
 
     return (
-        <main className="main-content" style={{ paddingTop: '120px', display: 'block', minHeight: '100vh', paddingLeft: 0, paddingRight: 0 }}>
+        <main className="main-content dashboard-main">
             <div className="dashboard-container">
                 {/* Left Column */}
-                <div className="left-column" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                <div className="left-column">
                     {/* Left Side: Profile */}
                     <div className="profile-section glass-card">
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                            <h2 className="section-title" style={{ marginBottom: 0 }}>{t('dashboard.profile.title', 'Your Profile')}</h2>
+                        <div className="profile-header">
+                            <h2 className="section-title section-title-no-margin">{t('dashboard.profile.title', 'Your Profile')}</h2>
                             <button
                                 className="add-language-btn"
                                 onClick={() => {
@@ -1987,32 +1987,41 @@ const Dashboard = () => {
                                     </div>
                                     <div className="profile-view-info">
                                         <h3>{formData.name} {formData.family}</h3>
-                                        <p className="profile-subtitle" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                                            {formData.profession}
-                                            {formData.grade && <span style={{ opacity: 0.7 }}> • {formData.grade}</span>}
-                                            {formData.linkedin && (
-                                                <>
-                                                    <span style={{ opacity: 0.7 }}> • </span>
-                                                    <a
-                                                        href={formData.linkedin}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        style={{ color: '#0077b5', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}
-                                                    >
-                                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" /></svg>
-                                                        LinkedIn
-                                                    </a>
-                                                </>
+                                        <div className="profile-header-info">
+                                            {/* Profession line - only show if has meaningful value */}
+                                            {formData.profession && formData.profession !== 'Prefer not to say' && (
+                                                <p className="profile-subtitle">
+                                                    {formData.profession}
+                                                    {formData.grade && formData.grade !== 'Prefer not to say' && ` • ${formData.grade}`}
+                                                </p>
                                             )}
-                                        </p>
-                                        {formData.country && (
-                                            <div className="profile-location">
-                                                <span style={{ fontSize: '1.2rem' }}>{formData.country.flag}</span>
-                                                <span>{formData.country.name}</span>
-                                                {formData.city && <span>• {formData.city.name}</span>}
-                                                {formData.timezone && <span>• {formData.timezone}</span>}
-                                            </div>
-                                        )}
+
+                                            {/* Location line - City, Country • Timezone */}
+                                            {formData.country && (
+                                                <div className="profile-location">
+                                                    <span style={{ fontSize: '1.2rem' }}>{formData.country.flag}</span>
+                                                    {formData.city && <span>{formData.city.name}, </span>}
+                                                    <span>{formData.country.name}</span>
+                                                    {formData.timezone && <span> • {formData.timezone.replace('Europe/', '').replace('_', ' ')}</span>}
+                                                </div>
+                                            )}
+
+                                            {/* LinkedIn icon-only link */}
+                                            {formData.linkedin && (
+                                                <a
+                                                    href={formData.linkedin}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="profile-linkedin-icon"
+                                                    aria-label="LinkedIn Profile"
+                                                    title="LinkedIn Profile"
+                                                >
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                                        <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
+                                                    </svg>
+                                                </a>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
 

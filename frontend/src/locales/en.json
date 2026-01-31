@@ -150,6 +150,7 @@
         "launch_bot_help": "To get the code — launch <1>@Linked_Coffee_Bot</1> in Telegram."
     },
     "header": {
+        "dashboard": "My Dashboard",
         "about": "About",
         "rules": "Rules",
         "prices": "Prices",

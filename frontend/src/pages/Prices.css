@@ -1,0 +1,129 @@
+/* ========================================
+   PRICES PAGE SPECIFIC STYLES
+   ======================================== */
+
+/* Price card with border highlight (PRO plan) */
+.price-card-highlighted {
+    border: 2px solid #6366f1;
+    z-index: 1;
+}
+
+/* Price title with gradient for PRO plan */
+.price-card-title-gradient {
+    background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Billing cycle toggle switch */
+.billing-toggle {
+    display: flex;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 20px;
+    padding: 4px;
+}
+
+.billing-toggle-btn {
+    background: transparent;
+    color: var(--text-primary);
+    border: none;
+    border-radius: 16px;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.billing-toggle-btn.active {
+    background: #6366f1;
+    color: white;
+}
+
+/* Price amount variations */
+.price-card-amount-pro {
+    color: #6366f1;
+    margin-top: -1px;
+}
+
+.price-card-amount-early-bird {
+    color: #10b981;
+}
+
+/* Price card header with flex layout */
+.price-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    height: 50px;
+}
+
+.price-card-header-centered {
+    justify-content: center;
+}
+
+/* Premium blurred card */
+.price-card-blurred {
+    overflow: hidden;
+}
+
+.price-card-blur-overlay {
+    filter: blur(6px);
+    opacity: 0.6;
+    pointer-events: none;
+    flex: 1;
+    user-select: none;
+}
+
+.price-card-coming-soon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.9);
+    padding: 1rem 2rem;
+    border-radius: 1rem;
+    white-space: nowrap;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* Feature list with check marks */
+.price-feature-list {
+    list-style: none;
+    padding: 0;
+    flex: 1;
+}
+
+.price-feature-list-with-margin {
+    margin-bottom: 2rem;
+}
+
+.price-feature-item {
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.1rem;
+}
+
+.price-feature-check {
+    font-size: 1.2rem;
+}
+
+.price-feature-check-green {
+    color: #10b981;
+}
+
+.price-feature-check-purple {
+    color: #6366f1;
+}
+
+/* Upgrade button */
+.price-upgrade-btn {
+    width: 100%;
+}
