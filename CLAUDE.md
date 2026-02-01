@@ -73,11 +73,14 @@ cd backend && node scripts/notify-matches.js
 
 ### Docker Deployment
 ```bash
-# Deploy with Docker Compose
+# Deploy with Docker Compose (local)
 docker compose up -d
 
-# Production deployment (auto-commits, pushes, and deploys to server)
-./deploy-prod.sh
+# Production deployment (ALWAYS use enhanced script with smoke tests & rollback)
+./deploy-prod-enhanced.sh
+
+# Legacy deployment script (deprecated - use enhanced version)
+# ./deploy-prod.sh
 
 # View logs
 docker compose logs -f
@@ -485,12 +488,37 @@ window.location.reload();
 
 ## Deployment Notes
 
-### Production Deployment Script (`deploy-prod.sh`)
-1. Auto-commits uncommitted changes with generated message
-2. Pushes to origin main
-3. Copies `docker-compose.prod.yml` to server as `docker-compose.yml`
-4. SSHs to server (91.98.235.147), pulls latest code, rebuilds and restarts containers
-5. Deployed site accessible at https://linked.coffee
+### Production Deployment Script (`deploy-prod-enhanced.sh`) ⭐ **ALWAYS USE THIS**
+
+**IMPORTANT:** Always use `./deploy-prod-enhanced.sh` for production deployments. This script includes:
+
+1. **Pre-deployment checks:**
+   - Dependency validation (`depcheck`)
+   - Auto-commits uncommitted changes with generated message
+   - Pushes to origin main
+
+2. **Deployment with rollback capability:**
+   - Preserves current images as `:previous` for instant rollback
+   - Creates timestamped backups (`:v20250201-123456`)
+   - Copies `docker-compose.prod.yml` to server
+   - SSHs to server (91.98.235.147), pulls latest code
+   - Rebuilds and restarts containers
+
+3. **Automated smoke tests:**
+   - Runs production smoke tests inside Docker container
+   - Tests critical endpoints (health check, API availability)
+   - Validates deployment before considering it successful
+
+4. **Automatic rollback on failure:**
+   - If smoke tests fail, automatically rolls back to previous version
+   - Sends Telegram alerts to admin on deployment status
+   - Ensures site stability
+
+5. **Deployment result:**
+   - ✅ Success: Site available at https://linked.coffee
+   - ❌ Failure: Auto-rollback to previous working version
+
+**Legacy script (`deploy-prod.sh`):** Basic deployment without tests/rollback - **DO NOT USE**
 
 ### Docker Configuration
 - Frontend runs on port 8080 (nginx serving React build)
