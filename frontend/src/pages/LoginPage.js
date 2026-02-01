@@ -148,8 +148,7 @@ const LoginPage = ({ onLogin }) => {
                 email: pendingUser.email,       // Pass Email if available
                 linkedin: modalData?.linkedin || '',
                 name: modalData?.name || '',
-                family: modalData?.family || '',
-                communityCode: modalData?.communityCode || ''
+                family: modalData?.family || ''
             };
 
             const response = await fetch(`${API_URL}/api/consent`, {

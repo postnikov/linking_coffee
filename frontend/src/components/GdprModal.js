@@ -10,7 +10,6 @@ const GdprModal = ({ onAccept, onClose, initialName, initialFamily }) => {
     const [linkedinUrl, setLinkedinUrl] = useState('');
     const [name, setName] = useState(initialName || '');
     const [family, setFamily] = useState(initialFamily || '');
-    const [communityCode, setCommunityCode] = useState('');
 
     const allAccepted = agreements.terms && agreements.age && agreements.messages;
 
@@ -121,22 +120,6 @@ const GdprModal = ({ onAccept, onClose, initialName, initialFamily }) => {
                             onBlur={handleBlur}
                         />
                     </div>
-
-                    {/* Community Code Input (Optional) */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                        <label style={{ fontSize: '1rem', fontWeight: '600', color: '#374151', textAlign: 'left' }}>
-                            Community code <span style={{ color: '#9ca3af', fontWeight: '400', fontSize: '0.9rem' }}>(If you have it)</span>
-                        </label>
-                        <input
-                            type="text"
-                            placeholder="e.g. PRO2025"
-                            value={communityCode}
-                            onChange={(e) => setCommunityCode(e.target.value)}
-                            style={inputStyle}
-                            onFocus={handleFocus}
-                            onBlur={handleBlur}
-                        />
-                    </div>
                 </div>
 
                 <p style={{
@@ -192,7 +175,7 @@ const GdprModal = ({ onAccept, onClose, initialName, initialFamily }) => {
                 </div>
 
                 <button
-                    onClick={() => onAccept({ name, family, linkedin: linkedinUrl, communityCode })}
+                    onClick={() => onAccept({ name, family, linkedin: linkedinUrl })}
                     disabled={!allAccepted}
                     style={{
                         width: '100%',

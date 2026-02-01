@@ -919,40 +919,6 @@ app.post('/api/consent', async (req, res) => {
       if (name) updates.Name = name;
       if (family) updates.Family = family;
 
-      let communityId = null;
-      let communityName = null;
-
-      console.log('--- START CONSENT UPDATE ---');
-      const identifier = username ? username : (email ? email : id);
-      console.log(`User Identifier: ${identifier}, CommunityCode: ${req.body.communityCode}`);
-      console.log(`Base ID: ${process.env.AIRTABLE_BASE_ID}`);
-
-      // Validate Community Code first
-      if (req.body.communityCode) {
-        const code = req.body.communityCode.trim();
-        console.log(`Checking community code: ${code}`);
-
-        const commRecords = await base('tblSMXQlCTpl7BZED').select({
-          filterByFormula: `{Invite_Code} = '${code}'`,
-          maxRecords: 1
-        }).firstPage();
-
-        if (commRecords.length === 0) {
-          return res.status(400).json({ success: false, message: 'Invalid community code' });
-        }
-
-        const comm = commRecords[0];
-        if (comm.fields.Status !== 'Active') {
-          return res.status(400).json({ success: false, message: 'Community is not active' });
-        }
-
-        // Valid community
-        communityId = comm.id;
-        communityName = comm.fields.Name;
-        updates.Primary_Community = [communityId];
-        updates.Is_Global_Pool = false;
-      }
-
       // Update Member Record
       await base(process.env.AIRTABLE_MEMBERS_TABLE).update([
         {
@@ -960,44 +926,6 @@ app.post('/api/consent', async (req, res) => {
           fields: updates
         }
       ]);
-
-      // Create Community Membership if needed
-      console.log(`Checking communityId for creation: ${communityId}`);
-      if (communityId) {
-        try {
-          console.log('Attempting to create Community_Members record...');
-          console.log('Target Table:', 'tblPN0ni3zaaTCPcF');
-
-          const payload = {
-            'Member': [record.id],
-            'Community': [communityId],
-            'Role': 'Member',
-            'Status': 'Active',
-            'Joined_At': new Date().toISOString().split('T')[0]
-          };
-          console.log('Payload being sent:', JSON.stringify(payload, null, 2));
-
-          const createdRecords = await base('tblPN0ni3zaaTCPcF').create([{
-            fields: payload
-          }]);
-
-          if (createdRecords && createdRecords.length > 0) {
-            console.log(`✅ SUCCESS! Created record ID: ${createdRecords[0].id}`);
-          } else {
-            console.error('⚠️ WARNING: Create call returned no records but no error throw?');
-          }
-
-          console.log(`✅ Added user to community: ${communityName}`);
-        } catch (linkError) {
-          console.error('❌ Failed to create community link:', linkError);
-          console.error('   Error Details:', JSON.stringify(linkError, null, 2));
-          return res.status(500).json({
-            success: false,
-            message: 'Failed to create community link: ' + linkError.message,
-            details: linkError
-          });
-        }
-      }
 
       res.json({ success: true, message: 'Consent updated' });
     } else {
