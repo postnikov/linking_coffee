@@ -1,13 +1,13 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { ContentLayout } from '../layouts/BaseLayout';
+import { WideLayout } from '../layouts/BaseLayout';
 import '../styles/page-components.css';
 
 const Rules = () => {
     const { t } = useTranslation();
 
     return (
-        <ContentLayout>
+        <WideLayout>
             <header className="page-header">
                 <h1 className="page-title">{t('pages.rules.title')}</h1>
             </header>
@@ -39,7 +39,7 @@ const Rules = () => {
                     </ul>
                 </div>
             </div>
-        </ContentLayout>
+        </WideLayout>
     );
 };
 

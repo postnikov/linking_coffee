@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ContentLayout } from '../layouts/BaseLayout';
+import { WideLayout } from '../layouts/BaseLayout';
 import '../styles/page-components.css';
 import './Prices.css';
 
@@ -11,7 +11,7 @@ const Prices = ({ user }) => {
     const currentPlan = user?.status || (user ? 'Free' : '');
 
     return (
-        <ContentLayout>
+        <WideLayout>
             <header className="page-header">
                 <h1 className="page-title">{t('pages.prices.title')}</h1>
             </header>
@@ -117,7 +117,7 @@ const Prices = ({ user }) => {
                     </div>
                 </div>
             </div>
-        </ContentLayout>
+        </WideLayout>
     );
 };
 
