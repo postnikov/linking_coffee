@@ -29,6 +29,14 @@ const TokenProfile = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
     const [interests, setInterests] = useState({ professional: [], personal: [], categories: {} });
+    const [myInterests, setMyInterests] = useState({
+        professionalInterests: [],
+        otherProfessionalInterests: '',
+        personalInterests: [],
+        otherPersonalInterests: '',
+        languages: [],
+        bestMeetingDays: []
+    });
 
     useEffect(() => {
         // Fetch interests for localization
@@ -45,6 +53,34 @@ const TokenProfile = () => {
         };
         fetchInterests();
     }, []);
+
+    // Fetch current user's interests for highlighting matches (if logged in)
+    useEffect(() => {
+        const fetchMyInterests = async () => {
+            const storedUser = localStorage.getItem('user');
+            const currentUser = storedUser ? JSON.parse(storedUser) : null;
+            if (!currentUser || !currentUser.username) return;
+            const myUsername = currentUser.username.replace('@', '').trim().toLowerCase();
+
+            try {
+                const response = await fetch(`${API_URL}/api/profile?username=${myUsername}&requester=${myUsername}`);
+                const data = await response.json();
+                if (data.success && data.profile) {
+                    setMyInterests({
+                        professionalInterests: data.profile.professionalInterests || [],
+                        otherProfessionalInterests: data.profile.otherProfessionalInterests || '',
+                        personalInterests: data.profile.personalInterests || [],
+                        otherPersonalInterests: data.profile.otherPersonalInterests || '',
+                        languages: data.profile.languages || [],
+                        bestMeetingDays: data.profile.bestMeetingDays || []
+                    });
+                }
+            } catch (error) {
+                console.error('Failed to fetch own interests:', error);
+            }
+        };
+        fetchMyInterests();
+    }, [token]);
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -91,6 +127,33 @@ const TokenProfile = () => {
         }
         const index = Math.abs(hash) % colors.length;
         return colors[index];
+    };
+
+    // Helper to check if an interest is shared with the current user
+    const isMatchingInterest = (item, type) => {
+        if (type === 'professional') {
+            return myInterests.professionalInterests.includes(item);
+        }
+        if (type === 'personal') {
+            return myInterests.personalInterests.includes(item);
+        }
+        if (type === 'language') {
+            return myInterests.languages.includes(item);
+        }
+        if (type === 'day') {
+            return myInterests.bestMeetingDays.includes(item);
+        }
+        if (type === 'other-professional') {
+            const myOthers = myInterests.otherProfessionalInterests
+                .split(/[,.;]+/).map(i => i.trim().toLowerCase()).filter(Boolean);
+            return myOthers.includes(item.trim().toLowerCase());
+        }
+        if (type === 'other-personal') {
+            const myOthers = myInterests.otherPersonalInterests
+                .split(/[,.;]+/).map(i => i.trim().toLowerCase()).filter(Boolean);
+            return myOthers.includes(item.trim().toLowerCase());
+        }
+        return false;
     };
 
     if (isLoading) {
@@ -190,12 +253,12 @@ const TokenProfile = () => {
                                             <h4>{t('dashboard.profile.professional_interests')}</h4>
                                             <div className="language-chips" style={{ flexWrap: 'wrap' }}>
                                                 {formData.professionalInterests?.map(item => (
-                                                    <span key={item} className="chip" style={{ backgroundColor: getInterestColor(item) }}>
+                                                    <span key={item} className={`chip${isMatchingInterest(item, 'professional') ? ' chip-match' : ''}`} style={{ backgroundColor: getInterestColor(item) }}>
                                                         {getLocalizedInterest(item, 'professional')}
                                                     </span>
                                                 ))}
                                                 {formData.otherProfessionalInterests && formData.otherProfessionalInterests.split(/[,.;]+/).map(item => item.trim()).filter(item => item).map((item, index) => (
-                                                    <span key={`other-prof-${index}`} className="chip" style={{ backgroundColor: getInterestColor(item) }}>
+                                                    <span key={`other-prof-${index}`} className={`chip${isMatchingInterest(item, 'other-professional') ? ' chip-match' : ''}`} style={{ backgroundColor: getInterestColor(item) }}>
                                                         {item}
                                                     </span>
                                                 ))}
@@ -207,12 +270,12 @@ const TokenProfile = () => {
                                             <h4>{t('dashboard.profile.personal_interests')}</h4>
                                             <div className="language-chips" style={{ flexWrap: 'wrap' }}>
                                                 {formData.personalInterests?.map(item => (
-                                                    <span key={item} className="chip" style={{ backgroundColor: getInterestColor(item) }}>
+                                                    <span key={item} className={`chip${isMatchingInterest(item, 'personal') ? ' chip-match' : ''}`} style={{ backgroundColor: getInterestColor(item) }}>
                                                         {getLocalizedInterest(item, 'personal')}
                                                     </span>
                                                 ))}
                                                 {formData.otherPersonalInterests && formData.otherPersonalInterests.split(/[,.;]+/).map(item => item.trim()).filter(item => item).map((item, index) => (
-                                                    <span key={`other-pers-${index}`} className="chip" style={{ backgroundColor: getInterestColor(item) }}>
+                                                    <span key={`other-pers-${index}`} className={`chip${isMatchingInterest(item, 'other-personal') ? ' chip-match' : ''}`} style={{ backgroundColor: getInterestColor(item) }}>
                                                         {item}
                                                     </span>
                                                 ))}
@@ -235,7 +298,7 @@ const TokenProfile = () => {
                                         <h4>{t('dashboard.profile.languages')}</h4>
                                         <div className="language-chips" style={{ flexWrap: 'wrap' }}>
                                             {formData.languages.map(lang => (
-                                                <span key={lang} className="chip">{lang}</span>
+                                                <span key={lang} className={`chip${isMatchingInterest(lang, 'language') ? ' chip-match' : ''}`}>{lang}</span>
                                             ))}
                                         </div>
                                     </div>
@@ -248,7 +311,7 @@ const TokenProfile = () => {
                                             {formData.bestMeetingDays.map(day => (
                                                 <span
                                                     key={day}
-                                                    className="chip"
+                                                    className={`chip${isMatchingInterest(day, 'day') ? ' chip-match' : ''}`}
                                                     style={{ backgroundColor: DAY_COLORS[day] || '#f3f4f6' }}
                                                 >
                                                     {t(`dashboard.days.${day.toLowerCase()}`, day)}
