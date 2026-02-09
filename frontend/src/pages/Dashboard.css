@@ -378,6 +378,12 @@ textarea.form-control {
   white-space: nowrap;
 }
 
+.chip-match {
+  border: 2px solid #8b5cf6;
+  box-shadow: 0 0 0 1px rgba(139, 99, 246, 0.3);
+  font-weight: 600;
+}
+
 .chip-remove {
   background: none;
   border: none;

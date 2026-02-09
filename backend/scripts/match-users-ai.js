@@ -404,60 +404,102 @@ Your goal is to pair these users to maximize meaningful connections.
             previous_matches: previousMatches
         }, null, 2);
 
-        // 6. Call AI
+        // 6. Call AI (with Retry Logic)
         // -----------------------------------------------------
-        console.log(`🤖 Sending ${candidatesData.length} candidates and ${previousMatches.length} history records to ${MODEL_NAME}...`);
+        const MAX_LOGIC_RETRIES = 3;
+        let attempt = 0;
+        let success = false;
+        let pairsToCreate = []; // Will hold the final validated list
+        let retryFeedback = "";
 
-        const aiResult = await callGemini(systemPrompt, userPrompt);
+        while (attempt < MAX_LOGIC_RETRIES && !success) {
+            attempt++;
+            console.log(`🤖 Requesting matches from ${MODEL_NAME} (Attempt ${attempt}/${MAX_LOGIC_RETRIES})...`);
 
-        if (!aiResult) {
-            console.error("❌ AI returned null response.");
-            return;
-        }
-
-        let proposedMatches = [];
-        let leftovers = [];
-
-        // Parsing logic to handle Array vs Object response
-        if (Array.isArray(aiResult)) {
-            proposedMatches = aiResult;
-        } else if (aiResult.matches) {
-            proposedMatches = aiResult.matches;
-            leftovers = aiResult.leftovers || [];
-        } else {
-            // Fallback: sometimes Gemini returns { "result": [...] } or similar?
-            // But usually, it's either matches:[] or [].
-            // Let's print structure and exit.
-            console.error("❌ AI returned invalid structure:", JSON.stringify(aiResult, null, 2));
-            return;
-        }
-
-        console.log(`✅ AI proposed ${proposedMatches.length} matches. Leftovers: ${leftovers.length}`);
-
-        // 7. Validate & Process
-        // -----------------------------------------------------
-        const pairsToCreate = [];
-
-        proposedMatches.forEach(match => {
-            // Normalize keys: handle user_id_1, user1_id, User1_ID, etc.
-            const id1 = match.user_id_1 || match.user1_id || match.User1_ID;
-            const id2 = match.user_id_2 || match.user2_id || match.User2_ID;
-            const reason = match.reason || match.reasoning || match.Reason || "";
-
-            const u1 = candidates.find(c => c.id === id1);
-            const u2 = candidates.find(c => c.id === id2);
-
-            if (!u1 || !u2) {
-                console.warn(`⚠️ Warning: AI returned unknown ID: ${id1} or ${id2}. Object: ${JSON.stringify(match)}`);
-                return;
+            // Append explicit feedback if this is a retry
+            let currentSystemPrompt = systemPrompt;
+            if (retryFeedback) {
+                console.log(`   🔄 Including feedback: "${retryFeedback.substring(0, 100)}..."`);
+                currentSystemPrompt += `\n\n🚨 CRITICAL FEEDBACK FROM PREVIOUS ATTEMPT: ${retryFeedback}\n\nYour previous response was REJECTED. Start completely over.`;
             }
 
-            pairsToCreate.push({
-                u1,
-                u2,
-                reason: reason
-            });
-        });
+            const aiResult = await callGemini(currentSystemPrompt, userPrompt);
+
+            if (!aiResult) {
+                console.error("❌ AI returned null response. Retrying...");
+                continue;
+            }
+
+            let proposedMatches = [];
+            // Handle various JSON shapes
+            if (Array.isArray(aiResult)) {
+                proposedMatches = aiResult;
+            } else if (aiResult.matches) {
+                proposedMatches = aiResult.matches;
+                leftovers = aiResult.leftovers || [];
+            } else {
+                console.error(`❌ AI returned invalid structure: ${JSON.stringify(aiResult).substring(0, 100)}`);
+                // If structure is bad, we retry
+                retryFeedback = "Invalid JSON structure. Ensure you return an object with a 'matches' array.";
+                continue;
+            }
+
+            console.log(`✅ AI proposed ${proposedMatches.length} matches. Validating against history...`);
+
+            // 7. Validate (Fail-Fast Strategy)
+            // -----------------------------------------------------
+            let currentBatchValid = true;
+            let currentBatchPairs = [];
+            let duplicatesFound = [];
+
+            for (const match of proposedMatches) {
+                // Normalize keys
+                const id1 = match.user_id_1 || match.user1_id || match.User1_ID;
+                const id2 = match.user_id_2 || match.user2_id || match.User2_ID;
+                const reason = match.reason || match.reasoning || match.Reason || "";
+
+                const u1 = candidates.find(c => c.id === id1);
+                const u2 = candidates.find(c => c.id === id2);
+
+                if (!u1 || !u2) {
+                    // Unknown ID is a soft error, but if we strictly want to be safe, warn and skip
+                    console.warn(`   ⚠️ Unknown ID returned: ${id1} or ${id2}`);
+                    continue;
+                }
+
+                // 🔍 HISTORY CHECK
+                const pairKey = [u1.id, u2.id].sort().join(':');
+                if (previousMatches.includes(pairKey)) {
+                    duplicatesFound.push(`${u1.fields.Name} & ${u2.fields.Name}`);
+                    currentBatchValid = false; // Mark batch as failed
+                }
+
+                if (currentBatchValid) {
+                    currentBatchPairs.push({ u1, u2, reason });
+                }
+            }
+
+            if (!currentBatchValid) {
+                console.warn(`🛑 Batch rejected! Found ${duplicatesFound.length} repeat matches: ${duplicatesFound.join(', ')}`);
+                retryFeedback = `Constraint Violation: You matched users who have ALREADY matched in the past. \nForbidden Pairs found in your last attempt: ${duplicatesFound.join(', ')}. \nPLEASE CHECK THE 'previous_matches' LIST CAREFULLY.`;
+                // Correctly loop back to retry
+            } else {
+                if (proposedMatches.length > 0 && currentBatchPairs.length === 0) {
+                    console.warn("⚠️ All proposed matches were invalid (unknown IDs). Retrying...");
+                    retryFeedback = "All returned IDs were invalid/unknown. Use ONLY the IDs provided in the candidates list.";
+                    continue;
+                }
+
+                console.log("✨ Validation passed. Proceeding with execution.");
+                pairsToCreate = currentBatchPairs;
+                success = true;
+            }
+        }
+
+        if (!success) {
+            console.error("❌ Aborting: Could not generate a valid match list after " + MAX_LOGIC_RETRIES + " attempts.");
+            return;
+        }
 
         // 8. Execute Changes
         // -----------------------------------------------------

@@ -41,7 +41,8 @@ Thumbs.db
 *.swo
 *~
 
-
+# Byterover
+.brv/
 
 # Logs Directory
 logs/*
