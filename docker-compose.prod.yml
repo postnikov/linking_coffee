@@ -7,8 +7,6 @@ services:
       dockerfile: Dockerfile
     container_name: linking-coffee-backend
     restart: unless-stopped
-    ports:
-      - "3001:3001"
     volumes:
       - /opt/linking-coffee/config:/app/config
       - /opt/linking-coffee/logs:/app/logs
@@ -55,8 +53,6 @@ services:
         - REACT_APP_TELEGRAM_BOT_NAME=${REACT_APP_TELEGRAM_BOT_NAME:-Linked_Coffee_Bot}
     container_name: linking-coffee-frontend
     restart: unless-stopped
-    ports:
-      - "8181:80"
     depends_on:
       - backend
     networks:
