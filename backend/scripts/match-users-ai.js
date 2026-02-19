@@ -1,27 +1,30 @@
 /**
  * Match Users AI Script
- * 
+ *
  * Uses Google Gemini (gemini-3-flash-preview) to intelligently match users based on profiles,
- * interests, and history.
- * 
+ * interests, and history. Supports both global and community-specific matching.
+ *
  * Usage:
  *   node backend/scripts/match-users-ai.js [flags]
  *   node backend/scripts/match-users-ai.js
- * 
+ *
  * Flags:
- *   --dry-run   : Run without creating matches in Airtable.
- *   --model=X   : Override model name (default: gemini-3-flash-preview)
- * 
+ *   --dry-run        : Run without creating matches in Airtable.
+ *   --model=X        : Override model name (default: gemini-3-flash-preview)
+ *   --community=slug : Match within specific community (e.g., --community=tech-founders)
+ *
  * Example:
  * docker exec -it linking-coffee-backend node scripts/match-users-ai.js --dry-run
- * docker exec -it linking-coffee-backend node scripts/match-users-ai.js --resume
+ * docker exec -it linking-coffee-backend node scripts/match-users-ai.js --community=tech-founders
  * docker exec -it linking-coffee-backend node scripts/match-users-ai.js --model=gemini-3-pro-preview
- * 
+ *
  * Environment Variables:
  *   - GOOGLE_API_KEY
  *   - AIRTABLE_API_KEY
  *   - AIRTABLE_BASE_ID
  *   - AIRTABLE_MEMBERS_TABLE
+ *   - AIRTABLE_COMMUNITIES_TABLE
+ *   - AIRTABLE_COMMUNITY_MEMBERS_TABLE
  */
 
 const path = require('path');
@@ -50,8 +53,16 @@ if (config.checkRequiredEnv) config.checkRequiredEnv();
 const MEMBERS_TABLE = process.env.AIRTABLE_MEMBERS_TABLE;
 const MATCHES_TABLE = 'tblx2OEN5sSR1xFI2'; // From SCHEMA
 const LOGS_TABLE = 'tbln4rLHEgXUkL9Jh'; // From SCHEMA
+const COMMUNITIES_TABLE = process.env.AIRTABLE_COMMUNITIES_TABLE;
+const COMMUNITY_MEMBERS_TABLE = process.env.AIRTABLE_COMMUNITY_MEMBERS_TABLE;
+
 const DRY_RUN = process.argv.includes('--dry-run');
 const MODEL_OPT = process.argv.find(arg => arg.startsWith('--model='));
+const COMMUNITY_OPT = process.argv.find(arg => arg.startsWith('--community='));
+
+// Parse community flag
+const COMMUNITY_SLUG = COMMUNITY_OPT ? COMMUNITY_OPT.split('=')[1] : null;
+const IS_COMMUNITY_MATCH = !!COMMUNITY_SLUG;
 
 // Use CLI flag if present, otherwise fall back to config file
 const MODEL_NAME = MODEL_OPT ? MODEL_OPT.split('=')[1] : config.ai.matchingModel;
@@ -293,23 +304,85 @@ async function main() {
 
         // 1. Fetch Active Members
         // -----------------------------------------------------
-        console.log(`🔍 Fetching members with Next_Week_Status = 'Active'...`);
-        const activeMembers = await base(MEMBERS_TABLE).select({
-            filterByFormula: "AND({Next_Week_Status} = 'Active', {Consent_GDPR})"
-        }).all();
-        console.log(`✅ Found ${activeMembers.length} active members.`);
+        let activeMembers;
+        let communityRecord = null;
+        let minActiveForMatching = 2; // Default minimum
 
-        if (activeMembers.length < 2) {
-            console.log("⚠️ Not enough members to match.");
+        if (IS_COMMUNITY_MATCH) {
+            console.log(`🏘️  Community Mode: Fetching members for community '${COMMUNITY_SLUG}'...`);
+
+            // Fetch community record
+            const communityRecords = await base(COMMUNITIES_TABLE).select({
+                filterByFormula: `{Slug} = '${COMMUNITY_SLUG}'`,
+                maxRecords: 1
+            }).firstPage();
+
+            if (communityRecords.length === 0) {
+                console.error(`❌ Community '${COMMUNITY_SLUG}' not found.`);
+                process.exit(1);
+            }
+
+            communityRecord = communityRecords[0];
+            minActiveForMatching = communityRecord.fields.Min_Active_For_Matching || 6;
+
+            console.log(`   Community: ${communityRecord.fields.Name}`);
+            console.log(`   Min Active for Matching: ${minActiveForMatching}`);
+
+            // Fetch members with Matching_Context = 'community:{slug}' AND Next_Week_Status = 'Active'
+            activeMembers = await base(MEMBERS_TABLE).select({
+                filterByFormula: `AND(
+                    {Next_Week_Status} = 'Active',
+                    {Consent_GDPR},
+                    {Matching_Context} = 'community:${COMMUNITY_SLUG}'
+                )`
+            }).all();
+
+            console.log(`✅ Found ${activeMembers.length} active members in community.`);
+        } else {
+            console.log(`🌍 Global Mode: Fetching members with Next_Week_Status = 'Active'...`);
+
+            // Fetch members with Matching_Context = 'global' OR empty, AND No_Global_Notifications != TRUE
+            activeMembers = await base(MEMBERS_TABLE).select({
+                filterByFormula: `AND(
+                    {Next_Week_Status} = 'Active',
+                    {Consent_GDPR},
+                    OR({Matching_Context} = 'global', {Matching_Context} = ''),
+                    NOT({No_Global_Notifications} = TRUE())
+                )`
+            }).all();
+
+            console.log(`✅ Found ${activeMembers.length} active members in global pool.`);
+        }
+
+        if (activeMembers.length < minActiveForMatching) {
+            console.log(`⚠️  Not enough members to match (${activeMembers.length} < ${minActiveForMatching}).`);
+            if (IS_COMMUNITY_MATCH) {
+                console.log(`💡 Community needs at least ${minActiveForMatching} opt-ins for matching.`);
+            }
             return;
         }
 
         // 2. Fetch Match History (Crucial for AI Context)
         // -----------------------------------------------------
         console.log(`🔍 Fetching match history...`);
-        const allMatches = await base(MATCHES_TABLE).select({
-            fields: ['Member1', 'Member2', 'Week_Start']
-        }).all();
+        let matchHistoryFilter;
+
+        if (IS_COMMUNITY_MATCH) {
+            // Filter matches by Community field
+            matchHistoryFilter = {
+                filterByFormula: `{Community} = '${communityRecord.id}'`,
+                fields: ['Member1', 'Member2', 'Week_Start', 'Community']
+            };
+        } else {
+            // Global matches: where Community field is empty
+            matchHistoryFilter = {
+                filterByFormula: `{Community} = ''`,
+                fields: ['Member1', 'Member2', 'Week_Start']
+            };
+        }
+
+        const allMatches = await base(MATCHES_TABLE).select(matchHistoryFilter).all();
+        console.log(`   Found ${allMatches.length} previous matches in ${IS_COMMUNITY_MATCH ? 'community' : 'global'} context.`);
 
         const previousMatches = []; // List of "ID1:ID2" strings
         const matchedThisWeek = new Set();
@@ -598,6 +671,11 @@ Your goal is to pair these users to maximize meaningful connections.
                     'View_Token_1': generateViewToken(),
                     'View_Token_2': generateViewToken()
                 };
+
+                // Add community field if matching within a community
+                if (IS_COMMUNITY_MATCH && communityRecord) {
+                    fields['Community'] = [communityRecord.id];
+                }
 
                 // Add image if exists (Airtable expects array of objects with url)
                 if (p.introImageUrl) {

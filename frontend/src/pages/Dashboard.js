@@ -182,6 +182,8 @@ const Dashboard = () => {
         const storedUser = localStorage.getItem('user');
         return storedUser ? JSON.parse(storedUser) : { username: '', email: null };
     });
+    const [communities, setCommunities] = useState([]);
+    const [matchingContext, setMatchingContext] = useState('global');
 
     const [connectedAccounts, setConnectedAccounts] = useState({
         telegram: false,
@@ -270,6 +272,27 @@ const Dashboard = () => {
                 // ... other fields are populated via fetchProfile
             }));
         }
+    }, [user]);
+
+    // Fetch user's communities
+    useEffect(() => {
+        const fetchCommunities = async () => {
+            if (!user?.Tg_Username) return;
+
+            try {
+                const response = await fetch(`${API_URL}/api/my/communities?username=${user.Tg_Username}`);
+                const data = await response.json();
+
+                if (response.ok) {
+                    setCommunities(data.communities || []);
+                    setMatchingContext(data.matchingContext || 'global');
+                }
+            } catch (err) {
+                console.error('Error fetching communities:', err);
+            }
+        };
+
+        fetchCommunities();
     }, [user]);
 
     // Check for Telegram connect URL params (from bot link)
@@ -2686,6 +2709,89 @@ const Dashboard = () => {
                                     )}
                                 </div>
                             )}
+                        </div>
+                    )}
+
+                    {/* Community Card - Shows if user has communities */}
+                    {communities.length > 0 && (
+                        <div className="glass-card" style={{
+                            padding: '1.5rem',
+                            marginBottom: '1.5rem',
+                            background: 'linear-gradient(135deg, rgba(139,115,85,0.05) 0%, rgba(139,115,85,0.1) 100%)'
+                        }}>
+                            <h2 className="section-title" style={{ marginBottom: '1rem', fontSize: '1.1rem' }}>
+                                ☕ Your Communities
+                            </h2>
+
+                            <div style={{ marginBottom: '1rem' }}>
+                                {communities.slice(0, 3).map(community => (
+                                    <div
+                                        key={community.slug}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between',
+                                            padding: '0.75rem',
+                                            marginBottom: '0.5rem',
+                                            borderRadius: '0.5rem',
+                                            backgroundColor: matchingContext === `community:${community.slug}` ? 'rgba(139,115,85,0.1)' : 'rgba(255,255,255,0.5)',
+                                            border: matchingContext === `community:${community.slug}` ? '2px solid #8b7355' : '1px solid rgba(0,0,0,0.05)'
+                                        }}
+                                    >
+                                        <div style={{ flex: 1 }}>
+                                            <div style={{ fontWeight: '600', fontSize: '0.9rem', color: '#333', marginBottom: '0.25rem' }}>
+                                                {community.name}
+                                            </div>
+                                            <div style={{ fontSize: '0.75rem', color: '#666' }}>
+                                                {community.status === 'Pending' ? (
+                                                    <span style={{ color: '#ffa500' }}>⏳ Pending approval</span>
+                                                ) : (
+                                                    <span>{community.role}</span>
+                                                )}
+                                            </div>
+                                        </div>
+                                        {matchingContext === `community:${community.slug}` && (
+                                            <div style={{
+                                                backgroundColor: '#8b7355',
+                                                color: 'white',
+                                                padding: '0.25rem 0.5rem',
+                                                borderRadius: '0.25rem',
+                                                fontSize: '0.7rem',
+                                                fontWeight: '600'
+                                            }}>
+                                                ACTIVE
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+
+                            {communities.length > 3 && (
+                                <div style={{ fontSize: '0.85rem', color: '#666', marginBottom: '1rem', textAlign: 'center' }}>
+                                    +{communities.length - 3} more {communities.length - 3 === 1 ? 'community' : 'communities'}
+                                </div>
+                            )}
+
+                            <Link
+                                to="/my/communities"
+                                style={{
+                                    display: 'block',
+                                    width: '100%',
+                                    padding: '0.75rem',
+                                    backgroundColor: '#8b7355',
+                                    color: 'white',
+                                    textAlign: 'center',
+                                    borderRadius: '0.5rem',
+                                    textDecoration: 'none',
+                                    fontWeight: '600',
+                                    fontSize: '0.9rem',
+                                    transition: 'background-color 0.3s'
+                                }}
+                                onMouseOver={(e) => e.target.style.backgroundColor = '#6d5a45'}
+                                onMouseOut={(e) => e.target.style.backgroundColor = '#8b7355'}
+                            >
+                                Manage Communities →
+                            </Link>
                         </div>
                     )}
 

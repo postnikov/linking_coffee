@@ -22,5 +22,23 @@
     "enabled": true,
     "lastRun": null,
     "lastStatus": null
+  },
+  {
+    "name": "Weekly Matching (All Pools)",
+    "script": "match-all.js",
+    "cron": "0 8 * * 1",
+    "enabled": false,
+    "lastRun": null,
+    "lastStatus": null,
+    "description": "Runs community matching first, then global pool. Monday 8am."
+  },
+  {
+    "name": "Notify Matches",
+    "script": "notify-matches.js",
+    "cron": "0 9 * * 1",
+    "enabled": false,
+    "lastRun": null,
+    "lastStatus": null,
+    "description": "Sends match notifications via Telegram. Monday 9am."
   }
 ]

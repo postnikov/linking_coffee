@@ -14,6 +14,9 @@ import TokenProfile from './pages/TokenProfile';
 import LinkedinCallback from './pages/LinkedinCallback';
 import Unsubscribe from './pages/Unsubscribe';
 import Privacy from './pages/Privacy';
+import JoinCommunityPage from './pages/JoinCommunityPage';
+import MyCommunitiesPage from './pages/MyCommunitiesPage';
+import CommunityInfoPage from './pages/CommunityInfoPage';
 // import AdminHealth from './pages/AdminHealth'; // Now integrated
 
 
@@ -85,6 +88,17 @@ function App() {
                             <Route path="/view/:token" element={<TokenProfile />} />
                             <Route path="/auth/linkedin/callback" element={<LinkedinCallback onLogin={handleLogin} />} />
                             <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
+                            <Route path="/join/:code" element={<JoinCommunityPage user={user} />} />
+                            <Route path="/my/communities" element={
+                                <RequireAuth user={user}>
+                                    <MyCommunitiesPage user={user} />
+                                </RequireAuth>
+                            } />
+                            <Route path="/community/:slug" element={
+                                <RequireAuth user={user}>
+                                    <CommunityInfoPage user={user} />
+                                </RequireAuth>
+                            } />
                             <Route path="/about" element={<About />} />
                             <Route path="/rules" element={<Rules />} />
                             <Route path="/prices" element={<Prices user={user} />} />

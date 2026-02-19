@@ -193,6 +193,156 @@ The matching system operates on a **weekly cycle** with 5 main automated scripts
 - `broadcast-message.js` - Admin tool for bulk messaging
 - `update-schema-docs.js` - Generates database schema documentation
 
+---
+
+### 🏘️ Closed Communities Feature
+
+**Status**: ✅ Implemented (Phases 0-4 complete)
+**Purpose**: B2B monetization via isolated matching pools for companies and organizations
+
+#### Overview
+
+Closed Communities allow community admins to create private matching pools where members match with each other instead of the global pool. This enables companies, organizations, or interest groups to run Random Coffee within their own communities.
+
+**Key Capabilities**:
+- Community admins generate invite links
+- Members join via invite codes (auto or manual approval)
+- Members choose weekly matching context (global or specific community)
+- Separate matching runs for each community + global pool
+- Community-specific match notifications
+
+#### Database Tables
+
+**Communities Table (`tblSMXQlCTpl7BZED`)**:
+- `Name`, `Slug`, `Description`, `Status` (Active/Inactive)
+- `Settings` (JSON): approval_mode, visibility settings, odd_user_handling
+- `Min_Active_For_Matching` (default: 6) - Minimum opt-ins needed for matching
+- `Deleted_At` - Soft deletion timestamp
+
+**Community_Members Table (`tblPN0ni3zaaTCPcF`)**:
+- `Member` (link to Members), `Community` (link to Communities)
+- `Status` (Active, Pending, Removed), `Role` (Owner, Admin, Member)
+- `Invited_Via` (link to Invite_Links), `Left_At`, `Joined_At`
+
+**Invite_Links Table (`tblcTt0qyNr8HfzKS`)**:
+- `Code` (8-char hex), `Label`, `Status` (Active/Disabled)
+- `Max_Uses` (-1 = unlimited), `Used_Count`, `Expires_At`
+- `Community` (link), `Created_By` (link to Members)
+
+**Members Table Additions**:
+- `Matching_Context` - Format: "global" or "community:{slug}"
+- `No_Global_Notifications` - Opt-out from global invitations
+
+**Matches Table Additions**:
+- `Community` (link to Communities) - Populated for community matches
+
+#### API Endpoints
+
+**Invite Management** (Admin-only):
+- `POST /api/community/:slug/invite-links` - Generate invite link
+- `GET /api/invite/:code/info` - Validate invite (public)
+- `GET /api/community/:slug/invite-links` - List links (visibility-controlled)
+- `PATCH /api/community/:slug/invite-links/:id` - Disable/enable link
+
+**Join Flow**:
+- `POST /api/community/join/:code` - Join via invite (auto or manual approval)
+
+**Community Management**:
+- `GET /api/community/:slug` - Community info (member-only)
+- `GET /api/community/:slug/members` - Member list (visibility-controlled)
+- `PUT /api/community/:slug` - Update settings (admin-only)
+- `GET /api/my/communities` - User's communities list
+- `PUT /api/my/matching-context` - Set weekly matching pool
+- `POST /api/community/:slug/leave` - Leave community
+
+**See**: [docs/communities/API_ENDPOINTS_PHASE2.md](docs/communities/API_ENDPOINTS_PHASE2.md)
+
+#### Frontend Pages
+
+- `/join/:code` - [JoinCommunityPage.js](frontend/src/pages/JoinCommunityPage.js) - Invite landing page
+- `/my/communities` - [MyCommunitiesPage.js](frontend/src/pages/MyCommunitiesPage.js) - Matching context switcher
+- `/community/:slug` - [CommunityInfoPage.js](frontend/src/pages/CommunityInfoPage.js) - Community details
+- Dashboard community card - Shows user's communities in sidebar
+
+#### Bot Callbacks
+
+- `community_approve:{membershipId}` - Approve membership request
+- `community_ignore:{membershipId}` - Ignore membership request
+- `community_participate_yes:{memberId}:{slug}` - Opt into community matching
+- `community_participate_no:{memberId}:{slug}` - Opt out of matching
+- `community_deleted_join_global:{memberId}` - Join global pool after deletion
+- `community_deleted_skip:{memberId}` - Opt out of global matching
+
+#### Matching Workflow (Multi-Pool)
+
+**Monday 8:00 AM** - `match-all.js` orchestrates matching:
+1. Fetches all active communities
+2. For each community:
+   - Counts opt-ins where `Matching_Context = 'community:{slug}'`
+   - If `opt-ins >= Min_Active_For_Matching`:
+     - Runs `match-users-ai.js --community={slug}`
+     - Creates matches with `Community` field populated
+   - If insufficient opt-ins: Skips and notifies admin
+3. Runs `match-users-ai.js` (no flag) for global pool:
+   - Matches users with `Matching_Context = 'global'` or empty
+   - Excludes `No_Global_Notifications = true`
+   - Excludes users with community matching context
+
+**Monday 9:00 AM** - `notify-matches.js` sends notifications:
+- Fetches matches with `Notifications = 'Pending'`
+- If `Community` field populated: Fetches community name
+- Adds community prefix to message: "☕ Community: {Name}"
+- Sends via Telegram bot
+- Updates `Notifications = 'Sent'`
+
+#### Key Scripts
+
+**`match-users-ai.js`** - Parameterized matching engine:
+- `--community={slug}` flag for community matching
+- Filters members by `Matching_Context`
+- Filters match history by `Community` field
+- Sets `Community` field when creating matches
+
+**`match-all.js`** - Orchestrator for multi-pool matching:
+- Runs community matching first (respects min threshold)
+- Then runs global matching
+- Handles errors gracefully (failures don't cascade)
+- Sends admin notifications via Telegram
+
+#### Security Features
+
+All endpoints implement:
+- ✅ Input sanitization via `sanitizeForAirtable()`, `sanitizeUsername()`
+- ✅ Rate limiting (apiLimiter, adminLimiter, authLimiter)
+- ✅ Access control via `checkCommunityMember`, `checkCommunityAdmin` middleware
+- ✅ Enum validation for settings values
+- ✅ Date validation for expiry dates
+- ✅ Invite code format validation (8-char hex)
+
+**Middleware**: [backend/utils/community-middleware.js](backend/utils/community-middleware.js)
+
+#### Testing
+
+**Unit Tests**: See [docs/communities/TESTING_GUIDE.md](docs/communities/TESTING_GUIDE.md)
+- Global matching regression test
+- Community matching test
+- Insufficient opt-ins test
+- Match-all orchestrator test
+- Notification with community context test
+
+**Integration Test**: End-to-end flow from invite to match notification
+
+#### Documentation
+
+- [PRD_CLOSED_COMMUNITIES.md](docs/communities/PRD_CLOSED_COMMUNITIES.md) - Product requirements
+- [DATABASE_MIGRATION_PHASE1.md](docs/communities/DATABASE_MIGRATION_PHASE1.md) - Schema changes
+- [API_ENDPOINTS_PHASE2.md](docs/communities/API_ENDPOINTS_PHASE2.md) - API reference
+- [PHASE3_FRONTEND_SUMMARY.md](docs/communities/PHASE3_FRONTEND_SUMMARY.md) - Frontend implementation
+- [PHASE4_SCRIPTS_SUMMARY.md](docs/communities/PHASE4_SCRIPTS_SUMMARY.md) - Script refactoring
+- [TESTING_GUIDE.md](docs/communities/TESTING_GUIDE.md) - Testing procedures
+
+---
+
 ### Frontend (`/frontend/src/`)
 
 React application with internationalization and routing:

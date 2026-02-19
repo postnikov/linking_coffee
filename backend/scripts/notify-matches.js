@@ -124,7 +124,7 @@ Good Luck!
     }
 }
 
-async function notifyMember(member, partner, introField, viewToken = null, matchId = null, introImages = null) {
+async function notifyMember(member, partner, introField, viewToken = null, matchId = null, introImages = null, communityName = null) {
     const memberName = member.fields.Name || 'Friend';
     const partnerName = partner.fields.Name || 'a partner';
     const partnerUsername = partner.fields.Tg_Username ? `@${partner.fields.Tg_Username}` : '(no username)';
@@ -153,7 +153,15 @@ async function notifyMember(member, partner, introField, viewToken = null, match
 
     const partnerLinkedin = partner.fields.Linkedin || null;
 
-    const message = getMessage(lang, memberName, partnerName, partnerUsername, introField, IS_TEST_MODE, memberName, viewToken, partnerLinkedin);
+    let message = getMessage(lang, memberName, partnerName, partnerUsername, introField, IS_TEST_MODE, memberName, viewToken, partnerLinkedin);
+
+    // Add community context if this is a community match
+    if (communityName) {
+        const communityPrefix = lang === 'Ru'
+            ? `☕ Сообщество: *${communityName}*\n\n`
+            : `☕ Community: *${communityName}*\n\n`;
+        message = communityPrefix + message;
+    }
 
     // Determine final recipient
     const targetChatId = IS_TEST_MODE ? ADMIN_CHAT_ID : recipientId;
@@ -247,14 +255,26 @@ async function main() {
                 const member1 = await base(MEMBERS_TABLE).find(match.fields.Member1[0]);
                 const member2 = await base(MEMBERS_TABLE).find(match.fields.Member2[0]);
 
+                // Check if this is a community match
+                let communityName = null;
+                if (match.fields.Community && match.fields.Community.length > 0) {
+                    try {
+                        const COMMUNITIES_TABLE = process.env.AIRTABLE_COMMUNITIES_TABLE;
+                        const community = await base(COMMUNITIES_TABLE).find(match.fields.Community[0]);
+                        communityName = community.fields.Name;
+                    } catch (err) {
+                        console.log(`⚠️ Could not fetch community name: ${err.message}`);
+                    }
+                }
+
                 let sent1 = false;
                 let sent2 = false;
 
                 // Notify Member 1 (Use Intro_1, View_Token_1)
-                sent1 = await notifyMember(member1, member2, match.fields.Intro_1, match.fields.View_Token_1, match.id, match.fields.Intro_Image);
+                sent1 = await notifyMember(member1, member2, match.fields.Intro_1, match.fields.View_Token_1, match.id, match.fields.Intro_Image, communityName);
 
                 // Notify Member 2 (Use Intro_2, View_Token_2)
-                sent2 = await notifyMember(member2, member1, match.fields.Intro_2, match.fields.View_Token_2, match.id, match.fields.Intro_Image);
+                sent2 = await notifyMember(member2, member1, match.fields.Intro_2, match.fields.View_Token_2, match.id, match.fields.Intro_Image, communityName);
 
                 // Update Match record if ANY message was sent (or attempted in live mode)
                 // In DRY_RUN we don't update.

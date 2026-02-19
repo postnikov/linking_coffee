@@ -4,6 +4,7 @@ const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
 const cron = require('node-cron');
+const rateLimit = require('express-rate-limit');
 const Scheduler = require('./scheduler');
 const Airtable = require('airtable');
 const { Telegraf, Markup } = require('telegraf');
@@ -13,6 +14,7 @@ const statisticsUtils = require('./utils/statistics');
 const { sanitizeForAirtable, sanitizeUsername, sanitizeEmail, sanitizeTelegramId } = require('./utils/airtable-sanitizer');
 const { findPotentialDuplicates } = require('./utils/name-matcher');
 const { sendWarningAlert } = require('./utils/alerting');
+const { checkCommunityMember, checkCommunityAdmin } = require('./utils/community-middleware');
 
 const logDir = path.join(__dirname, 'logs');
 console.log('📂 Log Directory:', logDir);
@@ -135,6 +137,31 @@ app.use((req, res, next) => {
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
   res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
   next();
+});
+
+// Rate Limiting Configuration
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  message: { success: false, error: 'Too many requests, please try again later.' },
+  standardHeaders: true, // Return rate limit info in `RateLimit-*` headers
+  legacyHeaders: false, // Disable `X-RateLimit-*` headers
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // Limit each IP to 10 auth attempts per windowMs
+  message: { success: false, error: 'Too many authentication attempts, please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const adminLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000, // 5 minutes
+  max: 50, // Limit each IP to 50 admin requests per windowMs
+  message: { success: false, error: 'Too many admin requests, please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 
 // Configure Airtable
@@ -478,6 +505,165 @@ bot.action(/^fb_rate:(.+):(\d+):(\d+)(?::([A-Za-z]{2}))?$/, async (ctx) => {
   }
 });
 
+// Community: Approve Membership
+bot.action(/^community_approve:(.+)$/, async (ctx) => {
+  const membershipId = ctx.match[1];
+
+  try {
+    // Update membership status to Active
+    await base(process.env.AIRTABLE_COMMUNITY_MEMBERS_TABLE).update([
+      {
+        id: membershipId,
+        fields: {
+          Status: 'Active'
+        }
+      }
+    ]);
+
+    // Get membership details to notify user
+    const membership = await base(process.env.AIRTABLE_COMMUNITY_MEMBERS_TABLE).find(membershipId);
+    const memberIds = membership.fields.Member;
+    const communityIds = membership.fields.Community;
+
+    if (memberIds && memberIds.length > 0 && communityIds && communityIds.length > 0) {
+      const member = await base(process.env.AIRTABLE_MEMBERS_TABLE).find(memberIds[0]);
+      const community = await base(process.env.AIRTABLE_COMMUNITIES_TABLE).find(communityIds[0]);
+
+      const userTgId = member.fields.Tg_ID;
+      const communityName = community.fields.Name;
+
+      // Notify user of approval
+      if (userTgId) {
+        await bot.telegram.sendMessage(
+          userTgId,
+          `🎉 Your membership to *${communityName}* has been approved!\n\n` +
+          `You can now participate in weekly coffee matches within this community.`,
+          { parse_mode: 'Markdown' }
+        );
+      }
+    }
+
+    await ctx.answerCbQuery('✅ Membership approved');
+    await ctx.editMessageText(
+      ctx.callbackQuery.message.text + '\n\n✅ Approved'
+    );
+  } catch (error) {
+    console.error('Error approving membership:', error);
+    await ctx.answerCbQuery('❌ Error approving membership');
+  }
+});
+
+// Community: Ignore Membership Request
+bot.action(/^community_ignore:(.+)$/, async (ctx) => {
+  await ctx.answerCbQuery('Request ignored. User can re-apply if needed.');
+  await ctx.editMessageText(
+    ctx.callbackQuery.message.text + '\n\n🚫 Ignored'
+  );
+});
+
+// Community: Participate Yes
+bot.action(/^community_participate_yes:(.+):(.+)$/, async (ctx) => {
+  const memberId = ctx.match[1];
+  const slug = ctx.match[2];
+
+  try {
+    // Set Matching_Context and Next_Week_Status
+    await base(process.env.AIRTABLE_MEMBERS_TABLE).update([
+      {
+        id: memberId,
+        fields: {
+          Matching_Context: `community:${slug}`,
+          Next_Week_Status: 'Active'
+        }
+      }
+    ]);
+
+    await ctx.answerCbQuery('✅ You\'re in for next week\'s community match!');
+    await ctx.editMessageText(
+      ctx.callbackQuery.message.text + '\n\n✅ Confirmed for community matching'
+    );
+  } catch (error) {
+    console.error('Error setting community participation:', error);
+    await ctx.answerCbQuery('❌ Error confirming participation');
+  }
+});
+
+// Community: Participate No
+bot.action(/^community_participate_no:(.+):(.+)$/, async (ctx) => {
+  const memberId = ctx.match[1];
+
+  try {
+    // Clear participation
+    await base(process.env.AIRTABLE_MEMBERS_TABLE).update([
+      {
+        id: memberId,
+        fields: {
+          Next_Week_Status: 'Passive'
+        }
+      }
+    ]);
+
+    await ctx.answerCbQuery('👍 Skipping this week');
+    await ctx.editMessageText(
+      ctx.callbackQuery.message.text + '\n\n🪫 Skipping this week'
+    );
+  } catch (error) {
+    console.error('Error clearing participation:', error);
+    await ctx.answerCbQuery('❌ Error updating status');
+  }
+});
+
+// Community Deleted: Join Global
+bot.action(/^community_deleted_join_global:(.+)$/, async (ctx) => {
+  const memberId = ctx.match[1];
+
+  try {
+    // Clear No_Global_Notifications flag
+    await base(process.env.AIRTABLE_MEMBERS_TABLE).update([
+      {
+        id: memberId,
+        fields: {
+          No_Global_Notifications: false,
+          Matching_Context: 'global'
+        }
+      }
+    ]);
+
+    await ctx.answerCbQuery('✅ Welcome to the global pool!');
+    await ctx.editMessageText(
+      ctx.callbackQuery.message.text + '\n\n✅ Joined global matching pool'
+    );
+  } catch (error) {
+    console.error('Error joining global pool:', error);
+    await ctx.answerCbQuery('❌ Error updating preferences');
+  }
+});
+
+// Community Deleted: Skip
+bot.action(/^community_deleted_skip:(.+)$/, async (ctx) => {
+  const memberId = ctx.match[1];
+
+  try {
+    // Set No_Global_Notifications flag
+    await base(process.env.AIRTABLE_MEMBERS_TABLE).update([
+      {
+        id: memberId,
+        fields: {
+          No_Global_Notifications: true
+        }
+      }
+    ]);
+
+    await ctx.answerCbQuery('👍 You won\'t receive global invitations');
+    await ctx.editMessageText(
+      ctx.callbackQuery.message.text + '\n\n🪫 Opted out of global matching'
+    );
+  } catch (error) {
+    console.error('Error opting out:', error);
+    await ctx.answerCbQuery('❌ Error updating preferences');
+  }
+});
+
 // Register bot menu commands
 bot.telegram.setMyCommands([
   { command: 'start', description: '🚀 Start the bot' },
@@ -510,7 +696,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // Step 1: Register (Create Record) or Request OTP
-app.post('/api/register', async (req, res) => {
+app.post('/api/register', authLimiter, async (req, res) => {
   const { telegramUsername } = req.body;
   logConnection(`Telegram OTP request for @${telegramUsername || 'UNKNOWN'}`, 'ATTEMPT');
 
@@ -670,7 +856,7 @@ app.post('/api/dev-login', async (req, res) => {
 });
 
 // Step 2: Verify OTP and Update Tg_ID
-app.post('/api/verify', async (req, res) => {
+app.post('/api/verify', authLimiter, async (req, res) => {
   const { telegramUsername, otp } = req.body;
   console.log(`📥 /api/verify called with username: ${telegramUsername}, otp: ${otp}`);
   logAuth(`API Verify attempt: User=${telegramUsername}, OTP=${otp}`);
@@ -791,6 +977,7 @@ app.post('/api/verify', async (req, res) => {
         success: true,
         message: 'Verification successful! Account linked.',
         user: {
+          id: record.id,
           username: cleanUsername,
           status: record.fields.Status,
           consentGdpr: record.fields.Consent_GDPR,
@@ -854,6 +1041,7 @@ app.post('/api/verify', async (req, res) => {
         success: true,
         message: 'Account created and linked! Please complete your profile.',
         user: {
+          id: newRecord.id,
           username: cleanUsername,
           status: 'EarlyBird',
           consentGdpr: false, // New users need GDPR consent
@@ -1968,8 +2156,12 @@ const checkAdmin = async (req, res, next) => {
   const cleanRequester = requester.replace('@', '').trim().toLowerCase();
 
   try {
+    // Use sanitizeUsername to prevent SQL injection
+    const { sanitizeUsername } = require('./utils/airtable-sanitizer');
+    const safeUsername = sanitizeUsername(cleanRequester);
+
     const records = await base(process.env.AIRTABLE_MEMBERS_TABLE).select({
-      filterByFormula: `{Tg_Username} = '${cleanRequester}'`,
+      filterByFormula: `{Tg_Username} = '${safeUsername}'`,
       maxRecords: 1
     }).firstPage();
 
@@ -1986,7 +2178,7 @@ const checkAdmin = async (req, res, next) => {
 };
 
 // Bot Health Check
-app.post('/api/admin/bot/test', checkAdmin, async (req, res) => {
+app.post('/api/admin/bot/test', adminLimiter, checkAdmin, async (req, res) => {
   try {
     const me = await bot.telegram.getMe();
 
@@ -2011,7 +2203,7 @@ app.post('/api/admin/bot/test', checkAdmin, async (req, res) => {
 });
 
 // Logs
-app.get('/api/admin/logs', checkAdmin, (req, res) => {
+app.get('/api/admin/logs', adminLimiter, checkAdmin, (req, res) => {
   const logDir = path.join(__dirname, 'logs');
   const files = [];
 
@@ -2042,7 +2234,7 @@ app.get('/api/admin/logs', checkAdmin, (req, res) => {
   res.json({ success: true, files });
 });
 
-app.get('/api/admin/logs/view', checkAdmin, (req, res) => {
+app.get('/api/admin/logs/view', adminLimiter, checkAdmin, (req, res) => {
   const { file } = req.query; // 'debug.log' or 'logs/auth.log'
 
   if (!file) return res.status(400).json({ message: 'File required' });
@@ -2071,7 +2263,7 @@ app.get('/api/admin/logs/view', checkAdmin, (req, res) => {
 });
 
 // Script Logs Endpoints
-app.get('/api/admin/logs/scripts', checkAdmin, async (req, res) => {
+app.get('/api/admin/logs/scripts', adminLimiter, checkAdmin, async (req, res) => {
   try {
     const logsDir = path.join(__dirname, 'logs', 'scripts');
 
@@ -2111,7 +2303,7 @@ app.get('/api/admin/logs/scripts', checkAdmin, async (req, res) => {
   }
 });
 
-app.get('/api/admin/logs/scripts/:scriptName', checkAdmin, async (req, res) => {
+app.get('/api/admin/logs/scripts/:scriptName', adminLimiter, checkAdmin, async (req, res) => {
   try {
     const { scriptName } = req.params;
     const { offset = 0, limit = 100, search = '' } = req.query;
@@ -2154,7 +2346,7 @@ app.get('/api/admin/logs/scripts/:scriptName', checkAdmin, async (req, res) => {
   }
 });
 
-app.get('/api/admin/logs/scripts/:scriptName/tail', checkAdmin, async (req, res) => {
+app.get('/api/admin/logs/scripts/:scriptName/tail', adminLimiter, checkAdmin, async (req, res) => {
   try {
     const { scriptName } = req.params;
     const { lines = 100 } = req.query;
@@ -2186,7 +2378,7 @@ app.get('/api/admin/logs/scripts/:scriptName/tail', checkAdmin, async (req, res)
   }
 });
 
-app.get('/api/admin/logs/scripts/:scriptName/download', checkAdmin, async (req, res) => {
+app.get('/api/admin/logs/scripts/:scriptName/download', adminLimiter, checkAdmin, async (req, res) => {
   try {
     const { scriptName } = req.params;
 
@@ -2209,7 +2401,7 @@ app.get('/api/admin/logs/scripts/:scriptName/download', checkAdmin, async (req, 
 });
 
 // Statistics
-app.get('/api/admin/statistics', checkAdmin, async (req, res) => {
+app.get('/api/admin/statistics', adminLimiter, checkAdmin, async (req, res) => {
   try {
     const period = parseInt(req.query.period) || 30;
 
@@ -2316,7 +2508,7 @@ app.get('/api/admin/statistics', checkAdmin, async (req, res) => {
 });
 
 // Backups
-app.get('/api/admin/backups', checkAdmin, (req, res) => {
+app.get('/api/admin/backups', adminLimiter, checkAdmin, (req, res) => {
   // Use the same logic as initialization
   const dir = process.env.BACKUP_DIR || path.join(__dirname, 'backups');
   console.log(`📂 Listing backups from: ${dir}`);
@@ -2374,11 +2566,11 @@ app.get('/api/admin/backups', checkAdmin, (req, res) => {
 
 
 // Scheduler
-app.get('/api/admin/scheduler', checkAdmin, (req, res) => {
+app.get('/api/admin/scheduler', adminLimiter, checkAdmin, (req, res) => {
   res.json({ success: true, jobs: scheduler.getJobs() });
 });
 
-app.post('/api/admin/scheduler', checkAdmin, (req, res) => {
+app.post('/api/admin/scheduler', adminLimiter, checkAdmin, (req, res) => {
   const { action, job } = req.body; // action: add, update, delete, start-now
 
   try {
@@ -2395,7 +2587,7 @@ app.post('/api/admin/scheduler', checkAdmin, (req, res) => {
   }
 });
 
-app.post('/api/admin/scheduler/run', checkAdmin, (req, res) => {
+app.post('/api/admin/scheduler/run', adminLimiter, checkAdmin, (req, res) => {
   const { name } = req.body;
   if (scheduler.runJobNow(name)) {
     res.json({ success: true, message: 'Job started' });
@@ -2405,7 +2597,7 @@ app.post('/api/admin/scheduler/run', checkAdmin, (req, res) => {
 });
 
 // Available scripts
-app.get('/api/admin/scripts', checkAdmin, (req, res) => {
+app.get('/api/admin/scripts', adminLimiter, checkAdmin, (req, res) => {
   const scriptsDir = path.join(__dirname, 'scripts');
   if (fs.existsSync(scriptsDir)) {
     const files = fs.readdirSync(scriptsDir).filter(f => f.endsWith('.js'));
@@ -2416,7 +2608,7 @@ app.get('/api/admin/scripts', checkAdmin, (req, res) => {
 });
 
 // Deployment Tests - View test results
-app.get('/api/admin/tests', checkAdmin, (req, res) => {
+app.get('/api/admin/tests', adminLimiter, checkAdmin, (req, res) => {
   const testLogFile = path.join(logDir, 'deployment-tests.log');
 
   if (!fs.existsSync(testLogFile)) {
@@ -2448,7 +2640,7 @@ app.get('/api/admin/tests', checkAdmin, (req, res) => {
 });
 
 // Deployment Tests - Trigger tests manually
-app.post('/api/admin/tests/run', checkAdmin, async (req, res) => {
+app.post('/api/admin/tests/run', adminLimiter, checkAdmin, async (req, res) => {
   const { spawn } = require('child_process');
 
   res.json({ success: true, status: 'started', message: 'Smoke tests initiated' });
@@ -3164,6 +3356,925 @@ app.post('/api/admin/regenerate-image', async (req, res) => {
     res.write(`\n❌ Error spawning process: ${err.message}`);
     res.end();
   });
+});
+
+// ==========================================
+// CLOSED COMMUNITIES - API ENDPOINTS
+// ==========================================
+
+// Generate Invite Link (Admin Only)
+app.post('/api/community/:slug/invite-links', apiLimiter, adminLimiter, checkCommunityAdmin, async (req, res) => {
+  try {
+    const { label, maxUses = -1, expiresAt = null } = req.body;
+
+    // Validate inputs
+    if (!label || typeof label !== 'string' || label.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Label is required'
+      });
+    }
+
+    if (typeof maxUses !== 'number' || (maxUses < -1 || maxUses === 0)) {
+      return res.status(400).json({
+        success: false,
+        error: 'maxUses must be -1 (unlimited) or a positive integer'
+      });
+    }
+
+    // Validate expiry date if provided
+    if (expiresAt !== null) {
+      const expiryDate = new Date(expiresAt);
+      if (isNaN(expiryDate.getTime())) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid expiresAt date format'
+        });
+      }
+      if (expiryDate <= new Date()) {
+        return res.status(400).json({
+          success: false,
+          error: 'expiresAt must be in the future'
+        });
+      }
+    }
+
+    // Generate unique 8-char hex code
+    const crypto = require('crypto');
+    const code = crypto.randomBytes(4).toString('hex').toUpperCase();
+
+    // Create invite link record
+    const inviteLinkRecord = await base(process.env.AIRTABLE_INVITE_LINKS_TABLE).create([
+      {
+        fields: {
+          Community: [req.community.id],
+          Code: code,
+          Label: sanitizeForAirtable(label.trim()),
+          Status: 'Active',
+          Max_Uses: maxUses,
+          Used_Count: 0,
+          Expires_At: expiresAt,
+          Created_By: [req.userId]
+        }
+      }
+    ]);
+
+    res.json({
+      success: true,
+      inviteLink: {
+        id: inviteLinkRecord[0].id,
+        code: code,
+        label: label.trim(),
+        status: 'Active',
+        maxUses: maxUses,
+        usedCount: 0,
+        expiresAt: expiresAt,
+        url: `https://linked.coffee/join/${code}`
+      }
+    });
+
+    logDebug(`Invite link created for community ${req.params.slug} by ${req.membership.fields.Member}: ${code}`);
+  } catch (error) {
+    console.error('Error creating invite link:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to create invite link'
+    });
+  }
+});
+
+// Get Invite Link Info (Public - for join page)
+app.get('/api/invite/:code/info', apiLimiter, async (req, res) => {
+  try {
+    const { code } = req.params;
+
+    // Validate code format
+    if (!/^[A-F0-9]{8}$/i.test(code)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid invite code format'
+      });
+    }
+
+    const safeCode = sanitizeForAirtable(code.toUpperCase());
+
+    // Find invite link
+    const inviteLinkRecords = await base(process.env.AIRTABLE_INVITE_LINKS_TABLE).select({
+      filterByFormula: `{Code} = '${safeCode}'`,
+      maxRecords: 1
+    }).firstPage();
+
+    if (inviteLinkRecords.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Invite link not found'
+      });
+    }
+
+    const inviteLink = inviteLinkRecords[0].fields;
+
+    // Check if invite is valid
+    if (inviteLink.Status !== 'Active') {
+      return res.status(400).json({
+        success: false,
+        error: 'This invite link has been disabled'
+      });
+    }
+
+    // Check expiry
+    if (inviteLink.Expires_At) {
+      const expiryDate = new Date(inviteLink.Expires_At);
+      if (expiryDate <= new Date()) {
+        return res.status(400).json({
+          success: false,
+          error: 'This invite link has expired'
+        });
+      }
+    }
+
+    // Check usage limit
+    if (inviteLink.Max_Uses !== -1 && inviteLink.Used_Count >= inviteLink.Max_Uses) {
+      return res.status(400).json({
+        success: false,
+        error: 'This invite link has reached its usage limit'
+      });
+    }
+
+    // Get community info
+    const communityId = inviteLink.Community[0];
+    const community = await base(process.env.AIRTABLE_COMMUNITIES_TABLE).find(communityId);
+
+    res.json({
+      success: true,
+      invite: {
+        code: code.toUpperCase(),
+        label: inviteLink.Label,
+        community: {
+          name: community.fields.Name,
+          slug: community.fields.Slug,
+          description: community.fields.Description || ''
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching invite info:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch invite information'
+    });
+  }
+});
+
+// List Invite Links (Visibility-Controlled)
+app.get('/api/community/:slug/invite-links', apiLimiter, checkCommunityMember, async (req, res) => {
+  try {
+    const settings = req.community.fields.Settings ? JSON.parse(req.community.fields.Settings) : {};
+    const visibleTo = settings.invite_links_visible_to || 'all_members';
+
+    // Check visibility permissions
+    const memberRole = req.membership.fields.Role;
+    const isAdmin = memberRole === 'Owner' || memberRole === 'Admin';
+
+    if (visibleTo === 'admins_only' && !isAdmin) {
+      return res.status(403).json({
+        success: false,
+        error: 'Only admins can view invite links'
+      });
+    }
+
+    // Fetch invite links for this community
+    const inviteLinks = await base(process.env.AIRTABLE_INVITE_LINKS_TABLE).select({
+      filterByFormula: `{Community} = '${req.community.id}'`,
+      sort: [{ field: 'Created_At', direction: 'desc' }]
+    }).all();
+
+    const links = inviteLinks.map(link => ({
+      id: link.id,
+      code: link.fields.Code,
+      label: link.fields.Label,
+      status: link.fields.Status,
+      maxUses: link.fields.Max_Uses,
+      usedCount: link.fields.Used_Count || 0,
+      expiresAt: link.fields.Expires_At || null,
+      createdAt: link.fields.Created_At,
+      url: `https://linked.coffee/join/${link.fields.Code}`
+    }));
+
+    res.json({
+      success: true,
+      inviteLinks: links
+    });
+  } catch (error) {
+    console.error('Error listing invite links:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch invite links'
+    });
+  }
+});
+
+// Disable Invite Link (Admin Only)
+app.patch('/api/community/:slug/invite-links/:linkId', apiLimiter, adminLimiter, checkCommunityAdmin, async (req, res) => {
+  try {
+    const { linkId } = req.params;
+    const { status } = req.body;
+
+    // Validate status
+    if (!['Active', 'Disabled'].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Status must be Active or Disabled'
+      });
+    }
+
+    // Verify link belongs to this community
+    const link = await base(process.env.AIRTABLE_INVITE_LINKS_TABLE).find(linkId);
+    if (link.fields.Community[0] !== req.community.id) {
+      return res.status(403).json({
+        success: false,
+        error: 'This invite link does not belong to this community'
+      });
+    }
+
+    // Update status
+    await base(process.env.AIRTABLE_INVITE_LINKS_TABLE).update([
+      {
+        id: linkId,
+        fields: {
+          Status: status
+        }
+      }
+    ]);
+
+    res.json({
+      success: true,
+      message: `Invite link ${status === 'Disabled' ? 'disabled' : 'enabled'} successfully`
+    });
+
+    logDebug(`Invite link ${linkId} ${status} by ${req.membership.fields.Member} in community ${req.params.slug}`);
+  } catch (error) {
+    console.error('Error updating invite link:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to update invite link'
+    });
+  }
+});
+
+// Community Join Flow
+app.post('/api/community/join/:code', apiLimiter, async (req, res) => {
+  try {
+    // Check authentication
+    const username = req.body.username || req.headers['x-user'];
+    if (!username) {
+      return res.status(401).json({
+        success: false,
+        error: 'Authentication required'
+      });
+    }
+
+    const { code } = req.params;
+
+    // Validate code format
+    if (!/^[A-F0-9]{8}$/i.test(code)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid invite code format'
+      });
+    }
+
+    const safeCode = sanitizeForAirtable(code.toUpperCase());
+    const safeUsername = sanitizeUsername(username.replace('@', '').trim().toLowerCase());
+
+    // Find invite link
+    const inviteLinkRecords = await base(process.env.AIRTABLE_INVITE_LINKS_TABLE).select({
+      filterByFormula: `{Code} = '${safeCode}'`,
+      maxRecords: 1
+    }).firstPage();
+
+    if (inviteLinkRecords.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Invite link not found'
+      });
+    }
+
+    const inviteLink = inviteLinkRecords[0];
+    const inviteFields = inviteLink.fields;
+
+    // Validate invite status
+    if (inviteFields.Status !== 'Active') {
+      return res.status(400).json({
+        success: false,
+        error: 'This invite link has been disabled'
+      });
+    }
+
+    // Check expiry
+    if (inviteFields.Expires_At) {
+      const expiryDate = new Date(inviteFields.Expires_At);
+      if (expiryDate <= new Date()) {
+        return res.status(400).json({
+          success: false,
+          error: 'This invite link has expired'
+        });
+      }
+    }
+
+    // Check usage limit
+    if (inviteFields.Max_Uses !== -1 && inviteFields.Used_Count >= inviteFields.Max_Uses) {
+      return res.status(400).json({
+        success: false,
+        error: 'This invite link has reached its usage limit'
+      });
+    }
+
+    // Get community
+    const communityId = inviteFields.Community[0];
+    const community = await base(process.env.AIRTABLE_COMMUNITIES_TABLE).find(communityId);
+    const communityFields = community.fields;
+
+    // Get user
+    const userRecords = await base(process.env.AIRTABLE_MEMBERS_TABLE).select({
+      filterByFormula: `{Tg_Username} = '${safeUsername}'`,
+      maxRecords: 1
+    }).firstPage();
+
+    if (userRecords.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found. Please complete registration first.'
+      });
+    }
+
+    const user = userRecords[0];
+    const userId = user.id;
+    const userTgId = user.fields.Tg_ID;
+
+    // Check if user is already a member
+    const existingMembership = await base(process.env.AIRTABLE_COMMUNITY_MEMBERS_TABLE).select({
+      filterByFormula: `AND({Member} = '${userId}', {Community} = '${communityId}')`,
+      maxRecords: 1
+    }).firstPage();
+
+    if (existingMembership.length > 0) {
+      const status = existingMembership[0].fields.Status;
+      if (status === 'Active') {
+        return res.status(400).json({
+          success: false,
+          error: 'You are already a member of this community'
+        });
+      } else if (status === 'Pending') {
+        return res.status(400).json({
+          success: false,
+          error: 'Your membership is pending approval'
+        });
+      }
+    }
+
+    // Determine initial status based on approval mode
+    const settings = communityFields.Settings ? JSON.parse(communityFields.Settings) : {};
+    const approvalMode = settings.approval_mode || 'auto';
+    const initialStatus = approvalMode === 'manual' ? 'Pending' : 'Active';
+
+    // Create Community_Members record
+    const membershipRecord = await base(process.env.AIRTABLE_COMMUNITY_MEMBERS_TABLE).create([
+      {
+        fields: {
+          Member: [userId],
+          Community: [communityId],
+          Status: initialStatus,
+          Role: 'Member',
+          Invited_Via: [inviteLink.id]
+        }
+      }
+    ]);
+
+    // Increment invite usage counter
+    await base(process.env.AIRTABLE_INVITE_LINKS_TABLE).update([
+      {
+        id: inviteLink.id,
+        fields: {
+          Used_Count: (inviteFields.Used_Count || 0) + 1
+        }
+      }
+    ]);
+
+    // Send Telegram notification to user
+    if (userTgId) {
+      if (initialStatus === 'Pending') {
+        await bot.telegram.sendMessage(
+          userTgId,
+          `✅ You've requested to join *${communityFields.Name}*\n\n` +
+          `Your request is pending approval from a community admin. You'll be notified once approved.`,
+          { parse_mode: 'Markdown' }
+        );
+      } else {
+        await bot.telegram.sendMessage(
+          userTgId,
+          `🎉 Welcome to *${communityFields.Name}*!\n\n` +
+          `You're now a member. You can start participating in weekly coffee matches.`,
+          { parse_mode: 'Markdown' }
+        );
+      }
+    }
+
+    // If manual approval, notify community admins
+    if (initialStatus === 'Pending') {
+      // Find community admins
+      const adminMemberships = await base(process.env.AIRTABLE_COMMUNITY_MEMBERS_TABLE).select({
+        filterByFormula: `AND(
+          {Community} = '${communityId}',
+          {Status} = 'Active',
+          OR({Role} = 'Owner', {Role} = 'Admin')
+        )`
+      }).all();
+
+      for (const adminMembership of adminMemberships) {
+        const adminMemberIds = adminMembership.fields.Member;
+        if (adminMemberIds && adminMemberIds.length > 0) {
+          const adminMember = await base(process.env.AIRTABLE_MEMBERS_TABLE).find(adminMemberIds[0]);
+          const adminTgId = adminMember.fields.Tg_ID;
+
+          if (adminTgId) {
+            await bot.telegram.sendMessage(
+              adminTgId,
+              `👤 New membership request for *${communityFields.Name}*\n\n` +
+              `User: @${safeUsername}\n` +
+              `Name: ${user.fields.Name || 'Not set'}\n\n` +
+              `Please approve or ignore this request.`,
+              {
+                parse_mode: 'Markdown',
+                reply_markup: {
+                  inline_keyboard: [
+                    [
+                      { text: '✅ Approve', callback_data: `community_approve:${membershipRecord[0].id}` },
+                      { text: '🚫 Ignore', callback_data: `community_ignore:${membershipRecord[0].id}` }
+                    ]
+                  ]
+                }
+              }
+            );
+          }
+        }
+      }
+    }
+
+    res.json({
+      success: true,
+      membership: {
+        id: membershipRecord[0].id,
+        status: initialStatus,
+        community: {
+          name: communityFields.Name,
+          slug: communityFields.Slug
+        }
+      },
+      message: initialStatus === 'Pending'
+        ? 'Your membership request has been submitted and is pending approval'
+        : 'You have successfully joined the community'
+    });
+
+    logDebug(`User ${safeUsername} joined community ${communityFields.Slug} with status ${initialStatus} via invite ${code}`);
+  } catch (error) {
+    console.error('Error joining community:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to join community'
+    });
+  }
+});
+
+// Get Community Info (Member-Only)
+app.get('/api/community/:slug', apiLimiter, checkCommunityMember, async (req, res) => {
+  try {
+    const community = req.community;
+    const settings = community.fields.Settings ? JSON.parse(community.fields.Settings) : {};
+
+    // Get member count
+    const memberCount = await base(process.env.AIRTABLE_COMMUNITY_MEMBERS_TABLE).select({
+      filterByFormula: `AND({Community} = '${community.id}', {Status} = 'Active')`
+    }).all();
+
+    res.json({
+      success: true,
+      community: {
+        name: community.fields.Name,
+        slug: community.fields.Slug,
+        description: community.fields.Description || '',
+        memberCount: memberCount.length,
+        minActiveForMatching: community.fields.Min_Active_For_Matching || 6,
+        settings: settings,
+        myRole: req.membership.fields.Role
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching community info:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch community information'
+    });
+  }
+});
+
+// Get Community Members List (Visibility-Controlled)
+app.get('/api/community/:slug/members', apiLimiter, checkCommunityMember, async (req, res) => {
+  try {
+    const settings = req.community.fields.Settings ? JSON.parse(req.community.fields.Settings) : {};
+    const visibleTo = settings.member_list_visible_to || 'all_members';
+
+    // Check visibility permissions
+    const memberRole = req.membership.fields.Role;
+    const isAdmin = memberRole === 'Owner' || memberRole === 'Admin';
+
+    if (visibleTo === 'admins_only' && !isAdmin) {
+      return res.status(403).json({
+        success: false,
+        error: 'Only admins can view member list'
+      });
+    }
+
+    // Fetch community members
+    const memberships = await base(process.env.AIRTABLE_COMMUNITY_MEMBERS_TABLE).select({
+      filterByFormula: `AND({Community} = '${req.community.id}', {Status} = 'Active')`,
+      sort: [{ field: 'Joined_At', direction: 'asc' }]
+    }).all();
+
+    const members = [];
+    for (const membership of memberships) {
+      const memberIds = membership.fields.Member;
+      if (memberIds && memberIds.length > 0) {
+        const member = await base(process.env.AIRTABLE_MEMBERS_TABLE).find(memberIds[0]);
+        members.push({
+          username: member.fields.Tg_Username,
+          name: member.fields.Name || '',
+          role: membership.fields.Role,
+          joinedAt: membership.fields.Joined_At
+        });
+      }
+    }
+
+    res.json({
+      success: true,
+      members: members
+    });
+  } catch (error) {
+    console.error('Error fetching community members:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch community members'
+    });
+  }
+});
+
+// Update Community Settings (Admin-Only)
+app.put('/api/community/:slug', apiLimiter, adminLimiter, checkCommunityAdmin, async (req, res) => {
+  try {
+    const { name, description, minActiveForMatching, settings } = req.body;
+
+    const updates = {};
+
+    if (name !== undefined) {
+      if (typeof name !== 'string' || name.trim().length === 0) {
+        return res.status(400).json({
+          success: false,
+          error: 'Name must be a non-empty string'
+        });
+      }
+      updates.Name = sanitizeForAirtable(name.trim());
+    }
+
+    if (description !== undefined) {
+      updates.Description = sanitizeForAirtable(description);
+    }
+
+    if (minActiveForMatching !== undefined) {
+      if (typeof minActiveForMatching !== 'number' || minActiveForMatching < 2) {
+        return res.status(400).json({
+          success: false,
+          error: 'minActiveForMatching must be a number >= 2'
+        });
+      }
+      updates.Min_Active_For_Matching = minActiveForMatching;
+    }
+
+    if (settings !== undefined) {
+      // Validate settings structure
+      const validApprovalModes = ['auto', 'manual'];
+      const validVisibility = ['all_members', 'admins_only'];
+      const validOddHandling = ['skip', 'notify_admin'];
+
+      if (settings.approval_mode && !validApprovalModes.includes(settings.approval_mode)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid approval_mode'
+        });
+      }
+
+      if (settings.member_list_visible_to && !validVisibility.includes(settings.member_list_visible_to)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid member_list_visible_to'
+        });
+      }
+
+      if (settings.invite_links_visible_to && !validVisibility.includes(settings.invite_links_visible_to)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid invite_links_visible_to'
+        });
+      }
+
+      if (settings.odd_user_handling && !validOddHandling.includes(settings.odd_user_handling)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid odd_user_handling'
+        });
+      }
+
+      updates.Settings = JSON.stringify(settings);
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'No valid fields to update'
+      });
+    }
+
+    // Update community
+    await base(process.env.AIRTABLE_COMMUNITIES_TABLE).update([
+      {
+        id: req.community.id,
+        fields: updates
+      }
+    ]);
+
+    res.json({
+      success: true,
+      message: 'Community updated successfully'
+    });
+
+    logDebug(`Community ${req.params.slug} updated by ${req.membership.fields.Member}`);
+  } catch (error) {
+    console.error('Error updating community:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to update community'
+    });
+  }
+});
+
+// Get User's Communities
+app.get('/api/my/communities', apiLimiter, async (req, res) => {
+  try {
+    const username = req.query.username || req.headers['x-user'];
+    if (!username) {
+      return res.status(401).json({
+        success: false,
+        error: 'Authentication required'
+      });
+    }
+
+    const safeUsername = sanitizeUsername(username.replace('@', '').trim().toLowerCase());
+
+    // Find user
+    const userRecords = await base(process.env.AIRTABLE_MEMBERS_TABLE).select({
+      filterByFormula: `{Tg_Username} = '${safeUsername}'`,
+      maxRecords: 1
+    }).firstPage();
+
+    if (userRecords.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    const user = userRecords[0];
+    const userId = user.id;
+    const matchingContext = user.fields.Matching_Context || 'global';
+
+    // Find user's community memberships
+    const memberships = await base(process.env.AIRTABLE_COMMUNITY_MEMBERS_TABLE).select({
+      filterByFormula: `AND({Member} = '${userId}', OR({Status} = 'Active', {Status} = 'Pending'))`
+    }).all();
+
+    const communities = [];
+    for (const membership of memberships) {
+      const communityIds = membership.fields.Community;
+      if (communityIds && communityIds.length > 0) {
+        const community = await base(process.env.AIRTABLE_COMMUNITIES_TABLE).find(communityIds[0]);
+        communities.push({
+          slug: community.fields.Slug,
+          name: community.fields.Name,
+          role: membership.fields.Role,
+          status: membership.fields.Status,
+          isCurrentMatchingContext: matchingContext === `community:${community.fields.Slug}`
+        });
+      }
+    }
+
+    res.json({
+      success: true,
+      matchingContext: matchingContext,
+      communities: communities
+    });
+  } catch (error) {
+    console.error('Error fetching user communities:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch communities'
+    });
+  }
+});
+
+// Update User's Matching Context
+app.put('/api/my/matching-context', apiLimiter, async (req, res) => {
+  try {
+    const username = req.body.username || req.headers['x-user'];
+    if (!username) {
+      return res.status(401).json({
+        success: false,
+        error: 'Authentication required'
+      });
+    }
+
+    const { matchingContext } = req.body;
+
+    // Validate matching context format
+    if (!matchingContext || typeof matchingContext !== 'string') {
+      return res.status(400).json({
+        success: false,
+        error: 'matchingContext is required'
+      });
+    }
+
+    if (matchingContext !== 'global' && !matchingContext.startsWith('community:')) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid matchingContext format. Must be "global" or "community:{slug}"'
+      });
+    }
+
+    const safeUsername = sanitizeUsername(username.replace('@', '').trim().toLowerCase());
+
+    // If community context, verify user is active member
+    if (matchingContext.startsWith('community:')) {
+      const slug = matchingContext.replace('community:', '');
+
+      // Find community
+      const communityRecords = await base(process.env.AIRTABLE_COMMUNITIES_TABLE).select({
+        filterByFormula: `{Slug} = '${sanitizeForAirtable(slug)}'`,
+        maxRecords: 1
+      }).firstPage();
+
+      if (communityRecords.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: 'Community not found'
+        });
+      }
+
+      const communityId = communityRecords[0].id;
+
+      // Find user
+      const userRecords = await base(process.env.AIRTABLE_MEMBERS_TABLE).select({
+        filterByFormula: `{Tg_Username} = '${safeUsername}'`,
+        maxRecords: 1
+      }).firstPage();
+
+      if (userRecords.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: 'User not found'
+        });
+      }
+
+      const userId = userRecords[0].id;
+
+      // Verify active membership
+      const memberships = await base(process.env.AIRTABLE_COMMUNITY_MEMBERS_TABLE).select({
+        filterByFormula: `AND({Member} = '${userId}', {Community} = '${communityId}', {Status} = 'Active')`,
+        maxRecords: 1
+      }).firstPage();
+
+      if (memberships.length === 0) {
+        return res.status(403).json({
+          success: false,
+          error: 'You are not an active member of this community'
+        });
+      }
+
+      // Update matching context
+      await base(process.env.AIRTABLE_MEMBERS_TABLE).update([
+        {
+          id: userId,
+          fields: {
+            Matching_Context: matchingContext
+          }
+        }
+      ]);
+    } else {
+      // Global context
+      const userRecords = await base(process.env.AIRTABLE_MEMBERS_TABLE).select({
+        filterByFormula: `{Tg_Username} = '${safeUsername}'`,
+        maxRecords: 1
+      }).firstPage();
+
+      if (userRecords.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: 'User not found'
+        });
+      }
+
+      await base(process.env.AIRTABLE_MEMBERS_TABLE).update([
+        {
+          id: userRecords[0].id,
+          fields: {
+            Matching_Context: 'global'
+          }
+        }
+      ]);
+    }
+
+    res.json({
+      success: true,
+      matchingContext: matchingContext,
+      message: 'Matching context updated successfully'
+    });
+
+    logDebug(`User ${safeUsername} set matching context to ${matchingContext}`);
+  } catch (error) {
+    console.error('Error updating matching context:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to update matching context'
+    });
+  }
+});
+
+// Leave Community
+app.post('/api/community/:slug/leave', apiLimiter, checkCommunityMember, async (req, res) => {
+  try {
+    // Prevent owner from leaving
+    if (req.membership.fields.Role === 'Owner') {
+      return res.status(403).json({
+        success: false,
+        error: 'Community owner cannot leave. Transfer ownership first or delete the community.'
+      });
+    }
+
+    // Update membership status
+    await base(process.env.AIRTABLE_COMMUNITY_MEMBERS_TABLE).update([
+      {
+        id: req.membership.id,
+        fields: {
+          Status: 'Removed',
+          Left_At: new Date().toISOString()
+        }
+      }
+    ]);
+
+    // If user's matching context is this community, reset to global
+    const username = req.user?.Tg_Username || req.headers['x-user'];
+    const safeUsername = sanitizeUsername(username.replace('@', '').trim().toLowerCase());
+
+    const userRecords = await base(process.env.AIRTABLE_MEMBERS_TABLE).select({
+      filterByFormula: `{Tg_Username} = '${safeUsername}'`,
+      maxRecords: 1
+    }).firstPage();
+
+    if (userRecords.length > 0) {
+      const user = userRecords[0];
+      const matchingContext = user.fields.Matching_Context || 'global';
+
+      if (matchingContext === `community:${req.params.slug}`) {
+        await base(process.env.AIRTABLE_MEMBERS_TABLE).update([
+          {
+            id: user.id,
+            fields: {
+              Matching_Context: 'global'
+            }
+          }
+        ]);
+      }
+    }
+
+    res.json({
+      success: true,
+      message: 'You have successfully left the community'
+    });
+
+    logDebug(`User ${safeUsername} left community ${req.params.slug}`);
+  } catch (error) {
+    console.error('Error leaving community:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to leave community'
+    });
+  }
 });
 
 // Start server only if this file is run directly (not required as module)
