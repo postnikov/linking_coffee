@@ -8,6 +8,7 @@ const rateLimit = require('express-rate-limit');
 const Scheduler = require('./scheduler');
 const Airtable = require('airtable');
 const { Telegraf, Markup } = require('telegraf');
+const crypto = require('crypto');
 const fs = require('fs');
 const { spawn } = require('child_process');
 const statisticsUtils = require('./utils/statistics');
@@ -156,6 +157,14 @@ const authLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+const pollLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 400, // Allow ~6 concurrent pollers for 10 min each (3s interval)
+  message: { success: false, error: 'Polling rate exceeded. Please try again.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 const adminLimiter = rateLimit({
   windowMs: 5 * 60 * 1000, // 5 minutes
   max: 50, // Limit each IP to 50 admin requests per windowMs
@@ -216,6 +225,29 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // In-memory OTP store: Map<username_lowercase, { code, expiresAt }>
 const otpStore = new Map();
+
+// In-memory store for account linking tokens (LinkedIn ↔ Telegram)
+// Map<token, { linkedinSub, linkedinEmail, linkedinName, linkedinPicture,
+//              existingRecordId, existingTgId, expiresAt, status, session }>
+const linkingTokenStore = new Map();
+
+// Clean up expired and stale linking tokens every 5 minutes
+setInterval(() => {
+  const now = Date.now();
+  const seen = new Set();
+  for (const [token, data] of linkingTokenStore) {
+    // Skip if already processed (dual-key entries share data)
+    if (seen.has(token)) continue;
+    const isExpired = now > data.expiresAt;
+    // Also clean up completed tokens after 1 minute (session already fetched or abandoned)
+    const isStaleCompleted = data.status === 'completed' && now > data.expiresAt - 9 * 60 * 1000;
+    if (isExpired || isStaleCompleted) {
+      if (data.pollingToken) { seen.add(data.pollingToken); linkingTokenStore.delete(data.pollingToken); }
+      if (data.linkingToken) { seen.add(data.linkingToken); linkingTokenStore.delete(data.linkingToken); }
+      linkingTokenStore.delete(token);
+    }
+  }
+}, 5 * 60 * 1000);
 
 // Initialize Scheduler
 const scheduler = new Scheduler(
@@ -662,6 +694,126 @@ bot.action(/^community_deleted_skip:(.+)$/, async (ctx) => {
     console.error('Error opting out:', error);
     await ctx.answerCbQuery('❌ Error updating preferences');
   }
+});
+
+// Account Linking: Confirm (LinkedIn ↔ Telegram)
+bot.action(/^link_confirm:(.+)$/, async (ctx) => {
+  const token = ctx.match[1];
+  const tokenData = linkingTokenStore.get(token);
+
+  if (!tokenData) {
+    await ctx.answerCbQuery('This link has expired or was already used.');
+    return;
+  }
+
+  if (Date.now() > tokenData.expiresAt) {
+    linkingTokenStore.delete(tokenData.pollingToken);
+    linkingTokenStore.delete(tokenData.linkingToken);
+    await ctx.answerCbQuery('This link has expired. Please try logging in again.');
+    return;
+  }
+
+  if (tokenData.status !== 'pending') {
+    await ctx.answerCbQuery('This link has already been used.');
+    return;
+  }
+
+  // Verify the caller is the intended Telegram recipient
+  if (ctx.from.id.toString() !== tokenData.existingTgId.toString()) {
+    await ctx.answerCbQuery('This link is not for your account.');
+    return;
+  }
+
+  // Atomically mark as processing to prevent double-click race condition
+  // Both Map entries (pollingToken + linkingToken) point to same object, so update is visible from both
+  const processingEntry = { ...tokenData, status: 'processing' };
+  linkingTokenStore.set(tokenData.pollingToken, processingEntry);
+  linkingTokenStore.set(tokenData.linkingToken, processingEntry);
+
+  try {
+    // Build update fields for the existing record
+    const updateFields = {
+      Linkedin_ID: tokenData.linkedinSub
+    };
+
+    // Only set email if the existing record doesn't have one
+    const existingRecord = await base(process.env.AIRTABLE_MEMBERS_TABLE).find(tokenData.existingRecordId);
+    if (!existingRecord.fields.Email && tokenData.linkedinEmail) {
+      updateFields.Email = tokenData.linkedinEmail;
+    }
+
+    // Set avatar if the existing record doesn't have one
+    if ((!existingRecord.fields.Avatar || existingRecord.fields.Avatar.length === 0) && tokenData.linkedinPicture) {
+      updateFields.Avatar = [{ url: tokenData.linkedinPicture }];
+    }
+
+    // Update Airtable record
+    await base(process.env.AIRTABLE_MEMBERS_TABLE).update([
+      {
+        id: tokenData.existingRecordId,
+        fields: updateFields
+      }
+    ]);
+
+    // Fetch the updated record to build session
+    const updatedRecord = await base(process.env.AIRTABLE_MEMBERS_TABLE).find(tokenData.existingRecordId);
+
+    // Build session object (same shape as LinkedIn OAuth success response)
+    const session = {
+      id: updatedRecord.id,
+      username: updatedRecord.fields.Tg_Username || null,
+      email: tokenData.linkedinEmail,
+      status: updatedRecord.fields.Status,
+      consentGdpr: updatedRecord.fields.Consent_GDPR,
+      firstName: updatedRecord.fields.Name,
+      lastName: updatedRecord.fields.Family,
+      telegramConnected: !!updatedRecord.fields.Tg_ID,
+      tgId: updatedRecord.fields.Tg_ID,
+      linkedAccounts: ['linkedin', 'telegram']
+    };
+
+    // Mark token as completed with session data (immutable update)
+    // Both keys share the same entry so the polling endpoint sees the update
+    const completedEntry = { ...tokenData, status: 'completed', session };
+    linkingTokenStore.set(tokenData.pollingToken, completedEntry);
+    linkingTokenStore.set(tokenData.linkingToken, completedEntry);
+
+    logConnection(`Account linked via Telegram confirmation: ${tokenData.linkedinEmail} → ${updatedRecord.fields.Tg_Username}`, 'SUCCESS');
+
+    await ctx.answerCbQuery('Accounts linked!');
+    await ctx.editMessageText(
+      '✅ *Accounts linked successfully!*\n\n' +
+      'Your LinkedIn and Telegram accounts are now connected.\n' +
+      'Return to your browser — you should be logged in automatically.',
+      { parse_mode: 'Markdown' }
+    );
+  } catch (error) {
+    console.error('Error linking accounts:', error);
+    // Revert to pending so user can retry
+    const pendingEntry = { ...tokenData, status: 'pending' };
+    linkingTokenStore.set(tokenData.pollingToken, pendingEntry);
+    linkingTokenStore.set(tokenData.linkingToken, pendingEntry);
+    await ctx.answerCbQuery('Error linking accounts. Please try again.');
+  }
+});
+
+// Account Linking: Reject (LinkedIn ↔ Telegram)
+bot.action(/^link_reject:(.+)$/, async (ctx) => {
+  const token = ctx.match[1];
+  const tokenData = linkingTokenStore.get(token);
+  if (tokenData) {
+    linkingTokenStore.delete(tokenData.pollingToken);
+    linkingTokenStore.delete(tokenData.linkingToken);
+  } else {
+    linkingTokenStore.delete(token);
+  }
+
+  await ctx.answerCbQuery('Request rejected');
+  await ctx.editMessageText(
+    '🚫 *Linking request rejected*\n\n' +
+    'If this wasn\'t you, your account is safe. No changes were made.',
+    { parse_mode: 'Markdown' }
+  );
 });
 
 // Register bot menu commands
@@ -1405,7 +1557,108 @@ app.post('/api/auth/linkedin', async (req, res) => {
           // Handle based on confidence level
           if (confidence >= 90) {
             // HIGH CONFIDENCE: Very likely the same person
-            // Send admin notification for review
+            const existingTgId = duplicateRecord.fields.Tg_ID;
+
+            // If existing account has Telegram, send magic link for self-service linking
+            if (existingTgId) {
+              // Two-token system: pollingToken (exposed to browser), linkingToken (secret, Telegram only)
+              const pollingToken = crypto.randomBytes(16).toString('hex');
+              const linkingToken = crypto.randomBytes(16).toString('hex');
+
+              const tokenEntry = {
+                pollingToken,
+                linkingToken,
+                linkedinSub: sub,
+                linkedinEmail: email,
+                linkedinName: `${given_name || name} ${family_name || ''}`.trim(),
+                linkedinPicture: picture || null,
+                existingRecordId: duplicateRecord.id,
+                existingTgId,
+                expiresAt: Date.now() + 10 * 60 * 1000,
+                status: 'pending',
+                session: null
+              };
+
+              // Store by both keys for O(1) lookup from either direction
+              linkingTokenStore.set(pollingToken, tokenEntry);
+              linkingTokenStore.set(linkingToken, tokenEntry);
+
+              // Send Telegram message with confirm/reject buttons (uses secret linkingToken)
+              // Using HTML parse mode to avoid Markdown injection from user-controlled name/email
+              try {
+                const escapeHtml = (str) => String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                const linkedinDisplayName = escapeHtml(`${given_name || name} ${family_name || ''}`.trim());
+                const safeEmail = escapeHtml(email);
+                await bot.telegram.sendMessage(
+                  existingTgId,
+                  `🔗 <b>Account Linking Request</b>\n\n` +
+                  `Someone is trying to connect a LinkedIn account to your Linked.Coffee profile.\n\n` +
+                  `<b>LinkedIn Account:</b>\n` +
+                  `• Name: ${linkedinDisplayName}\n` +
+                  `• Email: ${safeEmail}\n\n` +
+                  `Is this you?`,
+                  {
+                    parse_mode: 'HTML',
+                    ...Markup.inlineKeyboard([
+                      [Markup.button.callback('Yes, link my accounts', `link_confirm:${linkingToken}`)],
+                      [Markup.button.callback('No, this is not me', `link_reject:${linkingToken}`)]
+                    ])
+                  }
+                );
+              } catch (tgError) {
+                console.error('Failed to send linking message via Telegram:', tgError);
+                linkingTokenStore.delete(pollingToken);
+                linkingTokenStore.delete(linkingToken);
+
+                // Fall back to "contact support" if Telegram send fails
+                return res.status(409).json({
+                  success: false,
+                  duplicateDetected: true,
+                  message: `We found an existing account for ${duplicateInfo.name}. Please contact support to link your accounts.`,
+                  potentialMatch: {
+                    name: duplicateInfo.name,
+                    hasTelegram: true,
+                    telegram: duplicateInfo.telegram
+                  }
+                });
+              }
+
+              // Notify admin about the linking attempt
+              try {
+                await sendWarningAlert(
+                  '🔗 Account Linking Initiated',
+                  `**LinkedIn → Telegram Linking**\n\n` +
+                  `**LinkedIn Account:**\n` +
+                  `• Email: ${email}\n` +
+                  `• Name: ${given_name || name} ${family_name || ''}\n` +
+                  `• LinkedIn Sub: ${sub}\n\n` +
+                  `**Existing Telegram Account:**\n` +
+                  `• Record ID: ${duplicateInfo.id}\n` +
+                  `• Name: ${duplicateInfo.name}\n` +
+                  `• Telegram: ${duplicateInfo.telegram}\n\n` +
+                  `**Match:** ${confidence}% — ${matchReason}\n\n` +
+                  `ℹ️ Magic link sent to Telegram. Awaiting user confirmation.`
+                );
+              } catch (alertError) {
+                console.error('Failed to send linking alert:', alertError);
+              }
+
+              // Return only pollingToken to browser (linkingToken stays secret in Telegram)
+              return res.status(409).json({
+                success: false,
+                duplicateDetected: true,
+                linkingInitiated: true,
+                linkingToken: pollingToken,
+                message: `We found your existing account. Check your Telegram to confirm linking.`,
+                potentialMatch: {
+                  name: duplicateInfo.name,
+                  hasTelegram: true,
+                  telegram: duplicateInfo.telegram
+                }
+              });
+            }
+
+            // No Tg_ID on existing record — fall back to admin notification + "contact support"
             try {
               await sendWarningAlert(
                 '🚨 High-Confidence Duplicate Detected',
@@ -1422,20 +1675,19 @@ app.post('/api/auth/linkedin', async (req, res) => {
                 `**Match Details:**\n` +
                 `• Confidence: ${confidence}%\n` +
                 `• Reason: ${matchReason}\n\n` +
-                `⚠️ **Action:** New account was NOT created. User should be directed to link accounts.`
+                `⚠️ **Action:** New account was NOT created. No Tg_ID on existing record — manual linking required.`
               );
             } catch (alertError) {
               console.error('Failed to send duplicate alert:', alertError);
             }
 
-            // Return error response asking user to link accounts
             return res.status(409).json({
               success: false,
               duplicateDetected: true,
               message: `We found an existing account for ${duplicateInfo.name}. Please contact support to link your accounts.`,
               potentialMatch: {
                 name: duplicateInfo.name,
-                hasTelegram: !!duplicateRecord.fields.Tg_ID,
+                hasTelegram: false,
                 telegram: duplicateInfo.telegram
               }
             });
@@ -1531,6 +1783,43 @@ app.post('/api/auth/linkedin', async (req, res) => {
     logConnection(`LinkedIn Auth Error: ${error.message}`, 'ERROR');
     res.status(401).json({ success: false, message: 'LinkedIn Authentication Failed' });
   }
+});
+
+// Poll account linking status (used by frontend during LinkedIn ↔ Telegram linking)
+// Browser polls with pollingToken only — linkingToken is never exposed to browser
+app.get('/api/auth/link-status/:token', pollLimiter, (req, res) => {
+  const { token } = req.params;
+
+  if (!token || typeof token !== 'string' || !/^[a-f0-9]{32}$/i.test(token)) {
+    return res.status(400).json({ success: false, message: 'Invalid token' });
+  }
+
+  const tokenData = linkingTokenStore.get(token);
+
+  if (!tokenData) {
+    return res.status(404).json({ status: 'not_found' });
+  }
+
+  // Only allow polling via pollingToken, not linkingToken
+  if (tokenData.pollingToken !== token) {
+    return res.status(404).json({ status: 'not_found' });
+  }
+
+  if (Date.now() > tokenData.expiresAt) {
+    linkingTokenStore.delete(tokenData.pollingToken);
+    linkingTokenStore.delete(tokenData.linkingToken);
+    return res.json({ status: 'expired' });
+  }
+
+  if (tokenData.status === 'completed' && tokenData.session) {
+    // Return session data and clean up both token entries
+    const session = { ...tokenData.session };
+    linkingTokenStore.delete(tokenData.pollingToken);
+    linkingTokenStore.delete(tokenData.linkingToken);
+    return res.json({ status: 'completed', user: session });
+  }
+
+  return res.json({ status: 'pending' });
 });
 
 // Unlink LinkedIn Account
