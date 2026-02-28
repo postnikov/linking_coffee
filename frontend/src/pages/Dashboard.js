@@ -141,13 +141,6 @@ const Dashboard = () => {
     const isProfileComplete = (data) => {
         if (!data.name?.trim()) return false;
         if (!data.family?.trim()) return false;
-        if (!data.country) return false;
-        if (!data.city) return false;
-        if (!data.timezone) return false;
-        if (!data.bestMeetingDays?.length) return false;
-        if (!data.languages?.length) return false;
-        if (!data.profession?.trim()) return false;
-        if (!data.grade) return false;
         return true;
     };
 
@@ -207,17 +200,17 @@ const Dashboard = () => {
     const completionFields = useMemo(() => [
         { key: 'telegram', label: t('dashboard.connected_accounts.telegram', 'Telegram'), done: !!(user?.username || user?.telegramConnected) },
         { key: 'name', label: t('dashboard.profile.name', 'Name'), done: !!formData.name?.trim() },
-        { key: 'family', label: t('dashboard.profile.family', 'Family (Last Name)'), done: !!formData.family?.trim() },
+        { key: 'family', label: t('dashboard.profile.family', 'Family (Last Name)'), done: !!formData.family?.trim() }
+    ], [formData, t, user]);
+
+    const improvementFields = useMemo(() => [
         { key: 'country', label: t('dashboard.profile.country', 'Country'), done: !!formData.country },
         { key: 'city', label: t('dashboard.profile.city', 'City'), done: !!formData.city },
         { key: 'timezone', label: t('dashboard.profile.timezone', 'Time Zone'), done: !!formData.timezone },
         { key: 'bestMeetingDays', label: t('dashboard.profile.best_days', 'Best Meeting Days'), done: formData.bestMeetingDays?.length > 0 },
         { key: 'languages', label: t('dashboard.profile.languages', 'Languages'), done: formData.languages?.length > 0 },
         { key: 'profession', label: t('dashboard.profile.profession', 'Profession'), done: !!formData.profession?.trim() },
-        { key: 'grade', label: t('dashboard.profile.grade', 'Grade'), done: !!formData.grade }
-    ], [formData, t, user]);
-
-    const improvementFields = useMemo(() => [
+        { key: 'grade', label: t('dashboard.profile.grade', 'Grade'), done: !!formData.grade },
         { key: 'professionalDesc', label: t('dashboard.profile.professional_desc', 'Professional Description'), done: !!formData.professionalDesc?.trim() },
         { key: 'personalDesc', label: t('dashboard.profile.personal_desc', 'Personal Description'), done: !!formData.personalDesc?.trim() },
         { key: 'professionalInterests', label: t('dashboard.profile.professional_interests', 'Professional Interests'), done: formData.professionalInterests?.length > 0 || !!formData.otherProfessionalInterests?.trim() },
@@ -480,6 +473,29 @@ const Dashboard = () => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     }, []);
+
+    // Switch matching context (global vs community)
+    const handleMatchingContextChange = async (newContext) => {
+        try {
+            const response = await fetch(`${API_URL}/api/my/matching-context`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    username: user.Tg_Username,
+                    matchingContext: newContext,
+                }),
+            });
+            if (response.ok) {
+                setMatchingContext(newContext);
+                setSavedSections(prev => ({ ...prev, matchingContext: true }));
+                setTimeout(() => {
+                    setSavedSections(prev => ({ ...prev, matchingContext: false }));
+                }, 3000);
+            }
+        } catch (err) {
+            console.error('Error updating matching context:', err);
+        }
+    };
 
     // Auto-save profile to server - memoized for stable reference
     const autoSaveProfile = useCallback(async (updatedData, section) => {
@@ -2712,88 +2728,7 @@ const Dashboard = () => {
                         </div>
                     )}
 
-                    {/* Community Card - Shows if user has communities */}
-                    {communities.length > 0 && (
-                        <div className="glass-card" style={{
-                            padding: '1.5rem',
-                            marginBottom: '1.5rem',
-                            background: 'linear-gradient(135deg, rgba(139,115,85,0.05) 0%, rgba(139,115,85,0.1) 100%)'
-                        }}>
-                            <h2 className="section-title" style={{ marginBottom: '1rem', fontSize: '1.1rem' }}>
-                                ☕ Your Communities
-                            </h2>
-
-                            <div style={{ marginBottom: '1rem' }}>
-                                {communities.slice(0, 3).map(community => (
-                                    <div
-                                        key={community.slug}
-                                        style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'space-between',
-                                            padding: '0.75rem',
-                                            marginBottom: '0.5rem',
-                                            borderRadius: '0.5rem',
-                                            backgroundColor: matchingContext === `community:${community.slug}` ? 'rgba(139,115,85,0.1)' : 'rgba(255,255,255,0.5)',
-                                            border: matchingContext === `community:${community.slug}` ? '2px solid #8b7355' : '1px solid rgba(0,0,0,0.05)'
-                                        }}
-                                    >
-                                        <div style={{ flex: 1 }}>
-                                            <div style={{ fontWeight: '600', fontSize: '0.9rem', color: '#333', marginBottom: '0.25rem' }}>
-                                                {community.name}
-                                            </div>
-                                            <div style={{ fontSize: '0.75rem', color: '#666' }}>
-                                                {community.status === 'Pending' ? (
-                                                    <span style={{ color: '#ffa500' }}>⏳ Pending approval</span>
-                                                ) : (
-                                                    <span>{community.role}</span>
-                                                )}
-                                            </div>
-                                        </div>
-                                        {matchingContext === `community:${community.slug}` && (
-                                            <div style={{
-                                                backgroundColor: '#8b7355',
-                                                color: 'white',
-                                                padding: '0.25rem 0.5rem',
-                                                borderRadius: '0.25rem',
-                                                fontSize: '0.7rem',
-                                                fontWeight: '600'
-                                            }}>
-                                                ACTIVE
-                                            </div>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-
-                            {communities.length > 3 && (
-                                <div style={{ fontSize: '0.85rem', color: '#666', marginBottom: '1rem', textAlign: 'center' }}>
-                                    +{communities.length - 3} more {communities.length - 3 === 1 ? 'community' : 'communities'}
-                                </div>
-                            )}
-
-                            <Link
-                                to="/my/communities"
-                                style={{
-                                    display: 'block',
-                                    width: '100%',
-                                    padding: '0.75rem',
-                                    backgroundColor: '#8b7355',
-                                    color: 'white',
-                                    textAlign: 'center',
-                                    borderRadius: '0.5rem',
-                                    textDecoration: 'none',
-                                    fontWeight: '600',
-                                    fontSize: '0.9rem',
-                                    transition: 'background-color 0.3s'
-                                }}
-                                onMouseOver={(e) => e.target.style.backgroundColor = '#6d5a45'}
-                                onMouseOut={(e) => e.target.style.backgroundColor = '#8b7355'}
-                            >
-                                Manage Communities →
-                            </Link>
-                        </div>
-                    )}
+                    {/* Old Community Card removed — now inside Matching Settings */}
 
                     {/* Connect Telegram Warning Block - Shows when Telegram is not connected */}
                     {!(user?.username || user?.telegramConnected) && (
@@ -2886,41 +2821,6 @@ const Dashboard = () => {
                         </div>
                     )}
 
-                    {/* Improvement Block (Only show if mandatory fields are done but improvements are not) */}
-                    {allFieldsDone && !allImprovementsDone && (
-                        <div className="glass-card" style={{ padding: '1.5rem', marginBottom: '1.5rem', animation: 'fadeIn 0.5s ease-out' }}>
-                            <h2 className="section-title" style={{ marginBottom: '1rem', fontSize: '1.25rem' }}>
-                                {t('dashboard.profile.improve_profile', 'Improve your profile')}
-                            </h2>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                                {improvementFields.map(field => (
-                                    <div
-                                        key={field.key}
-                                        style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.95rem', cursor: 'pointer' }}
-                                        onClick={() => {
-                                            // Scroll to relevant section if in edit mode, or switch to edit mode
-                                            if (!isEditMode) setIsEditMode(true);
-                                            // We can't easily scroll to specific fields without refs, but entering edit mode is a good start.
-                                            // If we wanted to be fancy we could add IDs to fields and scroll.
-                                            // keeping it simple for now as requested.
-                                        }}
-                                    >
-                                        {field.done ? (
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                <polyline points="20 6 9 17 4 12"></polyline>
-                                            </svg>
-                                        ) : (
-                                            <div style={{ width: '20px', height: '20px', border: '2px solid #e5e7eb', borderRadius: '4px', flexShrink: 0 }}></div>
-                                        )}
-                                        <span style={{ color: field.done ? '#1f2937' : '#6b7280' }}>
-                                            {field.label}
-                                        </span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
                     <div className="glass-card" style={{
                         padding: '1.5rem',
                         opacity: allFieldsDone ? 1 : 0.6,
@@ -2931,31 +2831,6 @@ const Dashboard = () => {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                             <h2 className="section-title" style={{ marginBottom: 0 }}>{t('dashboard.matching.title', 'Matching Settings')}</h2>
                         </div>
-
-                        {/* Community Block */}
-                        {formData.community && (
-                            <div className="input-group" style={{ marginBottom: '1.5rem', paddingBottom: '1.5rem', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                                    <label className="form-label" style={{ textAlign: 'left', margin: 0, display: 'flex', alignItems: 'center' }}>
-                                        {t('dashboard.matching.your_community', 'Your Community')}
-                                    </label>
-                                </div>
-                                <div style={{
-                                    background: '#f8fafc',
-                                    padding: '0.75rem 1rem',
-                                    borderRadius: '0.5rem',
-                                    border: '1px solid #e2e8f0',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.5rem',
-                                    color: '#1f2937',
-                                    fontWeight: '500'
-                                }}>
-                                    <span style={{ fontSize: '1.2rem' }}>🏙️</span>
-                                    {formData.community.name}
-                                </div>
-                            </div>
-                        )}
 
                         {/* Next Week Status Switch */}
                         <div className="input-group" style={{ marginBottom: '1.5rem', paddingBottom: '1.5rem', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
@@ -3033,6 +2908,90 @@ const Dashboard = () => {
                                 </div>
                             </div>
                         </div>
+
+                        {/* My Communities — matching pool selector */}
+                        {communities.filter(c => c.status === 'Active').length > 0 && (
+                            <div className="input-group" style={{ marginBottom: '1.5rem', paddingBottom: '1.5rem', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                                    <label className="form-label" style={{ textAlign: 'left', margin: 0 }}>
+                                        {t('community.my_title')}
+                                    </label>
+                                    {savedSections['matchingContext'] && (
+                                        <span style={{ color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.8rem' }}>
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                            {t('dashboard.profile.saved', 'Saved')}
+                                        </span>
+                                    )}
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                    {/* Global option */}
+                                    <label style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.75rem',
+                                        padding: '0.625rem 0.75rem',
+                                        borderRadius: '0.5rem',
+                                        backgroundColor: matchingContext === 'global' ? 'rgba(99,102,241,0.08)' : '#f8f8fa',
+                                        border: matchingContext === 'global' ? '2px solid #6366f1' : '1px solid rgba(0,0,0,0.06)',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s'
+                                    }}>
+                                        <input
+                                            type="radio"
+                                            name="matchingContext"
+                                            checked={matchingContext === 'global'}
+                                            onChange={() => handleMatchingContextChange('global')}
+                                            style={{ accentColor: '#6366f1', width: '16px', height: '16px', cursor: 'pointer' }}
+                                        />
+                                        <span style={{ fontWeight: '600', fontSize: '0.9rem', color: '#333' }}>
+                                            {t('community.global_pool')}
+                                        </span>
+                                    </label>
+
+                                    {/* Community options */}
+                                    {communities.filter(c => c.status === 'Active').map(community => (
+                                        <label key={community.slug} style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.75rem',
+                                            padding: '0.625rem 0.75rem',
+                                            borderRadius: '0.5rem',
+                                            backgroundColor: matchingContext === `community:${community.slug}` ? 'rgba(99,102,241,0.08)' : '#f8f8fa',
+                                            border: matchingContext === `community:${community.slug}` ? '2px solid #6366f1' : '1px solid rgba(0,0,0,0.06)',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s'
+                                        }}>
+                                            <input
+                                                type="radio"
+                                                name="matchingContext"
+                                                checked={matchingContext === `community:${community.slug}`}
+                                                onChange={() => handleMatchingContextChange(`community:${community.slug}`)}
+                                                style={{ accentColor: '#6366f1', width: '16px', height: '16px', cursor: 'pointer' }}
+                                            />
+                                            <Link
+                                                to={`/community/${community.slug}`}
+                                                onClick={(e) => e.stopPropagation()}
+                                                style={{
+                                                    fontWeight: '600',
+                                                    fontSize: '0.9rem',
+                                                    color: '#6366f1',
+                                                    textDecoration: 'none'
+                                                }}
+                                                onMouseOver={(e) => e.target.style.textDecoration = 'underline'}
+                                                onMouseOut={(e) => e.target.style.textDecoration = 'none'}
+                                            >
+                                                {community.name}
+                                            </Link>
+                                        </label>
+                                    ))}
+                                </div>
+                                <p style={{ fontSize: '0.8rem', color: '#888', margin: '0.5rem 0 0', lineHeight: '1.4' }}>
+                                    {matchingContext === 'global'
+                                        ? t('community.matching_hint_global')
+                                        : t('community.matching_hint_community')}
+                                </p>
+                            </div>
+                        )}
 
                         <div className="input-group">
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
@@ -3114,6 +3073,37 @@ const Dashboard = () => {
                             </div>
                         </div>
                     </div>
+
+                    {/* Improvement Block (Only show if mandatory fields are done but improvements are not) */}
+                    {allFieldsDone && !allImprovementsDone && (
+                        <div className="glass-card" style={{ padding: '1.5rem', marginTop: '1.5rem', marginBottom: '1.5rem', animation: 'fadeIn 0.5s ease-out' }}>
+                            <h2 className="section-title" style={{ marginBottom: '1rem', fontSize: '1.25rem' }}>
+                                {t('dashboard.profile.improve_profile', 'Improve your profile')}
+                            </h2>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                {improvementFields.map(field => (
+                                    <div
+                                        key={field.key}
+                                        style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.95rem', cursor: 'pointer' }}
+                                        onClick={() => {
+                                            if (!isEditMode) setIsEditMode(true);
+                                        }}
+                                    >
+                                        {field.done ? (
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <polyline points="20 6 9 17 4 12"></polyline>
+                                            </svg>
+                                        ) : (
+                                            <div style={{ width: '20px', height: '20px', border: '2px solid #e5e7eb', borderRadius: '4px', flexShrink: 0 }}></div>
+                                        )}
+                                        <span style={{ color: field.done ? '#1f2937' : '#6b7280' }}>
+                                            {field.label}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 

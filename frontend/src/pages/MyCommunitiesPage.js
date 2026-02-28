@@ -21,7 +21,7 @@ const MyCommunitiesPage = ({ user }) => {
   useEffect(() => {
     const fetchCommunities = async () => {
       if (!user) {
-        navigate('/login');
+        navigate('/');
         return;
       }
 
@@ -32,7 +32,7 @@ const MyCommunitiesPage = ({ user }) => {
         const data = await response.json();
 
         if (!response.ok) {
-          setError(data.error || 'Failed to load communities');
+          setError(data.error || t('community.failed_load_communities'));
           setIsLoading(false);
           return;
         }
@@ -42,13 +42,13 @@ const MyCommunitiesPage = ({ user }) => {
         setIsLoading(false);
       } catch (err) {
         console.error('Error fetching communities:', err);
-        setError('Failed to load communities');
+        setError(t('community.failed_load_communities'));
         setIsLoading(false);
       }
     };
 
     fetchCommunities();
-  }, [user, navigate]);
+  }, [user, navigate, t]);
 
   const handleContextChange = async (newContext) => {
     setIsSaving(true);
@@ -70,7 +70,7 @@ const MyCommunitiesPage = ({ user }) => {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error || 'Failed to update matching context');
+        setError(data.error || t('community.failed_update_context'));
         setIsSaving(false);
         return;
       }
@@ -83,7 +83,7 @@ const MyCommunitiesPage = ({ user }) => {
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (err) {
       console.error('Error updating matching context:', err);
-      setError('Failed to update matching context');
+      setError(t('community.failed_update_context'));
       setIsSaving(false);
     }
   };
@@ -93,21 +93,20 @@ const MyCommunitiesPage = ({ user }) => {
       <PageLayout>
         <div style={{ textAlign: 'center', padding: '40px' }}>
           <div className="loading-spinner">⏳</div>
-          <p style={{ marginTop: '20px', color: '#666' }}>Loading communities...</p>
+          <p style={{ marginTop: '20px', color: '#666' }}>{t('community.loading_communities')}</p>
         </div>
       </PageLayout>
     );
   }
 
   return (
-    <PageLayout>
-      <div className="dashboard-container" style={{ padding: '20px' }}>
-        <div className="glass-card" style={{ maxWidth: '800px', margin: '0 auto', padding: '30px' }}>
-          <h2 style={{ fontSize: '28px', fontWeight: '700', marginBottom: '10px', color: '#8b7355' }}>
-            ☕ My Communities
+    <div style={{ paddingTop: '100px', paddingBottom: '40px', minHeight: '100vh', background: 'white' }}>
+      <div style={{ maxWidth: '800px', margin: '0 auto', padding: '0 20px' }}>
+          <h2 style={{ fontSize: '28px', fontWeight: '700', marginBottom: '10px', color: '#6366f1' }}>
+            {t('community.my_title')}
           </h2>
           <p style={{ color: '#666', marginBottom: '30px' }}>
-            Choose where you'd like to be matched for coffee this week
+            {t('community.my_subtitle')}
           </p>
 
           {error && (
@@ -136,26 +135,26 @@ const MyCommunitiesPage = ({ user }) => {
                 color: '#22543d',
               }}
             >
-              ✅ Matching context updated successfully!
+              {t('community.context_updated')}
             </div>
           )}
 
           {/* Matching Context Selector */}
           <div style={{ marginBottom: '30px' }}>
             <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '15px', color: '#333' }}>
-              Select Matching Pool
+              {t('community.select_pool')}
             </h3>
 
             {/* Global Pool Option */}
             <div
               onClick={() => !isSaving && handleContextChange('global')}
               style={{
-                border: matchingContext === 'global' ? '3px solid #8b7355' : '2px solid #ddd',
+                border: matchingContext === 'global' ? '3px solid #6366f1' : '2px solid #ddd',
                 borderRadius: '12px',
                 padding: '20px',
                 marginBottom: '15px',
                 cursor: isSaving ? 'not-allowed' : 'pointer',
-                backgroundColor: matchingContext === 'global' ? '#faf8f6' : 'white',
+                backgroundColor: matchingContext === 'global' ? 'rgba(99,102,241,0.04)' : 'white',
                 transition: 'all 0.3s',
                 position: 'relative',
               }}
@@ -166,22 +165,22 @@ const MyCommunitiesPage = ({ user }) => {
                     width: '24px',
                     height: '24px',
                     borderRadius: '50%',
-                    border: matchingContext === 'global' ? '7px solid #8b7355' : '2px solid #ccc',
+                    border: matchingContext === 'global' ? '7px solid #6366f1' : '2px solid #ccc',
                     flexShrink: 0,
                   }}
                 />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: '18px', fontWeight: '600', color: '#333', marginBottom: '5px' }}>
-                    🌍 Global Pool
+                    {t('community.global_pool')}
                   </div>
                   <div style={{ fontSize: '14px', color: '#666' }}>
-                    Match with anyone on Linked.Coffee
+                    {t('community.global_desc')}
                   </div>
                 </div>
                 {matchingContext === 'global' && (
                   <div
                     style={{
-                      backgroundColor: '#8b7355',
+                      backgroundColor: '#6366f1',
                       color: 'white',
                       padding: '4px 12px',
                       borderRadius: '20px',
@@ -189,7 +188,7 @@ const MyCommunitiesPage = ({ user }) => {
                       fontWeight: '600',
                     }}
                   >
-                    ACTIVE
+                    {t('community.active_badge')}
                   </div>
                 )}
               </div>
@@ -208,10 +207,10 @@ const MyCommunitiesPage = ({ user }) => {
               >
                 <div style={{ fontSize: '48px', marginBottom: '15px' }}>🔍</div>
                 <p style={{ color: '#666', marginBottom: '20px' }}>
-                  You're not a member of any communities yet
+                  {t('community.no_communities')}
                 </p>
                 <p style={{ fontSize: '14px', color: '#999' }}>
-                  Communities allow you to match with specific groups like your company or organization
+                  {t('community.no_communities_desc')}
                 </p>
               </div>
             ) : (
@@ -226,7 +225,7 @@ const MyCommunitiesPage = ({ user }) => {
                   style={{
                     border:
                       matchingContext === `community:${community.slug}`
-                        ? '3px solid #8b7355'
+                        ? '3px solid #6366f1'
                         : '2px solid #ddd',
                     borderRadius: '12px',
                     padding: '20px',
@@ -234,7 +233,7 @@ const MyCommunitiesPage = ({ user }) => {
                     cursor:
                       isSaving || community.status !== 'Active' ? 'not-allowed' : 'pointer',
                     backgroundColor:
-                      matchingContext === `community:${community.slug}` ? '#faf8f6' : 'white',
+                      matchingContext === `community:${community.slug}` ? 'rgba(99,102,241,0.04)' : 'white',
                     transition: 'all 0.3s',
                     opacity: community.status !== 'Active' ? 0.6 : 1,
                   }}
@@ -247,7 +246,7 @@ const MyCommunitiesPage = ({ user }) => {
                         borderRadius: '50%',
                         border:
                           matchingContext === `community:${community.slug}`
-                            ? '7px solid #8b7355'
+                            ? '7px solid #6366f1'
                             : '2px solid #ccc',
                         flexShrink: 0,
                       }}
@@ -265,14 +264,14 @@ const MyCommunitiesPage = ({ user }) => {
                       </div>
                       <div style={{ fontSize: '14px', color: '#666' }}>
                         {community.status === 'Pending'
-                          ? '⏳ Membership pending approval'
-                          : `Role: ${community.role}`}
+                          ? t('community.pending_approval')
+                          : `${t('community.role_label')} ${community.role}`}
                       </div>
                     </div>
                     {matchingContext === `community:${community.slug}` && (
                       <div
                         style={{
-                          backgroundColor: '#8b7355',
+                          backgroundColor: '#6366f1',
                           color: 'white',
                           padding: '4px 12px',
                           borderRadius: '20px',
@@ -280,7 +279,7 @@ const MyCommunitiesPage = ({ user }) => {
                           fontWeight: '600',
                         }}
                       >
-                        ACTIVE
+                        {t('community.active_badge')}
                       </div>
                     )}
                     {community.status === 'Pending' && (
@@ -294,7 +293,7 @@ const MyCommunitiesPage = ({ user }) => {
                           fontWeight: '600',
                         }}
                       >
-                        PENDING
+                        {t('community.pending_badge')}
                       </div>
                     )}
                   </div>
@@ -308,8 +307,8 @@ const MyCommunitiesPage = ({ user }) => {
                         style={{
                           marginTop: '15px',
                           backgroundColor: 'transparent',
-                          color: '#8b7355',
-                          border: '2px solid #8b7355',
+                          color: '#6366f1',
+                          border: '2px solid #6366f1',
                           borderRadius: '6px',
                           padding: '8px 16px',
                           fontSize: '14px',
@@ -317,13 +316,13 @@ const MyCommunitiesPage = ({ user }) => {
                           transition: 'all 0.3s',
                         }}
                         onMouseOver={(e) => {
-                          e.target.style.backgroundColor = '#f5f5f5';
+                          e.target.style.backgroundColor = 'rgba(99,102,241,0.05)';
                         }}
                         onMouseOut={(e) => {
                           e.target.style.backgroundColor = 'transparent';
                         }}
                       >
-                        View Community →
+                        {t('community.view_community')} →
                       </button>
                     )}
                 </div>
@@ -342,21 +341,20 @@ const MyCommunitiesPage = ({ user }) => {
             }}
           >
             <div style={{ fontWeight: '600', marginBottom: '8px', color: '#1a5490' }}>
-              💡 How it works
+              {t('community.how_title')}
             </div>
             <ul style={{ margin: 0, paddingLeft: '20px', color: '#1a5490', fontSize: '14px' }}>
               <li style={{ marginBottom: '5px' }}>
-                Choose where you want to be matched each week
+                {t('community.how_1')}
               </li>
               <li style={{ marginBottom: '5px' }}>
-                You can only match in one pool per week (global or one community)
+                {t('community.how_2')}
               </li>
-              <li>Change your selection anytime before the weekly matching runs</li>
+              <li>{t('community.how_3')}</li>
             </ul>
           </div>
-        </div>
       </div>
-    </PageLayout>
+    </div>
   );
 };
 

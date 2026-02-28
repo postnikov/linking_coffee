@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import './Dashboard.css';
 
 const API_URL = process.env.REACT_APP_API_URL || '';
+const BOT_NAME = process.env.REACT_APP_TELEGRAM_BOT_NAME || 'Linked_Coffee_Bot';
 
 const JoinCommunityPage = ({ user }) => {
   const { t } = useTranslation();
@@ -16,6 +17,14 @@ const JoinCommunityPage = ({ user }) => {
   const [isJoining, setIsJoining] = useState(false);
   const [joinSuccess, setJoinSuccess] = useState(false);
   const [membershipStatus, setMembershipStatus] = useState(null);
+  const [alreadyMember, setAlreadyMember] = useState(false);
+
+  // Persist return URL so LoginPage can redirect back after Telegram bot login
+  useEffect(() => {
+    if (!user && code) {
+      localStorage.setItem('pendingReturnTo', `/join/${code}`);
+    }
+  }, [user, code]);
 
   // Fetch invite information
   useEffect(() => {
@@ -25,7 +34,7 @@ const JoinCommunityPage = ({ user }) => {
         const data = await response.json();
 
         if (!response.ok) {
-          setError(data.error || 'Invalid invite link');
+          setError(data.error || t('community.invalid_invite'));
           setIsLoading(false);
           return;
         }
@@ -34,7 +43,7 @@ const JoinCommunityPage = ({ user }) => {
         setIsLoading(false);
       } catch (err) {
         console.error('Error fetching invite info:', err);
-        setError('Failed to load invite information');
+        setError(t('community.failed_load_invite'));
         setIsLoading(false);
       }
     };
@@ -42,13 +51,13 @@ const JoinCommunityPage = ({ user }) => {
     if (code) {
       fetchInviteInfo();
     }
-  }, [code]);
+  }, [code, t]);
 
   const handleJoin = async () => {
     // Check if user is logged in
     if (!user) {
       // Redirect to login with return URL
-      navigate('/login', { state: { from: { pathname: `/join/${code}` } } });
+      navigate('/');
       return;
     }
 
@@ -69,7 +78,20 @@ const JoinCommunityPage = ({ user }) => {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error || 'Failed to join community');
+        if (data.error === 'Your membership is pending approval') {
+          setJoinSuccess(true);
+          setMembershipStatus('Pending');
+          setIsJoining(false);
+          return;
+        }
+        if (data.error === 'You are already a member of this community') {
+          setAlreadyMember(true);
+          setJoinSuccess(true);
+          setMembershipStatus('Active');
+          setIsJoining(false);
+          return;
+        }
+        setError(data.error || t('community.failed_join'));
         setIsJoining(false);
         return;
       }
@@ -79,14 +101,8 @@ const JoinCommunityPage = ({ user }) => {
       setIsJoining(false);
     } catch (err) {
       console.error('Error joining community:', err);
-      setError('Failed to join community. Please try again.');
+      setError(t('community.failed_join_retry'));
       setIsJoining(false);
-    }
-  };
-
-  const handleGoToCommunity = () => {
-    if (inviteInfo) {
-      navigate(`/community/${inviteInfo.community.slug}`);
     }
   };
 
@@ -97,10 +113,10 @@ const JoinCommunityPage = ({ user }) => {
   // Loading state
   if (isLoading) {
     return (
-      <div className="dashboard-container" style={{ padding: '40px 20px', textAlign: 'center' }}>
+      <div className="dashboard-container" style={{ padding: '40px 20px', textAlign: 'center', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 140px)' }}>
         <div className="glass-card" style={{ maxWidth: '600px', margin: '0 auto', padding: '40px' }}>
           <div className="loading-spinner">⏳</div>
-          <p style={{ marginTop: '20px', color: '#666' }}>Loading invite information...</p>
+          <p style={{ marginTop: '20px', color: '#666' }}>{t('community.loading_invite')}</p>
         </div>
       </div>
     );
@@ -109,27 +125,27 @@ const JoinCommunityPage = ({ user }) => {
   // Error state
   if (error && !inviteInfo) {
     return (
-      <div className="dashboard-container" style={{ padding: '40px 20px', textAlign: 'center' }}>
+      <div className="dashboard-container" style={{ padding: '40px 20px', textAlign: 'center', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 140px)' }}>
         <div className="glass-card" style={{ maxWidth: '600px', margin: '0 auto', padding: '40px' }}>
           <div style={{ fontSize: '48px', marginBottom: '20px' }}>❌</div>
-          <h2 style={{ color: '#ff4444', marginBottom: '20px' }}>Invalid Invite Link</h2>
+          <h2 style={{ color: '#ff4444', marginBottom: '20px' }}>{t('community.invalid_invite_title')}</h2>
           <p style={{ color: '#666', marginBottom: '30px' }}>{error}</p>
           <button
             onClick={() => navigate('/')}
             style={{
-              backgroundColor: '#8b7355',
+              background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
               color: 'white',
               border: 'none',
               borderRadius: '8px',
               padding: '12px 30px',
               fontSize: '16px',
               cursor: 'pointer',
-              transition: 'background-color 0.3s',
+              transition: 'opacity 0.3s',
             }}
-            onMouseOver={(e) => (e.target.style.backgroundColor = '#6d5a45')}
-            onMouseOut={(e) => (e.target.style.backgroundColor = '#8b7355')}
+            onMouseOver={(e) => (e.target.style.opacity = '0.85')}
+            onMouseOut={(e) => (e.target.style.opacity = '1')}
           >
-            Go to Dashboard
+            {t('community.go_to_dashboard')}
           </button>
         </div>
       </div>
@@ -139,62 +155,45 @@ const JoinCommunityPage = ({ user }) => {
   // Success state
   if (joinSuccess) {
     return (
-      <div className="dashboard-container" style={{ padding: '40px 20px', textAlign: 'center' }}>
+      <div className="dashboard-container" style={{ padding: '40px 20px', textAlign: 'center', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 140px)' }}>
         <div className="glass-card" style={{ maxWidth: '600px', margin: '0 auto', padding: '40px' }}>
           <div style={{ fontSize: '64px', marginBottom: '20px' }}>
-            {membershipStatus === 'Pending' ? '⏳' : '🎉'}
+            {membershipStatus === 'Pending' ? '⏳' : alreadyMember ? '☕' : '🎉'}
           </div>
-          <h2 style={{ color: '#8b7355', marginBottom: '20px' }}>
-            {membershipStatus === 'Pending' ? 'Request Submitted' : 'Welcome!'}
+          <h2 style={{ color: '#6366f1', marginBottom: '20px' }}>
+            {membershipStatus === 'Pending'
+              ? t('community.join_request_submitted')
+              : alreadyMember
+                ? t('community.already_member_title')
+                : t('community.join_welcome')}
           </h2>
           <h3 style={{ fontSize: '24px', fontWeight: '600', marginBottom: '15px' }}>
             {inviteInfo.community.name}
           </h3>
           <p style={{ color: '#666', marginBottom: '30px', lineHeight: '1.6' }}>
             {membershipStatus === 'Pending'
-              ? 'Your membership request has been submitted and is pending approval from a community admin. You\'ll receive a Telegram notification once approved.'
-              : 'You\'re now a member of this community! You can start participating in weekly coffee matches.'}
+              ? t('community.join_pending_msg')
+              : alreadyMember
+                ? t('community.already_member_msg', { name: inviteInfo.community.name })
+                : t('community.join_success_msg', { name: inviteInfo.community.name })}
           </p>
           <div style={{ display: 'flex', gap: '15px', justifyContent: 'center', flexWrap: 'wrap' }}>
-            {membershipStatus === 'Active' && (
-              <button
-                onClick={handleGoToCommunity}
-                style={{
-                  backgroundColor: '#8b7355',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  padding: '12px 30px',
-                  fontSize: '16px',
-                  cursor: 'pointer',
-                  transition: 'background-color 0.3s',
-                }}
-                onMouseOver={(e) => (e.target.style.backgroundColor = '#6d5a45')}
-                onMouseOut={(e) => (e.target.style.backgroundColor = '#8b7355')}
-              >
-                View Community
-              </button>
-            )}
             <button
               onClick={handleGoToDashboard}
               style={{
-                backgroundColor: 'white',
-                color: '#8b7355',
-                border: '2px solid #8b7355',
+                background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
+                color: 'white',
+                border: 'none',
                 borderRadius: '8px',
                 padding: '12px 30px',
                 fontSize: '16px',
                 cursor: 'pointer',
-                transition: 'all 0.3s',
+                transition: 'opacity 0.3s',
               }}
-              onMouseOver={(e) => {
-                e.target.style.backgroundColor = '#f5f5f5';
-              }}
-              onMouseOut={(e) => {
-                e.target.style.backgroundColor = 'white';
-              }}
+              onMouseOver={(e) => (e.target.style.opacity = '0.85')}
+              onMouseOut={(e) => (e.target.style.opacity = '1')}
             >
-              Go to Dashboard
+              {t('community.go_to_profile_btn')}
             </button>
           </div>
         </div>
@@ -204,12 +203,12 @@ const JoinCommunityPage = ({ user }) => {
 
   // Main invite display
   return (
-    <div className="dashboard-container" style={{ padding: '40px 20px' }}>
-      <div className="glass-card" style={{ maxWidth: '600px', margin: '0 auto', padding: '40px' }}>
+    <div className="dashboard-container" style={{ padding: '40px 20px', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 140px)' }}>
+      <div className="glass-card" style={{ maxWidth: '600px', width: '100%', padding: '40px' }}>
         <div style={{ textAlign: 'center', marginBottom: '30px' }}>
           <div style={{ fontSize: '64px', marginBottom: '20px' }}>☕</div>
-          <h2 style={{ fontSize: '28px', fontWeight: '700', marginBottom: '10px', color: '#8b7355' }}>
-            You're Invited!
+          <h2 style={{ fontSize: '28px', fontWeight: '700', marginBottom: '10px', color: '#6366f1' }}>
+            {t('community.youre_invited')}
           </h2>
           <h3 style={{ fontSize: '24px', fontWeight: '600', marginBottom: '15px' }}>
             {inviteInfo.community.name}
@@ -229,7 +228,7 @@ const JoinCommunityPage = ({ user }) => {
               color: '#666',
             }}
           >
-            Invite: <strong>{inviteInfo.label}</strong>
+            {t('community.invite_label')} <strong>{inviteInfo.label}</strong>
           </div>
         </div>
 
@@ -250,41 +249,62 @@ const JoinCommunityPage = ({ user }) => {
 
         <div style={{ textAlign: 'center' }}>
           {!user ? (
-            <>
-              <p style={{ color: '#666', marginBottom: '20px' }}>
-                Please log in to join this community
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <p style={{ color: '#666', marginBottom: '12px' }}>
+                {t('community.login_to_join')}
               </p>
-              <button
-                onClick={handleJoin}
+              <a
+                href={`https://t.me/${BOT_NAME}`}
+                target="_blank"
+                rel="noopener noreferrer"
                 style={{
-                  backgroundColor: '#8b7355',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  padding: '14px 40px',
-                  fontSize: '18px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  transition: 'background-color 0.3s',
-                  width: '100%',
-                  maxWidth: '300px',
+                  marginBottom: '12px',
+                  color: '#6366f1',
+                  fontWeight: '500',
+                  textDecoration: 'none'
                 }}
-                onMouseOver={(e) => (e.target.style.backgroundColor = '#6d5a45')}
-                onMouseOut={(e) => (e.target.style.backgroundColor = '#8b7355')}
               >
-                Log in to Join
-              </button>
-            </>
+                @{BOT_NAME}
+              </a>
+              <a
+                href={`https://t.me/${BOT_NAME}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="submit-btn"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  textDecoration: 'none',
+                  width: '100%',
+                  gap: '8px',
+                  fontSize: '1rem'
+                }}
+              >
+                <svg style={{ width: '20px', height: '20px', fill: 'currentColor' }} viewBox="0 0 24 24">
+                  <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z" />
+                </svg>
+                <span>{t('form.go_to_bot', 'Continue with Telegram')}</span>
+              </a>
+              <p style={{
+                marginTop: '12px',
+                fontSize: '0.85rem',
+                color: 'var(--gray-600)',
+                lineHeight: '1.4'
+              }}>
+                {t('form.bot_instructions', 'Open the bot, press Start — you\'ll get a magic link to log in instantly.')}
+              </p>
+            </div>
           ) : (
             <>
               <p style={{ color: '#666', marginBottom: '20px' }}>
-                Join this community to participate in weekly coffee matches with other members
+                {t('community.join_desc')}
               </p>
               <button
                 onClick={handleJoin}
                 disabled={isJoining}
                 style={{
-                  backgroundColor: isJoining ? '#ccc' : '#8b7355',
+                  background: isJoining ? '#ccc' : 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
                   color: 'white',
                   border: 'none',
                   borderRadius: '8px',
@@ -292,48 +312,23 @@ const JoinCommunityPage = ({ user }) => {
                   fontSize: '18px',
                   fontWeight: '600',
                   cursor: isJoining ? 'not-allowed' : 'pointer',
-                  transition: 'background-color 0.3s',
+                  transition: 'opacity 0.3s',
                   width: '100%',
                   maxWidth: '300px',
                 }}
                 onMouseOver={(e) => {
-                  if (!isJoining) e.target.style.backgroundColor = '#6d5a45';
+                  if (!isJoining) e.target.style.opacity = '0.85';
                 }}
                 onMouseOut={(e) => {
-                  if (!isJoining) e.target.style.backgroundColor = '#8b7355';
+                  if (!isJoining) e.target.style.opacity = '1';
                 }}
               >
-                {isJoining ? 'Joining...' : 'Join Community'}
+                {isJoining ? t('community.joining') : t('community.join_btn')}
               </button>
             </>
           )}
         </div>
 
-        <div
-          style={{
-            marginTop: '30px',
-            paddingTop: '20px',
-            borderTop: '1px solid #eee',
-            textAlign: 'center',
-          }}
-        >
-          <p style={{ fontSize: '14px', color: '#999' }}>
-            Already a member?{' '}
-            <button
-              onClick={handleGoToDashboard}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: '#8b7355',
-                textDecoration: 'underline',
-                cursor: 'pointer',
-                fontSize: '14px',
-              }}
-            >
-              Go to Dashboard
-            </button>
-          </p>
-        </div>
       </div>
     </div>
   );

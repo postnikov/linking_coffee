@@ -56,7 +56,7 @@ const LinkedinCallback = ({ onLogin }) => {
                     stopPolling();
                     setLinkingState(null);
                     setError('Linking expired. Please try again.');
-                    setTimeout(() => navigate('/login'), 3000);
+                    setTimeout(() => navigate('/'), 3000);
                 }
             } catch (e) {
                 pollFailuresRef.current += 1;
@@ -64,7 +64,7 @@ const LinkedinCallback = ({ onLogin }) => {
                     stopPolling();
                     setLinkingState(null);
                     setError('Connection lost. Please try again.');
-                    setTimeout(() => navigate('/login'), 3000);
+                    setTimeout(() => navigate('/'), 3000);
                 }
             }
         };
@@ -85,7 +85,7 @@ const LinkedinCallback = ({ onLogin }) => {
 
             if (err) {
                 setError('Authentication declined or failed.');
-                setTimeout(() => navigate('/login'), 3000);
+                setTimeout(() => navigate('/'), 3000);
                 return;
             }
 
@@ -121,11 +121,11 @@ const LinkedinCallback = ({ onLogin }) => {
                     });
                 } else {
                     setError(data.message || 'Authentication failed');
-                    setTimeout(() => navigate('/login'), 3000);
+                    setTimeout(() => navigate('/'), 3000);
                 }
             } catch (e) {
                 setError('Network error during authentication.');
-                setTimeout(() => navigate('/login'), 3000);
+                setTimeout(() => navigate('/'), 3000);
             }
         };
 
@@ -167,13 +167,13 @@ const LinkedinCallback = ({ onLogin }) => {
 
     const handleGdprClose = () => {
         setShowGdprModal(false);
-        navigate('/login');
+        navigate('/');
     };
 
     const handleCancelLinking = () => {
         stopPolling();
         setLinkingState(null);
-        navigate('/login');
+        navigate('/');
     };
 
     return (

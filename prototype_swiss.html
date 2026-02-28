@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Swiss Design Layout Prototype</title>
+    <!-- Подключаем элегантный шрифт -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        /* CSS в 5 раз проще — "High-End Minimal / Swiss" */
+        :root {
+            --bg-color: #ffffff;
+            --text-main: #222222;
+            --text-light: #888888;
+            --accent: #EFEFEF;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            overflow-x: hidden;
+        }
+
+        /* Навигация плавает, но без блюра */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 2rem 10%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.9);
+            z-index: 100;
+        }
+
+        /* Асимметричный лейаут с фокусом на контент */
+        .main-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            min-height: 100vh;
+            padding-top: 100px;
+        }
+
+        @media (min-width: 1024px) {
+            .main-container {
+                /* Левая колонка - огромный типографический манифест, правая - форма */
+                grid-template-columns: 3fr 2fr;
+                gap: 5rem;
+                padding: 150px 10% 50px 10%;
+            }
+        }
+
+        .hero-section {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            line-height: 1.1;
+        }
+
+        .hero-title {
+            font-size: clamp(3rem, 6vw, 6.5rem);
+            font-weight: 300;
+            letter-spacing: -0.04em;
+        }
+
+        .hero-title span {
+            font-weight: 600;
+        }
+
+        .hero-tagline {
+            margin-top: 2rem;
+            font-size: 1.5rem;
+            font-weight: 300;
+            color: var(--text-light);
+            max-width: 600px;
+        }
+
+        /* Форма регистрации: мягко, воздушно, без бордеров */
+        .form-section {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .minimal-form {
+            background-color: var(--accent);
+            padding: 4rem;
+            border-radius: 40px;
+            /* Сильное скругление, но без теней! */
+        }
+
+        .minimal-form h2 {
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+            font-weight: 500;
+        }
+
+        .input-wrapper {
+            margin-bottom: 1.5rem;
+        }
+
+        .input-wrapper input {
+            width: 100%;
+            padding: 1rem 0;
+            font-size: 1.25rem;
+            border: none;
+            background: transparent;
+            border-bottom: 1px solid #ccc;
+            font-family: inherit;
+            color: var(--text-main);
+            transition: border-color 0.3s;
+        }
+
+        .input-wrapper input:focus {
+            outline: none;
+            border-bottom-color: var(--text-main);
+        }
+
+        .btn-elegant {
+            margin-top: 2rem;
+            display: inline-block;
+            background-color: var(--text-main);
+            color: #ffffff;
+            padding: 1.25rem 3rem;
+            border-radius: 100px;
+            font-size: 1.125rem;
+            font-family: inherit;
+            font-weight: 500;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .btn-elegant:hover {
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div style="font-weight: 600; letter-spacing: -0.02em;">Linking Coffee</div>
+        <div style="font-weight: 300;">Log in</div>
+    </header>
+
+    <div class="main-container">
+        <!-- Блок 1 (Герой) -->
+        <main class="hero-section">
+            <h1 class="hero-title">Meet professionals.<br><span>Without noise.</span></h1>
+            <p class="hero-tagline">Мы убрали пестрые градиенты и стеклянные эффекты. Оставили только чистый опыт и
+                возможность найти нужных людей в экосистеме Random Coffee.</p>
+        </main>
+
+        <!-- Блок 2 (Форма) -->
+        <aside class="form-section">
+            <div class="minimal-form">
+                <h2>Join Ecosystem</h2>
+                <form onsubmit="event.preventDefault();">
+                    <div class="input-wrapper">
+                        <input type="text" placeholder="Your Name" required>
+                    </div>
+                    <div class="input-wrapper">
+                        <input type="email" placeholder="Email Address" required>
+                    </div>
+                    <button type="submit" class="btn-elegant">Continue</button>
+                </form>
+            </div>
+        </aside>
+    </div>
+</body>
+
+</html>

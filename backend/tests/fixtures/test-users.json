@@ -1,0 +1,68 @@
+{
+  "prefix": "e2e_test_",
+  "users": [
+    {
+      "key": "alice",
+      "fields": {
+        "Tg_Username": "e2e_test_alice",
+        "Tg_ID": "900000001",
+        "Name": "Alice",
+        "Family": "Testova",
+        "Status": "Free",
+        "Consent_GDPR": true,
+        "Email": "e2e_alice@test.localhost",
+        "Time_Zone": "Europe/London (UTC+0)",
+        "Languages": ["English"],
+        "Best_Meetings_Days": ["Monday", "Wednesday", "Friday"],
+        "Profession": "Software Engineer",
+        "Grade": "Senior",
+        "Professional_Description": "E2E test user - backend development",
+        "Personal_Description": "E2E test user - likes testing",
+        "Professional_Interests": ["Technology", "Product"],
+        "Personal_Interests": ["Travel", "Sports"],
+        "Coffee_Goals": ["Professional Chat"],
+        "Serendipity": 5,
+        "Proximity": 5,
+        "Next_Week_Status": "Active",
+        "Matching_Context": "global"
+      }
+    },
+    {
+      "key": "bob",
+      "fields": {
+        "Tg_Username": "e2e_test_bob",
+        "Tg_ID": "900000002",
+        "Name": "Bob",
+        "Family": "Testov",
+        "Status": "Free",
+        "Consent_GDPR": true,
+        "Email": "e2e_bob@test.localhost",
+        "Time_Zone": "Europe/Paris (UTC+1)",
+        "Languages": ["English", "Russian"],
+        "Best_Meetings_Days": ["Tuesday", "Thursday"],
+        "Profession": "Product Manager",
+        "Grade": "Lead / Head of",
+        "Professional_Description": "E2E test user - product management",
+        "Personal_Description": "E2E test user - likes coffee",
+        "Professional_Interests": ["Product", "Strategy"],
+        "Personal_Interests": ["Books", "Music"],
+        "Coffee_Goals": ["Casual Chat"],
+        "Serendipity": 7,
+        "Proximity": 3,
+        "Next_Week_Status": "Active",
+        "Matching_Context": "global"
+      }
+    },
+    {
+      "key": "charlie_noconsent",
+      "fields": {
+        "Tg_Username": "e2e_test_charlie",
+        "Tg_ID": "900000003",
+        "Name": "Charlie",
+        "Family": "Tester",
+        "Status": "EarlyBird",
+        "Consent_GDPR": false
+      }
+    }
+  ]
+}

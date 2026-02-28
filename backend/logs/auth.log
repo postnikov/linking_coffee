@@ -654,3 +654,233 @@
 [2026-02-01T21:13:43.232Z] Server Initialized
 [2026-02-01T21:17:20.783Z] Server Initialized
 [2026-02-09T13:19:21.356Z] Server Initialized
+[2026-02-26T12:37:19.333Z] Server Initialized
+[2026-02-26T12:50:50.902Z] Server Initialized
+[2026-02-26T12:50:59.651Z] Server Initialized
+[2026-02-26T12:51:46.870Z] Server Initialized
+[2026-02-26T12:51:53.836Z] Server Initialized
+[2026-02-26T12:52:01.104Z] Server Initialized
+[2026-02-26T12:52:10.365Z] Server Initialized
+[2026-02-26T12:52:17.777Z] Server Initialized
+[2026-02-26T12:52:24.405Z] Server Initialized
+[2026-02-26T12:54:12.842Z] Server Initialized
+[2026-02-26T12:54:17.561Z] Server Initialized
+[2026-02-26T12:54:22.228Z] Server Initialized
+[2026-02-26T13:02:53.268Z] Server Initialized
+[2026-02-26T13:02:59.384Z] Server Initialized
+[2026-02-26T13:04:05.051Z] Server Initialized
+[2026-02-26T13:07:20.458Z] Server Initialized
+[2026-02-26T13:08:55.209Z] Server Initialized
+[2026-02-26T13:08:55.209Z] Server Initialized
+[2026-02-26T13:19:50.759Z] Server Initialized
+[2026-02-26T13:19:50.759Z] Server Initialized
+[2026-02-26T13:20:00.940Z] Server Initialized
+[2026-02-26T13:20:00.940Z] Server Initialized
+[2026-02-26T13:20:12.532Z] Server Initialized
+[2026-02-26T13:20:12.532Z] Server Initialized
+[2026-02-26T13:20:32.762Z] Server Initialized
+[2026-02-26T13:20:32.762Z] Server Initialized
+[2026-02-26T13:20:43.367Z] Server Initialized
+[2026-02-26T13:20:43.367Z] Server Initialized
+[2026-02-26T13:22:04.603Z] [AUTH] ATTEMPT: Telegram OTP request for @max_postnikov
+[2026-02-26T13:22:05.263Z] [AUTH] SUCCESS: Proactive OTP successfully sent to @max_postnikov (379053)
+[2026-02-26T13:22:21.941Z] [AUTH] INFO: API Verify attempt: User=max_postnikov, OTP=965264
+[2026-02-26T13:22:21.941Z] [AUTH] INFO: OTP Mismatch for max_postnikov. Got: 965264
+[2026-02-26T13:22:33.398Z] [AUTH] INFO: API Verify attempt: User=max_postnikov, OTP=965264
+[2026-02-26T13:22:33.399Z] [AUTH] INFO: OTP Mismatch for max_postnikov. Got: 965264
+[2026-02-26T13:24:18.005Z] Server Initialized
+[2026-02-26T13:24:41.865Z] [AUTH] ATTEMPT: Telegram OTP request for @max_postnikov
+[2026-02-26T13:24:42.587Z] [AUTH] SUCCESS: Proactive OTP successfully sent to @max_postnikov (379053)
+[2026-02-26T13:24:53.944Z] [AUTH] INFO: API Verify attempt: User=max_postnikov, OTP=251024
+[2026-02-26T13:24:53.944Z] [AUTH] INFO: OTP Mismatch for max_postnikov. Got: 251024
+[2026-02-26T13:25:11.997Z] [AUTH] ATTEMPT: Telegram OTP request for @max_postnikov
+[2026-02-26T13:25:12.664Z] [AUTH] SUCCESS: Proactive OTP successfully sent to @max_postnikov (379053)
+[2026-02-26T13:25:22.485Z] [AUTH] INFO: API Verify attempt: User=max_postnikov, OTP=194280
+[2026-02-26T13:25:22.486Z] [AUTH] INFO: OTP Mismatch for max_postnikov. Got: 194280
+[2026-02-26T13:25:58.791Z] [AUTH] INFO: API Verify attempt: User=max_postnikov, OTP=689274
+[2026-02-26T13:25:58.792Z] [AUTH] INFO: Verify Success for max_postnikov. OTP matches.
+[2026-02-26T14:03:23.783Z] Server Initialized
+[2026-02-26T14:03:23.783Z] Server Initialized
+[2026-02-26T14:03:23.783Z] Server Initialized
+[2026-02-26T14:03:28.498Z] Server Initialized
+[2026-02-26T14:03:28.499Z] Server Initialized
+[2026-02-26T14:03:28.526Z] Server Initialized
+[2026-02-26T14:03:34.571Z] Server Initialized
+[2026-02-26T14:03:34.573Z] Server Initialized
+[2026-02-26T14:03:34.603Z] Server Initialized
+[2026-02-26T14:03:37.942Z] Server Initialized
+[2026-02-26T14:03:37.943Z] Server Initialized
+[2026-02-26T14:03:38.013Z] Server Initialized
+[2026-02-26T14:03:46.219Z] Server Initialized
+[2026-02-26T14:03:46.224Z] Server Initialized
+[2026-02-26T14:03:46.279Z] Server Initialized
+[2026-02-26T14:03:48.841Z] Server Initialized
+[2026-02-26T14:03:48.841Z] Server Initialized
+[2026-02-26T14:03:48.887Z] Server Initialized
+[2026-02-26T14:03:52.665Z] Server Initialized
+[2026-02-26T14:03:52.667Z] Server Initialized
+[2026-02-26T14:03:52.703Z] Server Initialized
+[2026-02-26T14:04:56.447Z] Server Initialized
+[2026-02-26T14:04:56.447Z] Server Initialized
+[2026-02-26T14:04:56.447Z] Server Initialized
+[2026-02-26T14:06:20.487Z] Server Initialized
+[2026-02-26T14:06:20.487Z] Server Initialized
+[2026-02-26T14:06:20.487Z] Server Initialized
+[2026-02-26T14:07:07.538Z] Server Initialized
+[2026-02-26T14:07:07.538Z] Server Initialized
+[2026-02-26T14:07:07.538Z] Server Initialized
+[2026-02-26T14:10:05.342Z] Server Initialized
+[2026-02-26T14:10:05.342Z] Server Initialized
+[2026-02-26T14:10:05.342Z] Server Initialized
+[2026-02-26T14:10:16.823Z] Server Initialized
+[2026-02-26T14:10:16.823Z] Server Initialized
+[2026-02-26T14:10:16.823Z] Server Initialized
+[2026-02-26T14:10:31.443Z] Server Initialized
+[2026-02-26T14:10:31.443Z] Server Initialized
+[2026-02-26T14:10:31.443Z] Server Initialized
+[2026-02-26T14:10:39.280Z] Server Initialized
+[2026-02-26T14:10:39.285Z] Server Initialized
+[2026-02-26T14:10:39.296Z] Server Initialized
+[2026-02-26T14:11:24.214Z] Server Initialized
+[2026-02-26T14:11:24.214Z] Server Initialized
+[2026-02-26T14:11:24.214Z] Server Initialized
+[2026-02-26T14:12:25.671Z] Server Initialized
+[2026-02-26T14:12:25.671Z] Server Initialized
+[2026-02-26T14:12:25.671Z] Server Initialized
+[2026-02-26T14:52:11.654Z] Server Initialized
+[2026-02-26T14:55:19.462Z] Server Initialized
+[2026-02-26T16:20:21.843Z] Server Initialized
+[2026-02-26T16:24:10.797Z] Server Initialized
+[2026-02-26T16:30:26.643Z] Server Initialized
+[2026-02-26T16:30:26.643Z] Server Initialized
+[2026-02-26T16:30:26.644Z] Server Initialized
+[2026-02-26T16:30:26.645Z] Server Initialized
+[2026-02-26T16:32:53.171Z] Server Initialized
+[2026-02-26T16:32:53.171Z] Server Initialized
+[2026-02-26T16:32:53.171Z] Server Initialized
+[2026-02-26T16:32:53.171Z] Server Initialized
+[2026-02-26T16:33:06.208Z] Server Initialized
+[2026-02-26T16:33:06.208Z] Server Initialized
+[2026-02-26T16:33:06.208Z] Server Initialized
+[2026-02-26T16:33:06.208Z] Server Initialized
+[2026-02-26T16:33:24.958Z] Server Initialized
+[2026-02-26T16:33:24.958Z] Server Initialized
+[2026-02-26T16:33:24.958Z] Server Initialized
+[2026-02-26T16:33:24.958Z] Server Initialized
+[2026-02-26T16:33:31.651Z] Server Initialized
+[2026-02-26T16:33:31.653Z] Server Initialized
+[2026-02-26T16:33:31.655Z] Server Initialized
+[2026-02-26T16:33:31.685Z] Server Initialized
+[2026-02-26T16:33:37.963Z] Server Initialized
+[2026-02-26T16:33:37.963Z] Server Initialized
+[2026-02-26T16:33:37.963Z] Server Initialized
+[2026-02-26T16:33:38.000Z] Server Initialized
+[2026-02-26T16:33:44.328Z] Server Initialized
+[2026-02-26T16:33:44.329Z] Server Initialized
+[2026-02-26T16:33:44.331Z] Server Initialized
+[2026-02-26T16:33:44.356Z] Server Initialized
+[2026-02-26T16:33:50.858Z] Server Initialized
+[2026-02-26T16:33:50.862Z] Server Initialized
+[2026-02-26T16:33:50.872Z] Server Initialized
+[2026-02-26T16:33:50.894Z] Server Initialized
+[2026-02-26T16:33:57.445Z] Server Initialized
+[2026-02-26T16:33:57.446Z] Server Initialized
+[2026-02-26T16:33:57.449Z] Server Initialized
+[2026-02-26T16:33:57.478Z] Server Initialized
+[2026-02-26T16:52:17.280Z] [AUTH] ATTEMPT: Telegram OTP request for @kisodrakon
+[2026-02-26T16:52:31.916Z] [AUTH] INFO: Bot connect received from: kisodrakon (ID: 7769456432)
+[2026-02-26T16:52:31.916Z] [AUTH] INFO: Generated OTP for kisodrakon: 137289
+[2026-02-26T16:52:38.057Z] [AUTH] INFO: API Verify attempt: User=kisodrakon, OTP=137289
+[2026-02-26T16:52:38.058Z] [AUTH] INFO: Verify Success for kisodrakon. OTP matches.
+[2026-02-26T16:56:25.405Z] Server Initialized
+[2026-02-26T16:56:25.405Z] Server Initialized
+[2026-02-26T16:56:25.405Z] Server Initialized
+[2026-02-26T16:56:25.405Z] Server Initialized
+[2026-02-28T08:34:57.422Z] Server Initialized
+[2026-02-28T08:56:15.002Z] Server Initialized
+[2026-02-28T08:56:38.980Z] Server Initialized
+[2026-02-28T08:56:51.499Z] Server Initialized
+[2026-02-28T08:56:59.436Z] Server Initialized
+[2026-02-28T08:57:11.622Z] Server Initialized
+[2026-02-28T08:57:14.376Z] Server Initialized
+[2026-02-28T09:00:07.891Z] Server Initialized
+[2026-02-28T09:00:15.898Z] Server Initialized
+[2026-02-28T09:00:26.589Z] Server Initialized
+[2026-02-28T09:00:51.642Z] Server Initialized
+[2026-02-28T10:36:30.132Z] Server Initialized
+[2026-02-28T12:29:43.552Z] Server Initialized
+[2026-02-28T12:34:24.625Z] Server Initialized
+[2026-02-28T12:34:32.226Z] Server Initialized
+[2026-02-28T12:34:41.827Z] Server Initialized
+[2026-02-28T12:37:40.380Z] Server Initialized
+[2026-02-28T12:44:22.887Z] Server Initialized
+[2026-02-28T12:51:55.099Z] Server Initialized
+[2026-02-28T12:52:08.758Z] Server Initialized
+[2026-02-28T12:53:51.503Z] Server Initialized
+[2026-02-28T12:53:54.793Z] Server Initialized
+[2026-02-28T12:57:16.914Z] Server Initialized
+[2026-02-28T12:57:22.907Z] Server Initialized
+[2026-02-28T13:08:20.293Z] Server Initialized
+[2026-02-28T13:25:59.613Z] Server Initialized
+[2026-02-28T13:26:43.507Z] Server Initialized
+[2026-02-28T13:59:42.667Z] Server Initialized
+[2026-02-28T13:59:54.145Z] Server Initialized
+[2026-02-28T13:59:55.478Z] Server Initialized
+[2026-02-28T13:59:56.574Z] Server Initialized
+[2026-02-28T13:59:57.768Z] Server Initialized
+[2026-02-28T13:59:59.183Z] Server Initialized
+[2026-02-28T14:00:00.433Z] Server Initialized
+[2026-02-28T14:17:44.729Z] Server Initialized
+[2026-02-28T14:17:51.949Z] Server Initialized
+[2026-02-28T15:03:27.567Z] [AUTH] INFO: API Verify attempt: User=kisodrakon, OTP=961922
+[2026-02-28T15:16:08.996Z] Server Initialized
+[2026-02-28T15:16:09.791Z] Server Initialized
+[2026-02-28T15:16:11.579Z] Server Initialized
+[2026-02-28T15:16:16.509Z] Server Initialized
+[2026-02-28T15:16:18.342Z] Server Initialized
+[2026-02-28T15:40:41.811Z] Server Initialized
+[2026-02-28T15:41:28.328Z] [AUTH] INFO: API Verify attempt: User=kisodrakon, OTP=391588
+[2026-02-28T15:44:20.057Z] [AUTH] INFO: Bot connect received from: kisodrakon (ID: 7769456432)
+[2026-02-28T15:44:20.058Z] [AUTH] INFO: Generated OTP for kisodrakon: 435076
+[2026-02-28T15:48:15.572Z] [AUTH] INFO: Bot connect received from: kisodrakon (ID: 7769456432)
+[2026-02-28T15:48:15.575Z] [AUTH] INFO: Generated OTP for kisodrakon: 391581
+[2026-02-28T15:49:10.450Z] Server Initialized
+[2026-02-28T15:49:18.818Z] Server Initialized
+[2026-02-28T15:49:31.835Z] Server Initialized
+[2026-02-28T15:55:46.649Z] Server Initialized
+[2026-02-28T15:56:23.809Z] [AUTH] INFO: Bot connect received from: kisodrakon (ID: 7769456432)
+[2026-02-28T15:56:23.810Z] [AUTH] INFO: Generated OTP for kisodrakon: 822309
+[2026-02-28T15:57:12.590Z] Server Initialized
+[2026-02-28T15:57:12.929Z] [AUTH] INFO: Bot connect received from: kisodrakon (ID: 7769456432)
+[2026-02-28T15:57:12.929Z] [AUTH] INFO: Generated OTP for kisodrakon: 389227
+[2026-02-28T15:57:32.461Z] Server Initialized
+[2026-02-28T15:57:46.876Z] Server Initialized
+[2026-02-28T15:58:26.568Z] Server Initialized
+[2026-02-28T15:58:36.491Z] [AUTH] INFO: Bot connect received from: kisodrakon (ID: 7769456432)
+[2026-02-28T15:58:36.493Z] [AUTH] INFO: Generated OTP for kisodrakon: 588307
+[2026-02-28T15:59:18.436Z] [AUTH] INFO: API Verify attempt: User=kisodrakon, OTP=588307
+[2026-02-28T15:59:18.437Z] [AUTH] INFO: Verify Success for kisodrakon. OTP matches.
+[2026-02-28T15:59:27.978Z] [AUTH] INFO: API Verify attempt: User=kisodrakon, OTP=588307
+[2026-02-28T16:15:49.638Z] [AUTH] INFO: Bot connect received from: kisodrakon (ID: 7769456432)
+[2026-02-28T16:15:49.645Z] [AUTH] INFO: Generated OTP for kisodrakon: 489376
+[2026-02-28T16:15:59.365Z] [AUTH] INFO: API Verify attempt: User=kisodrakon, OTP=489376
+[2026-02-28T16:15:59.365Z] [AUTH] INFO: Verify Success for kisodrakon. OTP matches.
+[2026-02-28T16:16:03.095Z] [AUTH] INFO: API Verify attempt: User=kisodrakon, OTP=489376
+[2026-02-28T16:27:51.157Z] [AUTH] INFO: Bot connect received from: kisodrakon (ID: 7769456432)
+[2026-02-28T16:27:51.160Z] [AUTH] INFO: Generated OTP for kisodrakon: 258246
+[2026-02-28T16:27:59.813Z] [AUTH] INFO: API Verify attempt: User=kisodrakon, OTP=258246
+[2026-02-28T16:27:59.814Z] [AUTH] INFO: Verify Success for kisodrakon. OTP matches.
+[2026-02-28T16:28:00.721Z] [AUTH] INFO: API Verify attempt: User=kisodrakon, OTP=258246
+[2026-02-28T16:34:35.990Z] Server Initialized
+[2026-02-28T16:35:13.425Z] [AUTH] INFO: Bot connect received from: kisodrakon (ID: 7769456432)
+[2026-02-28T16:35:13.426Z] [AUTH] INFO: Generated OTP for kisodrakon: 241040
+[2026-02-28T16:35:20.950Z] [AUTH] INFO: API Verify attempt: User=kisodrakon, OTP=241040
+[2026-02-28T16:35:20.950Z] [AUTH] INFO: Verify Success for kisodrakon. OTP matches.
+[2026-02-28T16:35:22.163Z] [AUTH] INFO: API Verify attempt: User=kisodrakon, OTP=241040
+[2026-02-28T16:36:55.061Z] [AUTH] INFO: Bot connect received from: kisodrakon (ID: 7769456432)
+[2026-02-28T16:36:55.062Z] [AUTH] INFO: Generated OTP for kisodrakon: 412030
+[2026-02-28T16:37:04.064Z] [AUTH] INFO: API Verify attempt: User=kisodrakon, OTP=412030
+[2026-02-28T16:37:04.066Z] [AUTH] INFO: Verify Success for kisodrakon. OTP matches.
+[2026-02-28T16:37:04.889Z] [AUTH] INFO: Bot-first registration: Creating new record for kisodrakon
+[2026-02-28T16:37:06.693Z] [AUTH] INFO: Bot-first registration complete: kisodrakon (Record: recN239pMfXcMOR1I)
+[2026-02-28T16:37:11.074Z] [AUTH] INFO: API Verify attempt: User=kisodrakon, OTP=412030

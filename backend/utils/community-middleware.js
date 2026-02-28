@@ -8,10 +8,8 @@
  * Security: Critical - Access control for Closed Communities feature
  */
 
-const Airtable = require('airtable');
+const base = require('../shared/base');
 const { sanitizeForAirtable } = require('./airtable-sanitizer');
-
-const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY }).base(process.env.AIRTABLE_BASE_ID);
 
 /**
  * Verifies that the authenticated user is an Active member of the specified community
@@ -85,16 +83,38 @@ async function checkCommunityMember(req, res, next) {
     const userId = user.id;
 
     // Check if user is an Active member of the community
+    // Note: Lookup fields like {Name (from Community)} return arrays when a record
+    // links to multiple communities. Use FIND() + ARRAYJOIN() instead of = for matching.
+    const communityName = community.fields.Name;
+    const safeCommunityName = sanitizeForAirtable(communityName);
     const membershipRecords = await base(process.env.AIRTABLE_COMMUNITY_MEMBERS_TABLE).select({
       filterByFormula: `AND(
-        {Member} = '${userId}',
-        {Community} = '${communityId}',
+        {Tg_Username (from Member)} = '${safeUsername}',
+        FIND('${safeCommunityName}', ARRAYJOIN({Name (from Community)}, '||')),
         {Status} = 'Active'
       )`,
       maxRecords: 1
     }).firstPage();
 
     if (membershipRecords.length === 0) {
+      // Check if membership is Pending
+      const pendingRecords = await base(process.env.AIRTABLE_COMMUNITY_MEMBERS_TABLE).select({
+        filterByFormula: `AND(
+          {Tg_Username (from Member)} = '${safeUsername}',
+          FIND('${safeCommunityName}', ARRAYJOIN({Name (from Community)}, '||')),
+          {Status} = 'Pending'
+        )`,
+        maxRecords: 1
+      }).firstPage();
+
+      if (pendingRecords.length > 0) {
+        return res.status(403).json({
+          success: false,
+          error: 'Membership pending approval',
+          membershipStatus: 'Pending'
+        });
+      }
+
       return res.status(403).json({
         success: false,
         error: 'Not a member of this community or membership not active'
@@ -188,10 +208,14 @@ async function checkCommunityAdmin(req, res, next) {
     const userId = user.id;
 
     // Check if user is an Owner or Admin of the community
+    // Note: Lookup fields like {Name (from Community)} return arrays when a record
+    // links to multiple communities. Use FIND() + ARRAYJOIN() instead of = for matching.
+    const communityName = community.fields.Name;
+    const safeCommunityName = sanitizeForAirtable(communityName);
     const membershipRecords = await base(process.env.AIRTABLE_COMMUNITY_MEMBERS_TABLE).select({
       filterByFormula: `AND(
-        {Member} = '${userId}',
-        {Community} = '${communityId}',
+        {Tg_Username (from Member)} = '${safeUsername}',
+        FIND('${safeCommunityName}', ARRAYJOIN({Name (from Community)}, '||')),
         {Status} = 'Active',
         OR({Role} = 'Owner', {Role} = 'Admin')
       )`,

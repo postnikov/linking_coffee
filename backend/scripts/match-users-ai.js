@@ -368,9 +368,10 @@ async function main() {
         let matchHistoryFilter;
 
         if (IS_COMMUNITY_MATCH) {
-            // Filter matches by Community field
+            // Filter matches by Community field (use lookup for linked record matching)
+            const safeCommunityName = communityRecord.fields.Name.replace(/'/g, "\\'");
             matchHistoryFilter = {
-                filterByFormula: `{Community} = '${communityRecord.id}'`,
+                filterByFormula: `{Community_Name} = '${safeCommunityName}'`,
                 fields: ['Member1', 'Member2', 'Week_Start', 'Community']
             };
         } else {

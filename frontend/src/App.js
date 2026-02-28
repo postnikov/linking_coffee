@@ -24,9 +24,8 @@ import CommunityInfoPage from './pages/CommunityInfoPage';
 import './App.css';
 
 const RequireAuth = ({ user, children }) => {
-    const location = useLocation();
     if (!user) {
-        return <Navigate to="/login" state={{ from: location }} replace />;
+        return <Navigate to="/" replace />;
     }
     return children;
 };
@@ -83,8 +82,8 @@ function App() {
                 <Route path="*" element={
                     <MainLayout>
                         <Routes>
-                            <Route path="/" element={user ? <Dashboard /> : <Home onLogin={handleLogin} />} />
-                            <Route path="/dashboard" element={user ? <Dashboard /> : <Navigate to="/login" state={{ from: { pathname: '/dashboard' } }} replace />} />
+                            <Route path="/" element={user ? <Dashboard /> : <Home />} />
+                            <Route path="/dashboard" element={user ? <Dashboard /> : <Navigate to="/" replace />} />
                             <Route path="/view/:token" element={<TokenProfile />} />
                             <Route path="/auth/linkedin/callback" element={<LinkedinCallback onLogin={handleLogin} />} />
                             <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />

@@ -12,6 +12,48 @@
 
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID;
 
+// Test user recipient map (dev-only): Tg_ID -> username
+const TEST_USER_IDS = new Map();
+if (process.env.NODE_ENV !== 'production') {
+  try {
+    const testUsers = require('../tests/fixtures/test-users.json');
+    for (const user of testUsers.users) {
+      if (user.fields.Tg_ID) {
+        TEST_USER_IDS.set(String(user.fields.Tg_ID), user.fields.Tg_Username || user.key);
+      }
+    }
+  } catch (e) {
+    // Fixture file not available — fine
+  }
+}
+
+/**
+ * Check if a chat ID belongs to a test user
+ * @param {string|number} chatId - Telegram chat ID
+ * @returns {boolean}
+ */
+function isTestRecipient(chatId) {
+  return TEST_USER_IDS.has(String(chatId));
+}
+
+/**
+ * Resolve recipient for test users: redirect to ADMIN_CHAT_ID with prefix
+ * Real users pass through unchanged.
+ * @param {string|number} chatId - Original Telegram chat ID
+ * @returns {{ chatId: string, prefix: string, isTestUser: boolean }}
+ */
+function resolveRecipient(chatId) {
+  const testUsername = TEST_USER_IDS.get(String(chatId));
+  if (testUsername && ADMIN_CHAT_ID) {
+    return {
+      chatId: ADMIN_CHAT_ID,
+      prefix: `[E2E → @${testUsername}]\n\n`,
+      isTestUser: true
+    };
+  }
+  return { chatId, prefix: '', isTestUser: false };
+}
+
 // Bot instance management
 let botInstance = null;
 
@@ -77,8 +119,10 @@ let isProcessingQueue = false;
  * @returns {Promise}
  */
 async function sendWithRateLimit(chatId, message, options = {}) {
+  const resolved = resolveRecipient(chatId);
+  const finalMessage = resolved.prefix + message;
   return new Promise((resolve, reject) => {
-    messageQueue.push({ chatId, message, options, resolve, reject });
+    messageQueue.push({ chatId: resolved.chatId, message: finalMessage, options, resolve, reject });
     processQueue();
   });
 }
@@ -262,6 +306,20 @@ async function sendInfoAlert(title, details, options = {}) {
   }
 }
 
+/**
+ * Send a message to a user, automatically redirecting test users to admin.
+ * Use this instead of bot.telegram.sendMessage() for user-facing messages.
+ * @param {Telegraf} bot - Bot instance
+ * @param {string|number} chatId - Recipient Telegram chat ID
+ * @param {string} message - Message text
+ * @param {object} options - Telegraf sendMessage options (parse_mode, reply_markup, etc.)
+ * @returns {Promise}
+ */
+async function sendToUser(bot, chatId, message, options = {}) {
+  const resolved = resolveRecipient(chatId);
+  return bot.telegram.sendMessage(resolved.chatId, resolved.prefix + message, options);
+}
+
 module.exports = {
   sendCriticalAlert,
   sendWarningAlert,
@@ -271,5 +329,8 @@ module.exports = {
   clearWarnings,
   sendWithRateLimit,
   formatAlert,
-  getBotInstance
+  getBotInstance,
+  isTestRecipient,
+  resolveRecipient,
+  sendToUser
 };

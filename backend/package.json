@@ -11,7 +11,10 @@
     "sync": "./scripts/sync-to-gdrive.sh",
     "test": "jest",
     "test:smoke": "jest --testPathPattern=smoke",
-    "test:smoke:prod": "API_URL=https://linked.coffee/api FRONTEND_URL=https://linked.coffee jest --testPathPattern=smoke"
+    "test:smoke:prod": "API_URL=https://linked.coffee/api FRONTEND_URL=https://linked.coffee jest --testPathPattern=smoke",
+    "test:seed": "node scripts/seed-test-users.js seed",
+    "test:cleanup": "node scripts/seed-test-users.js cleanup",
+    "test:seed:status": "node scripts/seed-test-users.js status"
   },
   "keywords": [
     "airtable",
