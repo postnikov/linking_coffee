@@ -175,18 +175,24 @@ async function sendFeedbackRequests() {
             const m2Lang = await getMemberLanguage(m2Id);
 
             // Send to Member 1 if Feedback1 is empty
+            let sent1 = true;
             if (isF1Empty) {
-                await sendToMember(matchId, 1, m1TgId, m1Id, m1Username, m2Username, m2Name, m1Lang);
+                sent1 = await sendToMember(matchId, 1, m1TgId, m1Id, m1Username, m2Username, m2Name, m1Lang);
             }
 
             // Send to Member 2 if Feedback2 is empty
+            let sent2 = true;
             if (isF2Empty) {
-                await sendToMember(matchId, 2, m2TgId, m2Id, m2Username, m1Username, m1Name, m2Lang);
+                sent2 = await sendToMember(matchId, 2, m2TgId, m2Id, m2Username, m1Username, m1Name, m2Lang);
             }
 
-            // Mark checked
+            // Mark checked — only if all required sends succeeded
             if (!IS_DRY_RUN && !IS_TEST_MODE) {
-                await markWeekendChecked(matchId);
+                if (sent1 !== false && sent2 !== false) {
+                    await markWeekendChecked(matchId);
+                } else {
+                    console.log(`Skipping weekend mark for ${matchId}: sent1=${sent1}, sent2=${sent2}`);
+                }
             } else if (IS_TEST_MODE) {
                 console.log(`[TEST] Would mark match ${matchId} as Weekend_Checkin = true (Skipped)`);
             }
@@ -218,7 +224,7 @@ async function markWeekendChecked(matchId) {
 async function sendToMember(matchId, role, memberTgId, memberId, memberUsername, partnerUsername, partnerName, language = 'En') {
     if (!memberTgId) {
         console.log(`No Telegram ID for Member ${role} in match ${matchId}. Skipping.`);
-        return;
+        return true; // Skip is not a failure
     }
 
     const t = MESSAGES[language] || MESSAGES.En;
@@ -262,7 +268,7 @@ ${t.question(partnerName, cleanPartnerHandle, partnerLink)}`;
             tgUsername: memberUsername,
             tgId: memberTgId
         });
-        return;
+        return true;
     }
 
     try {
@@ -278,6 +284,7 @@ ${t.question(partnerName, cleanPartnerHandle, partnerLink)}`;
         });
         // Delay to avoid hitting rate limits
         await new Promise(resolve => setTimeout(resolve, 100));
+        return true;
     } catch (error) {
         await logMessage({
             scriptName: 'weekend-feedback',
@@ -289,6 +296,7 @@ ${t.question(partnerName, cleanPartnerHandle, partnerLink)}`;
             tgUsername: memberUsername,
             tgId: memberTgId
         });
+        return false;
     }
 }
 

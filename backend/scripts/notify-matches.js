@@ -283,7 +283,7 @@ async function main() {
                 // If it's a dry run, we skip update.
 
                 if (!DRY_RUN && !IS_TEST_MODE) {
-                    if (sent1 || sent2) {
+                    if (sent1 && sent2) {
                         await base(MATCHES_TABLE).update([{
                             id: match.id,
                             fields: {
@@ -291,13 +291,17 @@ async function main() {
                             }
                         }]);
                         console.log(`📝 Updated match ${match.id} status to 'Sent'`);
+                    } else if (sent1 || sent2) {
+                        await base(MATCHES_TABLE).update([{
+                            id: match.id,
+                            fields: {
+                                'Notifications': 'Partial'
+                            }
+                        }]);
+                        console.log(`⚠️ Updated match ${match.id} status to 'Partial' (sent1=${sent1}, sent2=${sent2})`);
                     }
+                    // If neither sent, leave as 'Pending' for retry
                 } else if (IS_TEST_MODE) {
-                    // In test mode, we might want to update ONLY if we really targeted that user?
-                    // Or just log that we WOULD update. 
-                    // Let's protect the data in test mode and NOT update status unless explicitly asked.
-                    // The user asked "After successful sending... change to Sent". 
-                    // If I send to myself in test mode, I shouldn't mark the REAL match as sent to the REAL user.
                     console.log(`[TEST] Would update match ${match.id} status to 'Sent' (Skipped in test mode)`);
                 } else { // DRY_RUN
                     console.log(`[DRY RUN] Would update match ${match.id} status to 'Sent'`);

@@ -4,6 +4,8 @@
     "script": "health-monitor.js",
     "cron": "*/5 * * * *",
     "enabled": true,
+    "timeout": 60000,
+    "maxRetries": 0,
     "lastRun": null,
     "lastStatus": null
   },
@@ -12,6 +14,9 @@
     "script": "daily-summary.js",
     "cron": "0 9 * * *",
     "enabled": true,
+    "timeout": 120000,
+    "maxRetries": 2,
+    "retryDelayMs": 60000,
     "lastRun": null,
     "lastStatus": null
   },
@@ -20,6 +25,8 @@
     "script": "check-deployment-health.js",
     "cron": "*/10 * * * *",
     "enabled": true,
+    "timeout": 60000,
+    "maxRetries": 0,
     "lastRun": null,
     "lastStatus": null
   },
@@ -28,6 +35,9 @@
     "script": "match-all.js",
     "cron": "0 8 * * 1",
     "enabled": false,
+    "timeout": 600000,
+    "maxRetries": 2,
+    "retryDelayMs": 120000,
     "lastRun": null,
     "lastStatus": null,
     "description": "Runs community matching first, then global pool. Monday 8am."
@@ -37,8 +47,59 @@
     "script": "notify-matches.js",
     "cron": "0 9 * * 1",
     "enabled": false,
+    "timeout": 300000,
+    "maxRetries": 3,
+    "retryDelayMs": 60000,
     "lastRun": null,
     "lastStatus": null,
     "description": "Sends match notifications via Telegram. Monday 9am."
+  },
+  {
+    "name": "Weekend Ask For Feedback",
+    "script": "weekend-feedback.js",
+    "cron": "0 13 * * 6",
+    "enabled": false,
+    "timeout": 300000,
+    "maxRetries": 2,
+    "retryDelayMs": 60000,
+    "lastRun": null,
+    "lastStatus": null,
+    "description": "Weekend feedback collection. Saturday 1pm."
+  },
+  {
+    "name": "Weekend Invite All",
+    "script": "weekend-invitation-all.js",
+    "cron": "0 14 * * 0",
+    "enabled": false,
+    "timeout": 300000,
+    "maxRetries": 2,
+    "retryDelayMs": 60000,
+    "lastRun": null,
+    "lastStatus": null,
+    "description": "Weekly participation invitation. Sunday 2pm."
+  },
+  {
+    "name": "Wednesday Check-In",
+    "script": "midweek-checkin.js",
+    "cron": "0 16 * * 3",
+    "enabled": false,
+    "timeout": 300000,
+    "maxRetries": 2,
+    "retryDelayMs": 60000,
+    "lastRun": null,
+    "lastStatus": null,
+    "description": "Midweek feedback check-in. Wednesday 4pm."
+  },
+  {
+    "name": "Match Users with AI",
+    "script": "match-users-ai.js",
+    "cron": "0 8 * * 1",
+    "enabled": false,
+    "timeout": 600000,
+    "maxRetries": 2,
+    "retryDelayMs": 120000,
+    "lastRun": null,
+    "lastStatus": null,
+    "description": "AI-powered user matching. Monday 8am."
   }
 ]

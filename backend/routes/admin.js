@@ -479,10 +479,23 @@ module.exports = function createAdminRouter(scheduler, projectConfig) {
 
   // Scheduler
   router.get('/api/admin/scheduler', adminLimiter, checkAdmin, (req, res) => {
+    if (!scheduler) {
+      return res.json({ success: true, jobs: [], message: 'Scheduler runs in separate process' });
+    }
     res.json({ success: true, jobs: scheduler.getJobs() });
   });
 
+  router.get('/api/admin/scheduler/health', adminLimiter, checkAdmin, (req, res) => {
+    if (!scheduler) {
+      return res.json({ success: true, message: 'Scheduler runs in separate process', external: true });
+    }
+    res.json({ success: true, ...scheduler.getHealthStatus() });
+  });
+
   router.post('/api/admin/scheduler', adminLimiter, checkAdmin, (req, res) => {
+    if (!scheduler) {
+      return res.status(503).json({ success: false, message: 'Scheduler runs in separate process' });
+    }
     const { action, job } = req.body; // action: add, update, delete, start-now
 
     try {
@@ -500,6 +513,9 @@ module.exports = function createAdminRouter(scheduler, projectConfig) {
   });
 
   router.post('/api/admin/scheduler/run', adminLimiter, checkAdmin, (req, res) => {
+    if (!scheduler) {
+      return res.status(503).json({ success: false, message: 'Scheduler runs in separate process' });
+    }
     const { name } = req.body;
     if (scheduler.runJobNow(name)) {
       res.json({ success: true, message: 'Job started' });

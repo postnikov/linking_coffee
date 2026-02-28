@@ -146,24 +146,28 @@ async function sendFeedbackRequests() {
             const m2Lang = await getMemberLanguage(m2Id);
 
             // Send to Member 1
-            await sendToMember(matchId, 1, m1TgId, m1Id, m1Username, m2Username, m1Lang);
+            const sent1 = await sendToMember(matchId, 1, m1TgId, m1Id, m1Username, m2Username, m1Lang);
 
             // Send to Member 2
-            await sendToMember(matchId, 2, m2TgId, m2Id, m2Username, m1Username, m2Lang);
+            const sent2 = await sendToMember(matchId, 2, m2TgId, m2Id, m2Username, m1Username, m2Lang);
 
-            // Update match record to mark as checked in
+            // Update match record to mark as checked in — only if both sends succeeded
             // Logic: Not Dry Run AND Not Test Mode (to preserve real state)
             if (!IS_DRY_RUN && !IS_TEST_MODE) {
-                try {
-                    await base('tblx2OEN5sSR1xFI2').update([{
-                        id: matchId,
-                        fields: {
-                            'Midweek_Checkin': true
-                        }
-                    }]);
-                    console.log(`Marked match ${matchId} as checked in.`);
-                } catch (err) {
-                    console.error(`Failed to mark match ${matchId} as checked in:`, err);
+                if (sent1 !== false && sent2 !== false) {
+                    try {
+                        await base('tblx2OEN5sSR1xFI2').update([{
+                            id: matchId,
+                            fields: {
+                                'Midweek_Checkin': true
+                            }
+                        }]);
+                        console.log(`Marked match ${matchId} as checked in.`);
+                    } catch (err) {
+                        console.error(`Failed to mark match ${matchId} as checked in:`, err);
+                    }
+                } else {
+                    console.log(`Skipping mark for ${matchId}: send results m1=${sent1}, m2=${sent2}`);
                 }
             } else if (IS_TEST_MODE) {
                 console.log(`[TEST] Would mark match ${matchId} as checked in (Skipped)`);
@@ -182,7 +186,7 @@ async function sendFeedbackRequests() {
 async function sendToMember(matchId, role, memberTgId, memberId, memberUsername, partnerUsername, language = 'En') {
     if (!memberTgId) {
         console.log(`No Telegram ID for Member ${role} in match ${matchId}. Skipping.`);
-        return;
+        return true; // Skip is not a failure
     }
 
     const t = MESSAGES[language] || MESSAGES.En;
@@ -224,7 +228,7 @@ ${t.body(partnerLink)}`;
             tgUsername: memberUsername,
             tgId: memberTgId
         });
-        return;
+        return true;
     }
 
     try {
@@ -240,6 +244,7 @@ ${t.body(partnerLink)}`;
         });
         // Delay to avoid hitting rate limits
         await new Promise(resolve => setTimeout(resolve, 100));
+        return true;
     } catch (error) {
         await logMessage({
             scriptName: 'midweek-checkin',
@@ -251,6 +256,7 @@ ${t.body(partnerLink)}`;
             tgUsername: memberUsername,
             tgId: memberTgId
         });
+        return false;
     }
 }
 

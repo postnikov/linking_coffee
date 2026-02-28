@@ -4,8 +4,6 @@ const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
 const { Telegraf } = require('telegraf');
-const Scheduler = require('./scheduler');
-
 // Shared modules
 const { PORT, BACKUP_DIR } = require('./shared/config');
 const { UPLOADS_DIR } = require('./shared/config');
@@ -50,12 +48,18 @@ app.use((req, res, next) => {
 // Serve uploaded files statically
 app.use('/uploads', express.static(UPLOADS_DIR));
 
-// Initialize Scheduler
-const scheduler = new Scheduler(
-  path.join(__dirname, 'scheduler.json'),
-  path.join(__dirname, 'config/scheduler.json')
-);
-scheduler.init();
+// Initialize Scheduler (conditional — disabled when running separate scheduler container)
+let scheduler = null;
+if (process.env.ENABLE_SCHEDULER !== 'false') {
+  const Scheduler = require('./scheduler');
+  scheduler = new Scheduler(
+    path.join(__dirname, 'scheduler.json'),
+    path.join(__dirname, 'config/scheduler.json')
+  );
+  scheduler.init();
+} else {
+  console.log('Scheduler disabled (ENABLE_SCHEDULER=false). Running as API-only.');
+}
 
 // Initialize Telegram Bot
 const botToken = process.env.NODE_ENV === 'production' ? process.env.BOT_TOKEN : process.env.ADMIN_BOT_TOKEN;

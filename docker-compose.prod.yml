@@ -33,6 +33,7 @@ services:
       - LINKEDIN_REDIRECT_URI=${LINKEDIN_REDIRECT_URI}
       - FRONTEND_URL=${FRONTEND_URL:-https://linked.coffee}
       - PORT=3001
+      - ENABLE_SCHEDULER=false
     networks:
       - linking-coffee-network
       - traefik-public
@@ -42,6 +43,42 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+
+  # Scheduler (separate process for reliability)
+  scheduler:
+    image: linking-coffee-backend:latest
+    container_name: linking-coffee-scheduler
+    restart: unless-stopped
+    command: ["node", "scheduler-worker.js"]
+    volumes:
+      - /opt/linking-coffee/config:/app/config
+      - /opt/linking-coffee/logs:/app/logs
+      - /opt/linking-coffee/backups:/app/backups
+    environment:
+      - NODE_ENV=production
+      - AIRTABLE_API_KEY=${AIRTABLE_API_KEY}
+      - AIRTABLE_BASE_ID=${AIRTABLE_BASE_ID}
+      - AIRTABLE_MEMBERS_TABLE=${AIRTABLE_MEMBERS_TABLE}
+      - AIRTABLE_COUNTRIES_TABLE=${AIRTABLE_COUNTRIES_TABLE}
+      - AIRTABLE_CITIES_TABLE=${AIRTABLE_CITIES_TABLE}
+      - AIRTABLE_MATCHES_TABLE=${AIRTABLE_MATCHES_TABLE}
+      - AIRTABLE_COMMUNITIES_TABLE=${AIRTABLE_COMMUNITIES_TABLE}
+      - AIRTABLE_COMMUNITY_MEMBERS_TABLE=${AIRTABLE_COMMUNITY_MEMBERS_TABLE}
+      - AIRTABLE_LOGS_TABLE=${AIRTABLE_LOGS_TABLE}
+      - BOT_TOKEN=${BOT_TOKEN}
+      - ADMIN_BOT_TOKEN=${ADMIN_BOT_TOKEN}
+      - ADMIN_CHAT_ID=${ADMIN_CHAT_ID}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - GOOGLE_AI_API_KEY=${GOOGLE_AI_API_KEY}
+      - SCHEDULER_HEALTH_PORT=3002
+    networks:
+      - linking-coffee-network
+    healthcheck:
+      test: [ "CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3002/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
 
   # Frontend
   frontend:
