@@ -28,7 +28,10 @@ const {
 } = require('../utils/alertState');
 
 // Configuration
-const HEALTH_CHECK_URL = process.env.HEALTH_CHECK_URL || 'http://localhost:3001/api/health';
+const DEFAULT_HEALTH_URL = process.env.FROM_SCHEDULER === 'true'
+  ? 'http://linking-coffee-backend:3001/api/health'
+  : 'http://localhost:3001/api/health';
+const HEALTH_CHECK_URL = process.env.HEALTH_CHECK_URL || DEFAULT_HEALTH_URL;
 const TIMEOUT = parseInt(process.env.HEALTH_CHECK_TIMEOUT) || 5000;
 const CRITICAL_THRESHOLD = 3; // Alert after this many consecutive failures
 
