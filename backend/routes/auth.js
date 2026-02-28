@@ -51,19 +51,16 @@ module.exports = function createAuthRouter(bot) {
           try {
             // Provide both login link (for new users) and dashboard link (for Gmail users connecting Telegram)
             const loginUrl = `${FRONTEND_URL}/login?code=${otp}&user=${encodeURIComponent(cleanUsername)}`;
-            const dashboardUrl = `${FRONTEND_URL}/dashboard?connectCode=${otp}&connectUser=${encodeURIComponent(cleanUsername)}`;
-
             const useButtons = FRONTEND_URL.startsWith('https');
 
             if (useButtons) {
               await bot.telegram.sendMessage(
                 tgId,
-                `☕️☕️☕️\nYour verification code for Linked.Coffee is:\n\n\`${otp}\`\n\nClick a button below to verify:`,
+                `☕️☕️☕️\nYour verification code for Linked.Coffee is:\n\n\`${otp}\`\n\nClick the button below to verify:`,
                 {
                   parse_mode: 'Markdown',
                   ...Markup.inlineKeyboard([
-                    [Markup.button.url('New user? Click here', loginUrl)],
-                    [Markup.button.url('Already logged in? Click here', dashboardUrl)]
+                    [Markup.button.url('Login to Linked.Coffee', loginUrl)]
                   ])
                 }
               );

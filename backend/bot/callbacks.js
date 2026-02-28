@@ -10,55 +10,60 @@ module.exports = function registerBotCallbacks(bot) {
 
   // --- /start and /connect commands ---
 
-  const handleConnect = (ctx) => {
-    const username = ctx.from.username;
-    logAuth(`Bot connect received from: ${username} (ID: ${ctx.from.id})`);
+  const handleConnect = async (ctx) => {
+    try {
+      const username = ctx.from.username;
+      logAuth(`Bot connect received from: ${username} (ID: ${ctx.from.id})`);
 
-    if (!username) {
-      return ctx.reply('Please set a username in your Telegram settings to use this bot.');
-    }
+      if (!username) {
+        return ctx.reply('Please set a username in your Telegram settings to use this bot.');
+      }
 
-    const cleanUsername = username.toLowerCase();
-    console.log(`🤖 Bot received connect from: ${username} (clean: ${cleanUsername})`);
+      const cleanUsername = username.toLowerCase();
+      console.log(`🤖 Bot received connect from: ${username} (clean: ${cleanUsername})`);
 
-    // Generate 6-digit OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      // Generate 6-digit OTP
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-    // Store OTP (valid for 10 minutes)
-    otpStore.set(cleanUsername, {
-      code: otp,
-      telegramId: ctx.from.id, // Store ID to update later
-      firstName: ctx.from.first_name,
-      lastName: ctx.from.last_name,
-      expiresAt: Date.now() + 10 * 60 * 1000 // 10 minutes
-    });
+      // Store OTP (valid for 10 minutes)
+      otpStore.set(cleanUsername, {
+        code: otp,
+        telegramId: ctx.from.id, // Store ID to update later
+        firstName: ctx.from.first_name,
+        lastName: ctx.from.last_name,
+        expiresAt: Date.now() + 10 * 60 * 1000 // 10 minutes
+      });
 
-    console.log(`✅ Generated OTP for ${cleanUsername}: ${otp}`);
-    logAuth(`Generated OTP for ${cleanUsername}: ${otp}`);
+      console.log(`✅ Generated OTP for ${cleanUsername}: ${otp}`);
+      logAuth(`Generated OTP for ${cleanUsername}: ${otp}`);
 
-    // Provide both login link (for new users) and dashboard link (for Gmail users connecting Telegram)
-    const loginUrl = `${FRONTEND_URL}/login?code=${otp}&user=${encodeURIComponent(cleanUsername)}`;
-    const dashboardUrl = `${FRONTEND_URL}/dashboard?connectCode=${otp}&connectUser=${encodeURIComponent(cleanUsername)}`;
+      // Provide both login link (for new users) and dashboard link (for Gmail users connecting Telegram)
+      const loginUrl = `${FRONTEND_URL}/login?code=${otp}&user=${encodeURIComponent(cleanUsername)}`;
+      const useButtons = FRONTEND_URL.startsWith('https');
 
-    const useButtons = FRONTEND_URL.startsWith('https');
-
-    if (useButtons) {
-      ctx.reply(
-        `☕️☕️☕️\nYour verification code for Linked.Coffee is:\n\n\`${otp}\`\n\nClick a button below to verify:`,
-        {
-          parse_mode: 'Markdown',
-          ...Markup.inlineKeyboard([
-            [Markup.button.url('New user? Click here', loginUrl)],
-            [Markup.button.url('Already logged in? Click here', dashboardUrl)]
-          ])
-        }
-      );
-    } else {
-      ctx.reply(
-        `☕️☕️☕️\nYour verification code for Linked.Coffee is:\n\n\`${otp}\`\n\n` +
-        `Click to verify:\n${loginUrl}`,
-        { parse_mode: 'Markdown', disable_web_page_preview: true }
-      );
+      if (useButtons) {
+        await ctx.reply(
+          `☕️☕️☕️\nYour verification code for Linked.Coffee is:\n\n\`${otp}\`\n\nClick the button below to verify:`,
+          {
+            parse_mode: 'Markdown',
+            ...Markup.inlineKeyboard([
+              [Markup.button.url('Login to Linked.Coffee', loginUrl)]
+            ])
+          }
+        );
+      } else {
+        // Plain text fallback (no Markdown to avoid underscore parsing issues)
+        await ctx.reply(
+          `☕️☕️☕️\nYour verification code for Linked.Coffee is: ${otp}\n\nClick to verify:\n${loginUrl}`
+        );
+      }
+    } catch (error) {
+      console.error(`handleConnect error for ${ctx.from?.username}:`, error.message);
+      try {
+        await ctx.reply('Sorry, something went wrong. Please try again.');
+      } catch (replyError) {
+        console.error('Failed to send error reply:', replyError.message);
+      }
     }
   };
 
