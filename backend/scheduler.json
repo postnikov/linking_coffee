@@ -101,5 +101,17 @@
     "lastRun": null,
     "lastStatus": null,
     "description": "AI-powered user matching. Monday 8am."
+  },
+  {
+    "name": "Daily Backup",
+    "script": "backup-airtable.js",
+    "cron": "0 3 * * *",
+    "enabled": true,
+    "timeout": 300000,
+    "maxRetries": 2,
+    "retryDelayMs": 60000,
+    "lastRun": null,
+    "lastStatus": null,
+    "description": "Daily Airtable backup. 3am."
   }
 ]
