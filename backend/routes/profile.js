@@ -2,7 +2,7 @@ const router = require('express').Router();
 const base = require('../shared/base');
 const { upload } = require('../shared/upload');
 const { logDebug } = require('../shared/logging');
-const { sanitizeUsername, sanitizeEmail } = require('../utils/airtable-sanitizer');
+const { sanitizeUsername, sanitizeEmail, sanitizeForAirtable } = require('../utils/airtable-sanitizer');
 
 // ─── Tokenized Profile View (no auth) ───────────────────────────────────────
 
@@ -112,7 +112,7 @@ router.get('/api/view/:token', async (req, res) => {
 
 // Step 4: Get User Profile
 router.get('/api/profile', async (req, res) => {
-  const { username, requester, id, email } = req.query;
+  const { username, requester, id, email, communitySlug } = req.query;
   const requestId = Date.now();
   console.time(`Profile_Req_${requestId}`);
 
@@ -169,7 +169,52 @@ router.get('/api/profile', async (req, res) => {
       }).firstPage();
     }
 
-    // 4. Fetch Latest Match (Deferred if no username yet)
+    // 4. Community Member Access Check (if communitySlug provided)
+    let pCommunityMemberAccess = Promise.resolve({ requesterIsMember: false, targetIsMember: false });
+    if (communitySlug && cleanRequester && cleanUsername && cleanUsername !== cleanRequester) {
+      const safeSlug = sanitizeForAirtable(communitySlug);
+      const safeRequester = sanitizeForAirtable(cleanRequester);
+      const safeTarget = sanitizeForAirtable(cleanUsername);
+
+      pCommunityMemberAccess = (async () => {
+        const communityRecords = await base(process.env.AIRTABLE_COMMUNITIES_TABLE).select({
+          filterByFormula: `{Slug} = '${safeSlug}'`,
+          maxRecords: 1
+        }).firstPage();
+
+        if (communityRecords.length === 0) {
+          return { requesterIsMember: false, targetIsMember: false };
+        }
+
+        const safeCommunityName = sanitizeForAirtable(communityRecords[0].fields.Name);
+
+        const [requesterCheck, targetCheck] = await Promise.all([
+          base(process.env.AIRTABLE_COMMUNITY_MEMBERS_TABLE).select({
+            filterByFormula: `AND(
+              {Tg_Username (from Member)} = '${safeRequester}',
+              FIND('${safeCommunityName}', ARRAYJOIN({Name (from Community)}, '||')),
+              {Status} = 'Active'
+            )`,
+            maxRecords: 1
+          }).firstPage(),
+          base(process.env.AIRTABLE_COMMUNITY_MEMBERS_TABLE).select({
+            filterByFormula: `AND(
+              {Tg_Username (from Member)} = '${safeTarget}',
+              FIND('${safeCommunityName}', ARRAYJOIN({Name (from Community)}, '||')),
+              {Status} = 'Active'
+            )`,
+            maxRecords: 1
+          }).firstPage()
+        ]);
+
+        return {
+          requesterIsMember: requesterCheck.length > 0,
+          targetIsMember: targetCheck.length > 0
+        };
+      })().catch(() => ({ requesterIsMember: false, targetIsMember: false }));
+    }
+
+    // 5. Fetch Latest Match (Deferred if no username yet)
     // We only care about matches from current week or older?
     // Actually we just want the *latest* match.
     const recentDate = '2024-01-01';
@@ -183,8 +228,8 @@ router.get('/api/profile', async (req, res) => {
       }).firstPage();
     }
 
-    const [targetUserRecords, requesterRecords, accessMatchRecords, latestMatchRecords] =
-      await Promise.all([pTargetUser, pRequesterUser, pAccessMatch, pLatestMatch]);
+    const [targetUserRecords, requesterRecords, accessMatchRecords, latestMatchRecords, communityMemberAccess] =
+      await Promise.all([pTargetUser, pRequesterUser, pAccessMatch, pLatestMatch, pCommunityMemberAccess]);
 
     console.timeEnd(`Phase1_Core_${requestId}`);
 
@@ -201,8 +246,9 @@ router.get('/api/profile', async (req, res) => {
     if (cleanUsername !== cleanRequester) {
       const isRequesterAdmin = requesterRecords.length > 0 && requesterRecords[0].fields.Status === 'Admin';
       const isMatched = accessMatchRecords.length > 0;
+      const isCommunityMember = communityMemberAccess.requesterIsMember && communityMemberAccess.targetIsMember;
 
-      if (!isRequesterAdmin && !isMatched) {
+      if (!isRequesterAdmin && !isMatched && !isCommunityMember) {
         return res.status(403).json({
           success: false,
           message: 'Access denied. You can only view profiles of your matches.',

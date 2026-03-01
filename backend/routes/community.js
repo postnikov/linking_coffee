@@ -579,6 +579,127 @@ router.get('/api/community/:slug', pollLimiter, checkCommunityMember, async (req
   }
 });
 
+// Get Full Community Data (combined endpoint for CommunityInfoPage)
+router.get('/api/community/:slug/full', pollLimiter, checkCommunityMember, async (req, res) => {
+  try {
+    const community = req.community;
+    const membership = req.membership;
+    const settings = community.fields.Settings
+      ? JSON.parse(community.fields.Settings.replace(/\\_/g, '_'))
+      : {};
+    const memberRole = membership.fields.Role;
+    const isAdmin = memberRole === 'Owner' || memberRole === 'Admin';
+    const safeCommunityName = sanitizeForAirtable(community.fields.Name);
+
+    // Build parallel fetches based on role and visibility
+    const fetchPromises = {};
+
+    // 1. Active members (respecting visibility)
+    const memberListVisible = settings.member_list_visible_to || 'all_members';
+    if (memberListVisible === 'all_members' || isAdmin) {
+      fetchPromises.members = base(process.env.AIRTABLE_COMMUNITY_MEMBERS_TABLE).select({
+        filterByFormula: `AND(FIND('${safeCommunityName}', ARRAYJOIN({Name (from Community)}, '||')), {Status} = 'Active')`,
+        sort: [{ field: 'Joined_At', direction: 'asc' }]
+      }).all()
+        .then(records => records.map(m => ({
+          membershipId: m.id,
+          username: m.fields['Tg_Username (from Member)'] ? m.fields['Tg_Username (from Member)'][0] : '',
+          name: m.fields['Name (from Member)'] ? m.fields['Name (from Member)'][0] : '',
+          role: m.fields.Role,
+          joinedAt: m.fields.Joined_At
+        })).filter(m => m.username))
+        .catch(err => {
+          console.error('Error fetching members:', err.message);
+          return [];
+        });
+    }
+
+    // 2. Invite links (respecting visibility)
+    const inviteLinksVisible = settings.invite_links_visible_to || 'all_members';
+    if (inviteLinksVisible === 'all_members' || isAdmin) {
+      fetchPromises.inviteLinks = base(process.env.AIRTABLE_INVITE_LINKS_TABLE).select({
+        filterByFormula: `FIND('${safeCommunityName}', ARRAYJOIN({Name (from Community)}, '||'))`,
+        sort: [{ field: 'Created_At', direction: 'desc' }]
+      }).all()
+        .then(records => records.map(link => ({
+          id: link.id,
+          code: link.fields.Code,
+          label: link.fields.Label,
+          status: link.fields.Status,
+          maxUses: link.fields.Max_Uses,
+          usedCount: link.fields.Used_Count || 0,
+          expiresAt: link.fields.Expires_At || null,
+          createdAt: link.fields.Created_At,
+          url: `https://linked.coffee/join/${link.fields.Code}`
+        })))
+        .catch(err => {
+          console.error('Error fetching invite links:', err.message);
+          return [];
+        });
+    }
+
+    // 3. Pending members (admin only)
+    if (isAdmin) {
+      fetchPromises.pendingMembers = base(process.env.AIRTABLE_COMMUNITY_MEMBERS_TABLE).select({
+        filterByFormula: `AND(FIND('${safeCommunityName}', ARRAYJOIN({Name (from Community)}, '||')), {Status} = 'Pending')`,
+        sort: [{ field: 'Joined_At', direction: 'asc' }]
+      }).all()
+        .then(records => records.map(m => ({
+          membershipId: m.id,
+          username: m.fields['Tg_Username (from Member)'] ? m.fields['Tg_Username (from Member)'][0] : '',
+          name: m.fields['Name (from Member)'] ? m.fields['Name (from Member)'][0] : '',
+          requestedAt: m.fields.Joined_At || null
+        })).filter(m => m.username))
+        .catch(err => {
+          console.error('Error fetching pending members:', err.message);
+          return [];
+        });
+    }
+
+    // 4. Member count (separate query only if members list not visible)
+    if (!(memberListVisible === 'all_members' || isAdmin)) {
+      fetchPromises.memberCount = base(process.env.AIRTABLE_COMMUNITY_MEMBERS_TABLE).select({
+        filterByFormula: `AND(FIND('${safeCommunityName}', ARRAYJOIN({Name (from Community)}, '||')), {Status} = 'Active')`
+      }).all()
+        .then(records => records.length)
+        .catch(() => 0);
+    }
+
+    // Execute all in parallel
+    const keys = Object.keys(fetchPromises);
+    const values = await Promise.all(Object.values(fetchPromises));
+    const results = {};
+    keys.forEach((key, i) => { results[key] = values[i]; });
+
+    // Derive member count from members array if available, otherwise use separate query
+    const memberCount = results.memberCount !== undefined
+      ? results.memberCount
+      : (Array.isArray(results.members) ? results.members.length : 0);
+
+    res.json({
+      success: true,
+      community: {
+        name: community.fields.Name,
+        slug: community.fields.Slug,
+        description: community.fields.Description || '',
+        memberCount,
+        minActiveForMatching: community.fields.Min_Active_For_Matching || 6,
+        settings,
+        myRole: memberRole
+      },
+      members: Array.isArray(results.members) ? results.members : [],
+      inviteLinks: Array.isArray(results.inviteLinks) ? results.inviteLinks : [],
+      pendingMembers: Array.isArray(results.pendingMembers) ? results.pendingMembers : []
+    });
+  } catch (error) {
+    console.error('Error fetching full community data:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch community data'
+    });
+  }
+});
+
 // Get Community Members List (Visibility-Controlled)
 router.get('/api/community/:slug/members', pollLimiter, checkCommunityMember, async (req, res) => {
   try {
@@ -604,20 +725,14 @@ router.get('/api/community/:slug/members', pollLimiter, checkCommunityMember, as
       sort: [{ field: 'Joined_At', direction: 'asc' }]
     }).all();
 
-    const members = [];
-    for (const membership of memberships) {
-      const memberIds = membership.fields.Member;
-      if (memberIds && memberIds.length > 0) {
-        const member = await base(process.env.AIRTABLE_MEMBERS_TABLE).find(memberIds[0]);
-        members.push({
-          membershipId: membership.id,
-          username: member.fields.Tg_Username,
-          name: member.fields.Name || '',
-          role: membership.fields.Role,
-          joinedAt: membership.fields.Joined_At
-        });
-      }
-    }
+    // Use lookup fields to avoid N+1 queries
+    const members = memberships.map(membership => ({
+      membershipId: membership.id,
+      username: membership.fields['Tg_Username (from Member)'] ? membership.fields['Tg_Username (from Member)'][0] : '',
+      name: membership.fields['Name (from Member)'] ? membership.fields['Name (from Member)'][0] : '',
+      role: membership.fields.Role,
+      joinedAt: membership.fields.Joined_At
+    })).filter(m => m.username);
 
     res.json({
       success: true,
@@ -1059,19 +1174,13 @@ router.get('/api/community/:slug/pending-members', pollLimiter, checkCommunityAd
       sort: [{ field: 'Joined_At', direction: 'asc' }]
     }).all();
 
-    const pendingMembers = [];
-    for (const membership of pendingMemberships) {
-      const memberIds = membership.fields.Member;
-      if (memberIds && memberIds.length > 0) {
-        const member = await base(process.env.AIRTABLE_MEMBERS_TABLE).find(memberIds[0]);
-        pendingMembers.push({
-          membershipId: membership.id,
-          username: member.fields.Tg_Username,
-          name: member.fields.Name || '',
-          requestedAt: membership.fields.Joined_At || null
-        });
-      }
-    }
+    // Use lookup fields to avoid N+1 queries
+    const pendingMembers = pendingMemberships.map(membership => ({
+      membershipId: membership.id,
+      username: membership.fields['Tg_Username (from Member)'] ? membership.fields['Tg_Username (from Member)'][0] : '',
+      name: membership.fields['Name (from Member)'] ? membership.fields['Name (from Member)'][0] : '',
+      requestedAt: membership.fields.Joined_At || null
+    })).filter(m => m.username);
 
     res.json({
       success: true,

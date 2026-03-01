@@ -32,6 +32,9 @@ const CommunityInfoPage = ({ user }) => {
   const [rejectingId, setRejectingId] = useState(null);
   const [removingId, setRemovingId] = useState(null);
   const [confirmModal, setConfirmModal] = useState(null);
+  const [selectedMember, setSelectedMember] = useState(null);
+  const [memberProfile, setMemberProfile] = useState(null);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -41,61 +44,28 @@ const CommunityInfoPage = ({ user }) => {
 
     const fetchCommunityData = async () => {
       try {
-        // Fetch community info
-        const infoResponse = await fetch(`${API_URL}/api/community/${slug}`, {
+        const response = await fetch(`${API_URL}/api/community/${slug}/full`, {
           headers: { 'x-user': user.Tg_Username }
         });
-        const infoData = await infoResponse.json();
+        const data = await response.json();
 
-        if (!infoResponse.ok) {
-          if (infoData.membershipStatus === 'Pending') {
+        if (!response.ok) {
+          if (data.membershipStatus === 'Pending') {
             setIsPendingMember(true);
             setIsLoading(false);
             return;
           }
-          setError(infoData.error || t('community.failed_load'));
+          setError(data.error || t('community.failed_load'));
           setIsLoading(false);
           return;
         }
 
-        setCommunity(infoData.community);
-
-        // Fetch members if allowed
-        const membersResponse = await fetch(`${API_URL}/api/community/${slug}/members`, {
-          headers: { 'x-user': user.Tg_Username }
-        });
-        const membersData = await membersResponse.json();
-
-        if (membersResponse.ok) {
-          setMembers(membersData.members || []);
-        }
-
-        // Fetch invite links if allowed
-        const linksResponse = await fetch(`${API_URL}/api/community/${slug}/invite-links`, {
-          headers: { 'x-user': user.Tg_Username }
-        });
-        const linksData = await linksResponse.json();
-
-        if (linksResponse.ok) {
-          setInviteLinks(linksData.inviteLinks || []);
-        }
-
-        // Fetch pending members if admin
-        const role = infoData.community.myRole;
-        if (role === 'Owner' || role === 'Admin') {
-          const pendingResponse = await fetch(`${API_URL}/api/community/${slug}/pending-members`, {
-            headers: { 'x-user': user.Tg_Username }
-          });
-          const pendingData = await pendingResponse.json();
-
-          if (pendingResponse.ok) {
-            setPendingMembers(pendingData.pendingMembers || []);
-          }
-        }
-
+        setCommunity(data.community);
+        setMembers(data.members || []);
+        setInviteLinks(data.inviteLinks || []);
+        setPendingMembers(data.pendingMembers || []);
         setIsLoading(false);
       } catch (err) {
-        console.error('Error fetching community data:', err);
         setError(t('community.failed_load_data'));
         setIsLoading(false);
       }
@@ -124,8 +94,8 @@ const CommunityInfoPage = ({ user }) => {
         return;
       }
 
-      // Redirect to communities page
-      navigate('/my/communities');
+      // Redirect to dashboard
+      navigate('/dashboard');
     } catch (err) {
       console.error('Error leaving community:', err);
       alert(t('community.failed_leave'));
@@ -134,13 +104,27 @@ const CommunityInfoPage = ({ user }) => {
   };
 
   if (isLoading) {
+    const shimmer = {
+      background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
+      backgroundSize: '200% 100%',
+      animation: 'shimmer 1.5s infinite',
+      borderRadius: '8px'
+    };
     return (
-      <PageLayout>
-        <div style={{ textAlign: 'center', padding: '40px' }}>
-          <div className="loading-spinner">⏳</div>
-          <p style={{ marginTop: '20px', color: '#666' }}>{t('community.loading')}</p>
+      <main className="main-content dashboard-main">
+        <style>{`@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }`}</style>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 2rem', width: '100%', boxSizing: 'border-box' }}>
+          <div className="content-card" style={{ padding: '2rem' }}>
+            <div style={{ ...shimmer, width: '280px', height: '36px', marginBottom: '12px' }} />
+            <div style={{ ...shimmer, width: '220px', height: '16px', marginBottom: '24px' }} />
+            <div style={{ ...shimmer, width: '100%', height: '14px', marginBottom: '8px' }} />
+            <div style={{ ...shimmer, width: '60%', height: '14px', marginBottom: '30px' }} />
+            <div style={{ ...shimmer, width: '100%', height: '120px', marginBottom: '30px' }} />
+            <div style={{ ...shimmer, width: '160px', height: '24px', marginBottom: '16px' }} />
+            <div style={{ ...shimmer, width: '100%', height: '60px' }} />
+          </div>
         </div>
-      </PageLayout>
+      </main>
     );
   }
 
@@ -463,6 +447,43 @@ const CommunityInfoPage = ({ user }) => {
     });
   };
 
+  const handleSelectMember = async (username) => {
+    if (username === selectedMember) {
+      setSelectedMember(null);
+      setMemberProfile(null);
+      return;
+    }
+
+    setSelectedMember(username);
+    setMemberProfile(null);
+    setIsLoadingProfile(true);
+
+    try {
+      const response = await fetch(
+        `${API_URL}/api/profile?username=${username}&requester=${user.Tg_Username}&communitySlug=${encodeURIComponent(slug)}`
+      );
+      const data = await response.json();
+
+      if (data.success) {
+        setMemberProfile(data.profile);
+      } else {
+        setMemberProfile(null);
+        setSelectedMember(null);
+      }
+    } catch (err) {
+      setMemberProfile(null);
+      setSelectedMember(null);
+    } finally {
+      setIsLoadingProfile(false);
+    }
+  };
+
+  const getAvatarUrl = (avatarPath) => {
+    if (!avatarPath) return null;
+    if (avatarPath.startsWith('http') || avatarPath.startsWith('data:')) return avatarPath;
+    return `${API_URL}${avatarPath}`;
+  };
+
   const settingValueLabels = {
     auto: t('community.approval_auto'),
     manual: t('community.approval_manual'),
@@ -474,8 +495,17 @@ const CommunityInfoPage = ({ user }) => {
 
   return (
     <main className="main-content dashboard-main">
-      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 2rem', width: '100%', boxSizing: 'border-box' }}>
-        <div className="content-card" style={{ padding: '2rem' }}>
+      <div style={{
+        maxWidth: '1200px',
+        margin: '0 auto',
+        padding: '0 2rem',
+        width: '100%',
+        boxSizing: 'border-box',
+        display: 'flex',
+        gap: '2rem',
+        alignItems: 'flex-start'
+      }}>
+        <div className="content-card" style={{ padding: '2rem', flex: selectedMember ? '0 0 65%' : '1', minWidth: 0, transition: 'flex 0.3s' }}>
           {/* Header */}
           <div style={{ marginBottom: '30px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '15px' }}>
@@ -648,7 +678,11 @@ const CommunityInfoPage = ({ user }) => {
                 {t('community.members_title', { count: members.length })}
               </h3>
               <div style={{ display: 'grid', gap: '10px' }}>
-                {members.map(member => (
+                {members.map(member => {
+                  const isClickable = member.username !== user.Tg_Username;
+                  const isSelected = selectedMember === member.username;
+
+                  return (
                   <div
                     key={member.username}
                     style={{
@@ -656,13 +690,21 @@ const CommunityInfoPage = ({ user }) => {
                       alignItems: 'center',
                       justifyContent: 'space-between',
                       padding: '15px',
-                      border: '1px solid #eee',
+                      border: isSelected ? '2px solid #6366f1' : '1px solid #eee',
                       borderRadius: '8px',
-                      backgroundColor: 'white'
+                      backgroundColor: isSelected ? '#f5f3ff' : 'white',
+                      cursor: isClickable ? 'pointer' : 'default',
+                      transition: 'border-color 0.2s, background-color 0.2s'
                     }}
+                    onClick={() => isClickable && handleSelectMember(member.username)}
                   >
-                    <div>
-                      <div style={{ fontWeight: '600', fontSize: '16px', marginBottom: '5px' }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{
+                        fontWeight: '600',
+                        fontSize: '16px',
+                        marginBottom: '5px',
+                        color: isClickable ? '#6366f1' : 'inherit'
+                      }}>
                         {member.name || '@' + member.username}
                       </div>
                       <div style={{ fontSize: '14px', color: '#666' }}>
@@ -682,7 +724,7 @@ const CommunityInfoPage = ({ user }) => {
                       </div>
                       {isAdmin && member.role !== 'Owner' && member.username !== user.Tg_Username && (
                         <button
-                          onClick={() => handleRemoveMember(member.membershipId, member.username)}
+                          onClick={(e) => { e.stopPropagation(); handleRemoveMember(member.membershipId, member.username); }}
                           disabled={removingId === member.membershipId}
                           style={{
                             background: 'none',
@@ -706,7 +748,8 @@ const CommunityInfoPage = ({ user }) => {
                       )}
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -1126,6 +1169,278 @@ const CommunityInfoPage = ({ user }) => {
             )}
           </div>
         </div>
+
+        {/* Member Profile Panel */}
+        {selectedMember && (
+          <div style={{
+            flex: '1 1 35%',
+            minWidth: 0,
+            position: 'sticky',
+            top: '2rem',
+            maxHeight: 'calc(100vh - 4rem)',
+            overflowY: 'auto'
+          }}>
+            <div className="content-card" style={{ padding: '1.5rem' }}>
+              {/* Close button */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '0.5rem' }}>
+                <button
+                  onClick={() => { setSelectedMember(null); setMemberProfile(null); }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: '4px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    opacity: 0.5
+                  }}
+                  onMouseOver={(e) => { e.currentTarget.style.opacity = '1'; }}
+                  onMouseOut={(e) => { e.currentTarget.style.opacity = '0.5'; }}
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+              </div>
+
+              {isLoadingProfile ? (
+                <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem 0' }}>
+                  <div className="loading-spinner" />
+                </div>
+              ) : memberProfile ? (
+                <div>
+                  {/* Avatar + Name */}
+                  <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+                    <div style={{
+                      width: '80px',
+                      height: '80px',
+                      borderRadius: '50%',
+                      overflow: 'hidden',
+                      margin: '0 auto 12px',
+                      backgroundColor: '#f0f0f0',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      {memberProfile.avatar ? (
+                        <img
+                          src={getAvatarUrl(memberProfile.avatar)}
+                          alt={memberProfile.name}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                      ) : (
+                        <span style={{ fontSize: '28px', color: '#999' }}>
+                          {memberProfile.name ? memberProfile.name.charAt(0).toUpperCase() : '?'}
+                        </span>
+                      )}
+                    </div>
+                    <h3 style={{ fontSize: '18px', fontWeight: '700', margin: '0 0 4px' }}>
+                      {memberProfile.name} {memberProfile.family}
+                    </h3>
+                    <div style={{ fontSize: '14px', color: '#666', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                      {memberProfile.profession && <span>{memberProfile.profession}</span>}
+                      {memberProfile.grade && (
+                        <>
+                          {memberProfile.profession && <span style={{ opacity: 0.5 }}>&bull;</span>}
+                          <span>{memberProfile.grade}</span>
+                        </>
+                      )}
+                    </div>
+                    {memberProfile.linkedin && (
+                      <a
+                        href={memberProfile.linkedin}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ color: '#0077b5', textDecoration: 'none', fontSize: '13px', display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '6px' }}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+                        LinkedIn
+                      </a>
+                    )}
+                  </div>
+
+                  {/* Location */}
+                  {(memberProfile.country || memberProfile.city || memberProfile.timezone) && (
+                    <div style={{
+                      fontSize: '13px',
+                      color: '#666',
+                      textAlign: 'center',
+                      marginBottom: '1.5rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px',
+                      flexWrap: 'wrap'
+                    }}>
+                      {memberProfile.country && (
+                        <>
+                          <span>{memberProfile.country.flag}</span>
+                          <span>{memberProfile.country.name}</span>
+                        </>
+                      )}
+                      {memberProfile.city && <span>&bull; {memberProfile.city.name}</span>}
+                      {memberProfile.timezone && <span>&bull; {memberProfile.timezone}</span>}
+                    </div>
+                  )}
+
+                  {/* Telegram button */}
+                  {memberProfile.tg_username && (
+                    <a
+                      href={`https://t.me/${memberProfile.tg_username.replace('@', '')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px',
+                        padding: '10px',
+                        borderRadius: '8px',
+                        backgroundColor: '#6366f1',
+                        color: 'white',
+                        textDecoration: 'none',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        marginBottom: '1.5rem'
+                      }}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 11.944 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.638z"/></svg>
+                      {t('community.message_telegram', 'Message on Telegram')}
+                    </a>
+                  )}
+
+                  {/* Descriptions */}
+                  {memberProfile.professionalDesc && (
+                    <div style={{ marginBottom: '1rem' }}>
+                      <h4 style={{ fontSize: '13px', fontWeight: '600', color: '#999', textTransform: 'uppercase', marginBottom: '6px' }}>
+                        {t('dashboard.profile.professional_desc')}
+                      </h4>
+                      <p style={{ fontSize: '14px', color: '#333', lineHeight: '1.5', margin: 0 }}>
+                        {memberProfile.professionalDesc}
+                      </p>
+                    </div>
+                  )}
+
+                  {memberProfile.personalDesc && (
+                    <div style={{ marginBottom: '1rem' }}>
+                      <h4 style={{ fontSize: '13px', fontWeight: '600', color: '#999', textTransform: 'uppercase', marginBottom: '6px' }}>
+                        {t('dashboard.profile.personal_desc')}
+                      </h4>
+                      <p style={{ fontSize: '14px', color: '#333', lineHeight: '1.5', margin: 0 }}>
+                        {memberProfile.personalDesc}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Professional Interests */}
+                  {memberProfile.professionalInterests?.length > 0 && (
+                    <div style={{ marginBottom: '1rem' }}>
+                      <h4 style={{ fontSize: '13px', fontWeight: '600', color: '#999', textTransform: 'uppercase', marginBottom: '6px' }}>
+                        {t('dashboard.profile.professional_interests')}
+                      </h4>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                        {memberProfile.professionalInterests.map(item => (
+                          <span key={item} style={{
+                            padding: '4px 10px',
+                            borderRadius: '12px',
+                            fontSize: '12px',
+                            backgroundColor: '#eef0fb',
+                            color: '#4b5563'
+                          }}>
+                            {item}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Personal Interests */}
+                  {memberProfile.personalInterests?.length > 0 && (
+                    <div style={{ marginBottom: '1rem' }}>
+                      <h4 style={{ fontSize: '13px', fontWeight: '600', color: '#999', textTransform: 'uppercase', marginBottom: '6px' }}>
+                        {t('dashboard.profile.personal_interests')}
+                      </h4>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                        {memberProfile.personalInterests.map(item => (
+                          <span key={item} style={{
+                            padding: '4px 10px',
+                            borderRadius: '12px',
+                            fontSize: '12px',
+                            backgroundColor: '#fef3c7',
+                            color: '#92400e'
+                          }}>
+                            {item}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Coffee Goals */}
+                  {memberProfile.coffeeGoals?.length > 0 && (
+                    <div style={{ marginBottom: '1rem' }}>
+                      <h4 style={{ fontSize: '13px', fontWeight: '600', color: '#999', textTransform: 'uppercase', marginBottom: '6px' }}>
+                        {t('dashboard.profile.coffee_goals')}
+                      </h4>
+                      <p style={{ fontSize: '14px', color: '#333', margin: 0 }}>
+                        {Array.isArray(memberProfile.coffeeGoals) ? memberProfile.coffeeGoals.join(', ') : memberProfile.coffeeGoals}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Languages */}
+                  {memberProfile.languages?.length > 0 && (
+                    <div style={{ marginBottom: '1rem' }}>
+                      <h4 style={{ fontSize: '13px', fontWeight: '600', color: '#999', textTransform: 'uppercase', marginBottom: '6px' }}>
+                        {t('dashboard.profile.languages')}
+                      </h4>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                        {memberProfile.languages.map(lang => (
+                          <span key={lang} style={{
+                            padding: '4px 10px',
+                            borderRadius: '12px',
+                            fontSize: '12px',
+                            backgroundColor: '#f0f0f0',
+                            color: '#333'
+                          }}>
+                            {lang}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Meeting Days */}
+                  {memberProfile.bestMeetingDays?.length > 0 && (
+                    <div style={{ marginBottom: '0.5rem' }}>
+                      <h4 style={{ fontSize: '13px', fontWeight: '600', color: '#999', textTransform: 'uppercase', marginBottom: '6px' }}>
+                        {t('dashboard.profile.best_days')}
+                      </h4>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                        {memberProfile.bestMeetingDays.map(day => (
+                          <span key={day} style={{
+                            padding: '4px 10px',
+                            borderRadius: '12px',
+                            fontSize: '12px',
+                            backgroundColor: '#dbeafe',
+                            color: '#1e40af'
+                          }}>
+                            {t(`dashboard.days.${day.toLowerCase()}`, day)}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '2rem', color: '#999' }}>
+                  {t('community.profile_not_available', 'Profile not available')}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
       {confirmModal && (
         <div
