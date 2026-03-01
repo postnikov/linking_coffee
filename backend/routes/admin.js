@@ -10,6 +10,31 @@ const statisticsUtils = require('../utils/statistics');
 const { sanitizeUsername } = require('../utils/airtable-sanitizer');
 const { getBotInstance } = require('../utils/alerting');
 
+// Read scheduler config directly from file (used when scheduler runs in separate container)
+const SCHEDULER_CONFIG_FILE = path.join(__dirname, '..', 'config', 'scheduler.json');
+const DEFAULT_SCHEDULER_CONFIG = path.join(__dirname, '..', 'scheduler.json');
+
+function readSchedulerConfig() {
+  try {
+    const configPath = fs.existsSync(SCHEDULER_CONFIG_FILE)
+      ? SCHEDULER_CONFIG_FILE
+      : DEFAULT_SCHEDULER_CONFIG;
+    const data = fs.readFileSync(configPath, 'utf8');
+    return JSON.parse(data);
+  } catch (e) {
+    console.error('Failed to read scheduler config:', e.message);
+    return [];
+  }
+}
+
+function writeSchedulerConfig(configs) {
+  const dir = path.dirname(SCHEDULER_CONFIG_FILE);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+  fs.writeFileSync(SCHEDULER_CONFIG_FILE, JSON.stringify(configs, null, 2));
+}
+
 module.exports = function createAdminRouter(scheduler, projectConfig) {
   const router = require('express').Router();
 
@@ -477,36 +502,46 @@ module.exports = function createAdminRouter(scheduler, projectConfig) {
     }
   });
 
-  // Scheduler
+  // Scheduler — works with in-process scheduler OR reads shared config file
   router.get('/api/admin/scheduler', adminLimiter, checkAdmin, (req, res) => {
-    if (!scheduler) {
-      return res.json({ success: true, jobs: [], message: 'Scheduler runs in separate process' });
+    if (scheduler) {
+      return res.json({ success: true, jobs: scheduler.getJobs() });
     }
-    res.json({ success: true, jobs: scheduler.getJobs() });
+    const jobs = readSchedulerConfig();
+    res.json({ success: true, jobs, external: true });
   });
 
   router.get('/api/admin/scheduler/health', adminLimiter, checkAdmin, (req, res) => {
-    if (!scheduler) {
-      return res.json({ success: true, message: 'Scheduler runs in separate process', external: true });
+    if (scheduler) {
+      return res.json({ success: true, ...scheduler.getHealthStatus() });
     }
-    res.json({ success: true, ...scheduler.getHealthStatus() });
+    const jobs = readSchedulerConfig();
+    const enabled = jobs.filter(j => j.enabled).length;
+    res.json({ success: true, external: true, totalJobs: jobs.length, enabledJobs: enabled });
   });
 
   router.post('/api/admin/scheduler', adminLimiter, checkAdmin, (req, res) => {
-    if (!scheduler) {
-      return res.status(503).json({ success: false, message: 'Scheduler runs in separate process' });
-    }
-    const { action, job } = req.body; // action: add, update, delete, start-now
-
+    const { action, job } = req.body;
     try {
-      if (action === 'add') {
-        scheduler.addJob(job);
-      } else if (action === 'update') {
-        scheduler.updateJob(job.name, job); // Assuming name is key
-      } else if (action === 'delete') {
-        scheduler.deleteJob(job.name);
+      if (scheduler) {
+        if (action === 'add') scheduler.addJob(job);
+        else if (action === 'update') scheduler.updateJob(job.name, job);
+        else if (action === 'delete') scheduler.deleteJob(job.name);
+        return res.json({ success: true, jobs: scheduler.getJobs() });
       }
-      res.json({ success: true, jobs: scheduler.getJobs() });
+      // File-based operations for external scheduler
+      const configs = readSchedulerConfig();
+      if (action === 'add') {
+        configs.push(job);
+      } else if (action === 'update') {
+        const idx = configs.findIndex(c => c.name === job.name);
+        if (idx >= 0) configs[idx] = { ...configs[idx], ...job };
+      } else if (action === 'delete') {
+        const idx = configs.findIndex(c => c.name === job.name);
+        if (idx >= 0) configs.splice(idx, 1);
+      }
+      writeSchedulerConfig(configs);
+      res.json({ success: true, jobs: configs, external: true });
     } catch (e) {
       res.status(500).json({ success: false, message: e.message });
     }
@@ -514,7 +549,7 @@ module.exports = function createAdminRouter(scheduler, projectConfig) {
 
   router.post('/api/admin/scheduler/run', adminLimiter, checkAdmin, (req, res) => {
     if (!scheduler) {
-      return res.status(503).json({ success: false, message: 'Scheduler runs in separate process' });
+      return res.status(503).json({ success: false, message: 'Run Now requires in-process scheduler. Restart the scheduler container to pick up config changes.' });
     }
     const { name } = req.body;
     if (scheduler.runJobNow(name)) {

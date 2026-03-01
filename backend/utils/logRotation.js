@@ -150,9 +150,23 @@ function rotateAllScriptLogs(scriptsLogDir) {
   }
 }
 
+/**
+ * Rotate all app logs (auth.log, debug.log, connections.log, duplicates.log)
+ * @param {string} logsDir - Root logs directory
+ */
+function rotateAllAppLogs(logsDir) {
+  const appLogFiles = ['auth.log', 'debug.log', 'connections.log', 'duplicates.log'];
+
+  appLogFiles.forEach(filename => {
+    const filePath = path.join(logsDir, filename);
+    rotateLogIfNeeded(filePath);
+  });
+}
+
 // If run directly, perform cleanup and rotation
 if (require.main === module) {
-  const scriptsLogDir = path.join(__dirname, '..', 'logs', 'scripts');
+  const logsDir = path.join(__dirname, '..', 'logs');
+  const scriptsLogDir = path.join(logsDir, 'scripts');
 
   console.log(`🔄 Starting log maintenance...`);
   console.log(`   Max log size: ${(MAX_LOG_SIZE / 1024 / 1024).toFixed(2)} MB`);
@@ -160,11 +174,15 @@ if (require.main === module) {
   console.log(`   Retention: ${LOG_RETENTION_DAYS} days`);
   console.log(`   Compression: ${ENABLE_LOG_COMPRESSION ? 'Enabled' : 'Disabled'}`);
 
-  // Rotate logs if needed
+  // Rotate app logs (auth.log, debug.log, etc.)
+  rotateAllAppLogs(logsDir);
+
+  // Rotate script logs
   rotateAllScriptLogs(scriptsLogDir);
 
-  // Cleanup old logs
+  // Cleanup old logs in both directories
   cleanupOldLogs(scriptsLogDir);
+  cleanupOldLogs(logsDir);
 
   console.log(`✅ Log maintenance complete`);
 }
@@ -173,5 +191,6 @@ module.exports = {
   rotateLogIfNeeded,
   compressRotatedLog,
   cleanupOldLogs,
-  rotateAllScriptLogs
+  rotateAllScriptLogs,
+  rotateAllAppLogs
 };

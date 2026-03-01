@@ -18,4 +18,9 @@ docker images linking-coffee-frontend --format "{{.Tag}}" | grep '^v' | sort -r 
   docker rmi linking-coffee-frontend:$tag 2>/dev/null || true
 done
 
+# Remove dangling build cache
+docker builder prune -f 2>/dev/null || true
+
 echo "✅ Cleanup complete."
+echo "📊 Disk usage after cleanup:"
+df -h / | tail -1

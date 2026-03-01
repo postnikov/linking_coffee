@@ -1,0 +1,7 @@
+[2026-03-01T10:05:00.048Z] [INFO] [42615] Starting Health Monitor
+[2026-03-01T10:05:00.216Z] [INFO] [42615] 🏥 Health check: http://localhost:3001/api/health
+[2026-03-01T10:05:00.243Z] [INFO] [42615] ✅ Health check passed (26ms)
+[2026-03-01T10:05:00.243Z] [INFO] [42615] 📊 Loaded alert state from disk
+[2026-03-01T10:05:00.248Z] [INFO] [42615] Script completed in 0.2s (exit code: 0) - SUCCESS
+[2026-03-01T10:10:00.054Z] [INFO] [44009] Starting Health Monitor
+[2026-03-01T10:10:00.200Z] [INFO] [44009] 🏥 Health check: http://localhost:3001/api/health

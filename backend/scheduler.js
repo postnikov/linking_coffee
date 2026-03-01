@@ -25,13 +25,17 @@ class Scheduler {
 
   loadConfig() {
     try {
-      // Check if runtime config exists
+      // Check if runtime config exists and has jobs
       if (fs.existsSync(this.runtimeConfigFile)) {
         try {
           const data = fs.readFileSync(this.runtimeConfigFile, 'utf8');
-          this.configs = JSON.parse(data);
-          console.log(`📅 Scheduler loaded ${this.configs.length} jobs from runtime config.`);
-          return;
+          const parsed = JSON.parse(data);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            this.configs = parsed;
+            console.log(`📅 Scheduler loaded ${this.configs.length} jobs from runtime config.`);
+            return;
+          }
+          console.warn('⚠️ Runtime config is empty, falling back to default.');
         } catch (e) {
           console.error('❌ Error loading runtime config, falling back to default:', e);
         }

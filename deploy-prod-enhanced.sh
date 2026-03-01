@@ -57,12 +57,6 @@ fi
 
 # 3. Deploy to server with image preservation
 echo "📡 Connecting to server ($SERVER_IP) to deploy..."
-scp .env $SERVER_USER@$SERVER_IP:$SERVER_DIR/.env
-
-if [ $? -ne 0 ]; then
-  echo "❌ Failed to copy configuration files to server."
-  exit 1
-fi
 
 # Load environment variables for Telegram alerts
 if [ -f .env ]; then
@@ -140,6 +134,10 @@ TEST_EXIT_CODE=$(ssh $SERVER_USER@$SERVER_IP "cat /tmp/test_exit_code 2>/dev/nul
 if [ "$TEST_EXIT_CODE" -eq 0 ]; then
   echo "✅ All smoke tests passed!"
   echo "🌍 Deployment successful! Check the site at https://linked.coffee"
+
+  # Clean up old Docker images to free disk space
+  echo "🧹 Cleaning up old Docker images..."
+  ssh $SERVER_USER@$SERVER_IP "cd $SERVER_DIR && bash scripts/cleanup-old-images.sh" || echo "⚠️  Image cleanup failed (non-fatal)"
 
   # Send success alert to admin
   if [ -n "$ADMIN_CHAT_ID" ] && [ -n "$BOT_TOKEN" ]; then
