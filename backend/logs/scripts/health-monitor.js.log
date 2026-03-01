@@ -194,3 +194,12 @@
 [2026-03-01T13:25:05.412Z] [INFO] [86708]    Consecutive failures: 1
 [2026-03-01T13:25:05.413Z] [INFO] [86708] ⚠️  Queued warning [Health]: Health check failed (1 failure): timeout of 5000ms exceeded
 [2026-03-01T13:25:05.421Z] [INFO] [86708] Script completed in 5.4s (exit code: 1) - FAILED
+[2026-03-01T13:30:00.066Z] [INFO] [88120] Starting Health Monitor
+[2026-03-01T13:30:00.249Z] [INFO] [88120] 🏥 Health check: http://linking-coffee-backend:3001/api/health
+[2026-03-01T13:35:00.116Z] [INFO] [89404] Starting Health Monitor
+[2026-03-01T13:35:00.327Z] [INFO] [89404] 🏥 Health check: http://linking-coffee-backend:3001/api/health
+[2026-03-01T13:35:05.357Z] [ERROR] [89404] ❌ Health check failed: timeout of 5000ms exceeded (5027ms)
+[2026-03-01T13:35:05.358Z] [INFO] [89404] 📊 Loaded alert state from disk
+[2026-03-01T13:35:05.363Z] [INFO] [89404] 💔 Health check failure recorded (consecutive: 2)
+[2026-03-01T13:35:05.366Z] [INFO] [89404]    Consecutive failures: 2
+[2026-03-01T13:35:05.371Z] [INFO] [89404] Script completed in 5.3s (exit code: 1) - FAILED

@@ -1031,9 +1031,76 @@ const Dashboard = () => {
     };
 
     if (isLoading) {
+        const shimmer = {
+            background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
+            backgroundSize: '200% 100%',
+            animation: 'shimmer 1.5s infinite',
+            borderRadius: '8px'
+        };
         return (
-            <main className="main-content dashboard-main-loading">
-                <div className="spinner"></div>
+            <main className="main-content dashboard-main">
+                <style>{`@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }`}</style>
+                <div className="dashboard-container">
+                    {/* Left Column — Profile skeleton */}
+                    <div className="left-column">
+                        <div className="profile-section glass-card" style={{ padding: '2rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                                <div style={{ ...shimmer, width: '140px', height: '24px' }} />
+                                <div style={{ ...shimmer, width: '90px', height: '32px', borderRadius: '6px' }} />
+                            </div>
+                            {/* Avatar + Name row */}
+                            <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '2rem', alignItems: 'center' }}>
+                                <div style={{ ...shimmer, width: '80px', height: '80px', borderRadius: '50%', flexShrink: 0 }} />
+                                <div style={{ flex: 1 }}>
+                                    <div style={{ ...shimmer, width: '60%', height: '18px', marginBottom: '10px' }} />
+                                    <div style={{ ...shimmer, width: '45%', height: '18px' }} />
+                                </div>
+                            </div>
+                            {/* Form fields */}
+                            <div style={{ ...shimmer, width: '100%', height: '42px', marginBottom: '16px' }} />
+                            <div style={{ ...shimmer, width: '100%', height: '42px', marginBottom: '16px' }} />
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                                <div style={{ ...shimmer, height: '42px' }} />
+                                <div style={{ ...shimmer, height: '42px' }} />
+                            </div>
+                            <div style={{ ...shimmer, width: '100%', height: '80px', marginBottom: '16px' }} />
+                            <div style={{ ...shimmer, width: '100%', height: '80px', marginBottom: '16px' }} />
+                            {/* Tags */}
+                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
+                                <div style={{ ...shimmer, width: '80px', height: '28px', borderRadius: '14px' }} />
+                                <div style={{ ...shimmer, width: '100px', height: '28px', borderRadius: '14px' }} />
+                                <div style={{ ...shimmer, width: '70px', height: '28px', borderRadius: '14px' }} />
+                                <div style={{ ...shimmer, width: '90px', height: '28px', borderRadius: '14px' }} />
+                            </div>
+                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                                <div style={{ ...shimmer, width: '90px', height: '28px', borderRadius: '14px' }} />
+                                <div style={{ ...shimmer, width: '70px', height: '28px', borderRadius: '14px' }} />
+                                <div style={{ ...shimmer, width: '110px', height: '28px', borderRadius: '14px' }} />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Right Column — Matching skeleton */}
+                    <div className="matching-section">
+                        <div className="glass-card" style={{ padding: '2rem', marginBottom: '1.5rem' }}>
+                            <div style={{ ...shimmer, width: '160px', height: '24px', marginBottom: '8px' }} />
+                            <div style={{ ...shimmer, width: '120px', height: '14px', marginBottom: '1.5rem' }} />
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '1rem' }}>
+                                <div style={{ ...shimmer, width: '60px', height: '60px', borderRadius: '50%', flexShrink: 0 }} />
+                                <div style={{ flex: 1 }}>
+                                    <div style={{ ...shimmer, width: '70%', height: '18px', marginBottom: '8px' }} />
+                                    <div style={{ ...shimmer, width: '50%', height: '14px' }} />
+                                </div>
+                            </div>
+                        </div>
+                        <div className="glass-card" style={{ padding: '2rem' }}>
+                            <div style={{ ...shimmer, width: '180px', height: '24px', marginBottom: '16px' }} />
+                            <div style={{ ...shimmer, width: '100%', height: '14px', marginBottom: '8px' }} />
+                            <div style={{ ...shimmer, width: '80%', height: '14px', marginBottom: '16px' }} />
+                            <div style={{ ...shimmer, width: '140px', height: '36px', borderRadius: '6px' }} />
+                        </div>
+                    </div>
+                </div>
             </main>
         );
     }
