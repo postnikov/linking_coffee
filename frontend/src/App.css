@@ -23,6 +23,17 @@ html {
     flex-direction: column;
 }
 
+/* Header offset — single source of truth for all pages inside MainLayout */
+.app-container > .main-content {
+    padding-top: var(--header-height-desktop);
+}
+
+@media (max-width: 768px) {
+    .app-container > .main-content {
+        padding-top: var(--header-height-mobile);
+    }
+}
+
 /* Language Switcher */
 .language-switcher {
     position: absolute;
@@ -469,7 +480,6 @@ html {
 /* Tablet breakpoint */
 @media (max-width: 1024px) {
     .main-content {
-        padding-top: calc(var(--header-height-desktop) + 2rem);
         align-items: flex-start;
         height: auto;
         min-height: 100vh;
@@ -514,16 +524,11 @@ html {
     }
 }
 
-/* Mobile breakpoint */
-@media (max-width: 768px) {
-    .main-content {
-        padding-top: calc(var(--header-height-mobile) + 2rem);
-    }
-}
-
 @media (max-width: 640px) {
     .main-content {
-        padding: calc(var(--header-height-mobile) + 1rem) var(--spacing-md) var(--spacing-xl);
+        padding-left: var(--spacing-md);
+        padding-right: var(--spacing-md);
+        padding-bottom: var(--spacing-xl);
     }
 
     .hero-title {
@@ -570,9 +575,13 @@ html {
     }
 }
 
-/* Fluid content override for Dashboard and Profile pages */
+/* Fluid content override for Dashboard and Profile pages.
+   Keeps padding-top from the header offset rule above;
+   only zeros out horizontal and bottom padding. */
 .app-container .main-content-fluid {
-    padding: 0;
+    padding-left: 0;
+    padding-right: 0;
+    padding-bottom: 0;
     display: block;
     max-width: none;
 }

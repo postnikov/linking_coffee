@@ -1,12 +1,12 @@
 {
   "lastDailySummary": "2026-01-23T23:24:53.483Z",
-  "consecutiveHealthFailures": 0,
+  "consecutiveHealthFailures": 1,
   "scriptFailures": {
     "health-monitor.js": {
-      "consecutiveFailures": 0,
-      "lastFailure": null,
+      "consecutiveFailures": 1,
+      "lastFailure": "2026-03-01T13:25:05.422Z",
       "lastAlertSent": null,
-      "totalFailures": 0
+      "totalFailures": 1
     },
     "check-deployment-health.js": {
       "consecutiveFailures": 0,
@@ -16,7 +16,7 @@
     }
   },
   "healthChecks": {
-    "lastSuccess": "2026-03-01T13:05:00.309Z",
-    "lastFailure": "2026-03-01T10:20:00.328Z"
+    "lastSuccess": "2026-03-01T13:15:00.296Z",
+    "lastFailure": "2026-03-01T13:25:05.405Z"
   }
 }

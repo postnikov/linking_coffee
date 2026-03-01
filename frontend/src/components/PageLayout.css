@@ -1,6 +1,5 @@
 .page-container {
-    padding-top: 100px;
-    /* Space for fixed header */
+    padding-top: 2rem;
     padding-bottom: 40px;
     max-width: 800px;
     margin: 0 auto;
@@ -36,7 +35,7 @@
 
 @media (max-width: 768px) {
     .page-container {
-        padding: calc(var(--header-height-mobile) + 2rem) 1rem 2rem 1rem;
+        padding: 1.5rem 1rem 2rem 1rem;
     }
 
     .page-container .page-card,

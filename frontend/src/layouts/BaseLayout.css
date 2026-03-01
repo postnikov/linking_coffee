@@ -6,13 +6,6 @@
 .layout-wrapper {
     width: 100%;
     min-height: 100vh;
-    padding-top: var(--header-height-desktop);
-}
-
-@media (max-width: 768px) {
-    .layout-wrapper {
-        padding-top: var(--header-height-mobile);
-    }
 }
 
 /* Container System */

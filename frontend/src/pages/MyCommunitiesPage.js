@@ -100,7 +100,7 @@ const MyCommunitiesPage = ({ user }) => {
   }
 
   return (
-    <div style={{ paddingTop: '100px', paddingBottom: '40px', minHeight: '100vh', background: 'white' }}>
+    <div style={{ paddingTop: '2rem', paddingBottom: '40px', minHeight: '100vh', background: 'white' }}>
       <div style={{ maxWidth: '800px', margin: '0 auto', padding: '0 20px' }}>
           <h2 style={{ fontSize: '28px', fontWeight: '700', marginBottom: '10px', color: '#6366f1' }}>
             {t('community.my_title')}

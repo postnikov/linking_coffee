@@ -28,10 +28,10 @@ const {
 } = require('../utils/alertState');
 
 // Configuration
-const DEFAULT_HEALTH_URL = process.env.FROM_SCHEDULER === 'true'
+// FROM_SCHEDULER takes priority: in Docker, scheduler container can't reach backend via localhost
+const HEALTH_CHECK_URL = process.env.FROM_SCHEDULER === 'true'
   ? 'http://linking-coffee-backend:3001/api/health'
-  : 'http://localhost:3001/api/health';
-const HEALTH_CHECK_URL = process.env.HEALTH_CHECK_URL || DEFAULT_HEALTH_URL;
+  : (process.env.HEALTH_CHECK_URL || 'http://127.0.0.1:3001/api/health');
 const TIMEOUT = parseInt(process.env.HEALTH_CHECK_TIMEOUT) || 5000;
 const CRITICAL_THRESHOLD = 3; // Alert after this many consecutive failures
 

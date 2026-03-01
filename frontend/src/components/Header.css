@@ -3,11 +3,12 @@
     top: 0;
     left: 0;
     width: 100%;
+    height: var(--header-height-desktop);
     z-index: 100;
     background: rgb(118, 75, 162);
-    /* Removed backdrop-filter for scroll performance on fixed elements */
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 1rem 0;
+    display: flex;
+    align-items: center;
 }
 
 .header-container {
@@ -71,11 +72,8 @@
 @media (max-width: 768px) {
     .site-header {
         background: rgb(118, 75, 162);
-        padding: 0.75rem 0;
         border-bottom: none;
-        height: 60px;
-        display: flex;
-        align-items: center;
+        height: var(--header-height-mobile);
     }
 
     .header-container {

@@ -5,7 +5,7 @@ body.modal-open {
 
 /* Dashboard Main Wrapper */
 .main-content.dashboard-main {
-  padding-top: calc(var(--header-height-desktop) + 48px);
+  padding-top: 48px;
   display: block;
   min-height: 100vh;
   padding-left: 0;
@@ -13,7 +13,7 @@ body.modal-open {
 }
 
 .main-content.dashboard-main-loading {
-  padding-top: 8rem;
+  padding-top: 2rem;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -239,7 +239,7 @@ textarea.form-control {
 
 @media (max-width: 640px) {
   .main-content.dashboard-main {
-    padding-top: calc(var(--header-height-mobile) + 16px);
+    padding-top: 16px;
     padding-left: 0 !important;
     padding-right: 0 !important;
   }

@@ -3,7 +3,7 @@
     display: flex;
     justify-content: center;
     align-items: flex-start;
-    padding-top: 120px;
+    padding-top: 2rem;
 }
 
 .about-container {
@@ -126,10 +126,6 @@
 
 /* Tablet breakpoint */
 @media (max-width: 1024px) {
-    .about-main {
-        padding-top: calc(var(--header-height-desktop) + 2rem);
-    }
-
     .about-container {
         padding: 0 1rem;
     }
@@ -149,10 +145,6 @@
 
 /* Mobile breakpoint */
 @media (max-width: 768px) {
-    .about-main {
-        padding-top: calc(var(--header-height-mobile) + 2rem);
-    }
-
     .about-container {
         flex-direction: column;
         gap: 1.5rem;

@@ -180,7 +180,7 @@ const LoginPage = ({ onLogin }) => {
     };
 
     return (
-        <main className="main-content" style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-start', paddingTop: '120px', minHeight: 'calc(100vh - 80px)' }}>
+        <main className="main-content" style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-start', paddingTop: '2rem', minHeight: 'calc(100vh - 80px)' }}>
             {showGdprModal && <GdprModal onAccept={handleGdprAccept} onClose={handleGdprClose} initialName={pendingUser?.firstName} initialFamily={pendingUser?.lastName} />}
 
             <div className="glass-card" style={{ maxWidth: '400px', width: '100%', margin: '0 12px' }}>

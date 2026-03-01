@@ -173,7 +173,7 @@ const TokenProfile = () => {
     }
 
     return (
-        <main className="main-content" style={{ paddingTop: '120px', display: 'block', minHeight: '100vh', paddingLeft: 0, paddingRight: 0 }}>
+        <main className="main-content" style={{ paddingTop: '2rem', display: 'block', minHeight: '100vh', paddingLeft: 0, paddingRight: 0 }}>
             <div className="public-profile-container">
                 <div className="public-profile-section">
                     <div className="glass-card profile-view" style={{ padding: '2rem' }}>

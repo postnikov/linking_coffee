@@ -99,9 +99,9 @@
   --container-padding: clamp(1rem, 4vw, 2rem);
   --section-gap: clamp(1.5rem, 3vw, 3rem);
 
-  /* Header Heights (Dynamic) */
+  /* Header Heights — must match actual rendered header size */
   --header-height-mobile: 60px;
-  --header-height-desktop: 64px;
+  --header-height-desktop: 80px;
 
   /* Z-Index Scale */
   --z-dropdown: 1000;
