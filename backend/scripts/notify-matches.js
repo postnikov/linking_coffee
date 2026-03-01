@@ -28,6 +28,7 @@ require('dotenv').config({ path: path.join(__dirname, '../../.env') });
 const Airtable = require('airtable');
 const { Telegraf } = require('telegraf');
 const { logMessage } = require('../utils/logger');
+const { sendCriticalAlert, sendWarningAlert } = require('../utils/alerting');
 
 // Configuration
 const MATCHES_TABLE = 'tblx2OEN5sSR1xFI2'; // From SCHEMA
@@ -238,6 +239,8 @@ async function main() {
         console.log(`✅ Found ${matches.length} pending matches.`);
 
         let processedCount = 0;
+        let successCount = 0;
+        let failCount = 0;
 
         for (const match of matches) {
             if (processedCount >= MAX_MATCHES_TO_PROCESS) {
@@ -272,9 +275,11 @@ async function main() {
 
                 // Notify Member 1 (Use Intro_1, View_Token_1)
                 sent1 = await notifyMember(member1, member2, match.fields.Intro_1, match.fields.View_Token_1, match.id, match.fields.Intro_Image, communityName);
+                if (sent1) successCount++; else failCount++;
 
                 // Notify Member 2 (Use Intro_2, View_Token_2)
                 sent2 = await notifyMember(member2, member1, match.fields.Intro_2, match.fields.View_Token_2, match.id, match.fields.Intro_Image, communityName);
+                if (sent2) successCount++; else failCount++;
 
                 // Update Match record if ANY message was sent (or attempted in live mode)
                 // In DRY_RUN we don't update.
@@ -315,6 +320,26 @@ async function main() {
         }
 
         console.log('🏁 Done.');
+        console.log(`📊 Summary: ${successCount} sent, ${failCount} failed out of ${successCount + failCount} total`);
+
+        // Alert admin if there were notable failures
+        const totalAttempts = successCount + failCount;
+        const failRate = totalAttempts > 0 ? (failCount / totalAttempts * 100) : 0;
+
+        if (failCount > 0 && !DRY_RUN && !IS_TEST_MODE) {
+            const summary =
+                `Script: notify-matches\n` +
+                `Matches processed: ${processedCount}\n` +
+                `Messages failed: ${failCount}/${totalAttempts} (${failRate.toFixed(1)}%)\n` +
+                `Messages sent: ${successCount}`;
+
+            if (failCount >= 5 && failRate >= 30) {
+                await sendCriticalAlert('Match Notifications — Delivery Failures', summary);
+                process.exit(1);
+            } else if (failCount >= 3 || failRate >= 20) {
+                await sendWarningAlert('Match Notifications — Partial Failures', summary);
+            }
+        }
 
     } catch (error) {
         console.error('❌ Error executing script:', error);

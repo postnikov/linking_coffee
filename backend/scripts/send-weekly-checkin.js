@@ -23,6 +23,7 @@ const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../../.env') });
 const Airtable = require('airtable');
 const { Telegraf, Markup } = require('telegraf');
+const { sendCriticalAlert, sendWarningAlert } = require('../utils/alerting');
 
 // Configuration
 const BATCH_SIZE = 20; // Telegram has limits, good to batch
@@ -150,6 +151,24 @@ async function run() {
         console.log(`Total processed: ${processedCount}`);
         console.log(`Success: ${successCount}`);
         console.log(`Failed: ${failCount}`);
+
+        // Alert admin if there were notable failures
+        const totalAttempts = successCount + failCount;
+        const failRate = totalAttempts > 0 ? (failCount / totalAttempts * 100) : 0;
+
+        if (failCount > 0 && !isDryRun && !isTestMode) {
+            const summary =
+                `Script: send-weekly-checkin\n` +
+                `Messages failed: ${failCount}/${totalAttempts} (${failRate.toFixed(1)}%)\n` +
+                `Messages sent: ${successCount}`;
+
+            if (failCount >= 5 && failRate >= 30) {
+                await sendCriticalAlert('Weekly Check-in — Delivery Failures', summary);
+                process.exit(1);
+            } else if (failCount >= 3 || failRate >= 20) {
+                await sendWarningAlert('Weekly Check-in — Partial Failures', summary);
+            }
+        }
 
     } catch (error) {
         console.error('Fatal error:', error);

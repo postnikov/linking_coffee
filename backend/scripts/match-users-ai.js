@@ -34,6 +34,7 @@ require('dotenv').config({ path: path.join(__dirname, '../../.env') });
 const Airtable = require('airtable');
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const axios = require('axios');
+const { sendCriticalAlert, sendWarningAlert, sendInfoAlert } = require('../utils/alerting');
 // Load Config
 let config = {};
 try {
@@ -358,6 +359,19 @@ async function main() {
             console.log(`⚠️  Not enough members to match (${activeMembers.length} < ${minActiveForMatching}).`);
             if (IS_COMMUNITY_MATCH) {
                 console.log(`💡 Community needs at least ${minActiveForMatching} opt-ins for matching.`);
+                await sendInfoAlert(
+                    `Community ${COMMUNITY_SLUG} — Insufficient Opt-ins`,
+                    `Community: ${communityRecord.fields.Name}\n` +
+                    `Opt-ins: ${activeMembers.length}\n` +
+                    `Required: ${minActiveForMatching}`
+                );
+            } else {
+                await sendWarningAlert(
+                    'Global Matching — Not Enough Members',
+                    `Active members: ${activeMembers.length}\n` +
+                    `Required: ${minActiveForMatching}\n\n` +
+                    `No matches will be created this week.`
+                );
             }
             return;
         }
@@ -571,8 +585,17 @@ Your goal is to pair these users to maximize meaningful connections.
         }
 
         if (!success) {
+            const context = IS_COMMUNITY_MATCH ? `Community: ${COMMUNITY_SLUG}` : 'Global pool';
             console.error("❌ Aborting: Could not generate a valid match list after " + MAX_LOGIC_RETRIES + " attempts.");
-            return;
+            await sendCriticalAlert(
+                `AI Matching Failed — ${IS_COMMUNITY_MATCH ? COMMUNITY_SLUG : 'Global'}`,
+                `Context: ${context}\n` +
+                `Model: ${MODEL_NAME}\n` +
+                `Candidates: ${candidates.length}\n` +
+                `Retries exhausted: ${MAX_LOGIC_RETRIES}\n\n` +
+                `No matches created. Check AI model status and logs.`
+            );
+            process.exit(1);
         }
 
         // 8. Execute Changes
@@ -727,6 +750,15 @@ Your goal is to pair these users to maximize meaningful connections.
 
     } catch (e) {
         console.error('❌ Error:', e);
+        const context = IS_COMMUNITY_MATCH ? `Community: ${COMMUNITY_SLUG}` : 'Global pool';
+        await sendCriticalAlert(
+            `Match Script Fatal Error — ${IS_COMMUNITY_MATCH ? COMMUNITY_SLUG : 'Global'}`,
+            `Context: ${context}\n` +
+            `Error: ${e.message}\n` +
+            `Stack: ${(e.stack || '').substring(0, 300)}\n\n` +
+            `Log: ${logFile}`
+        );
+        process.exit(1);
     }
 }
 

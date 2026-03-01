@@ -27,6 +27,7 @@ require('dotenv').config({ path: require('path').join(__dirname, '../../.env') }
 const Airtable = require('airtable');
 const { Telegraf, Markup } = require('telegraf');
 const { logMessage } = require('../utils/logger');
+const { sendCriticalAlert, sendWarningAlert } = require('../utils/alerting');
 
 // Initialize Airtable
 const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY }).base(process.env.AIRTABLE_BASE_ID);
@@ -140,6 +141,8 @@ async function sendFeedbackRequests() {
         console.log(`Found ${matches.length} potential matches.`);
 
         let processedCount = 0;
+        let successCount = 0;
+        let failCount = 0;
 
         for (const match of matches) {
             if (processedCount >= MAX_MATCHES_TO_PROCESS) {
@@ -178,12 +181,14 @@ async function sendFeedbackRequests() {
             let sent1 = true;
             if (isF1Empty) {
                 sent1 = await sendToMember(matchId, 1, m1TgId, m1Id, m1Username, m2Username, m2Name, m1Lang);
+                if (sent1 === true) successCount++; else if (sent1 === false) failCount++;
             }
 
             // Send to Member 2 if Feedback2 is empty
             let sent2 = true;
             if (isF2Empty) {
                 sent2 = await sendToMember(matchId, 2, m2TgId, m2Id, m2Username, m1Username, m1Name, m2Lang);
+                if (sent2 === true) successCount++; else if (sent2 === false) failCount++;
             }
 
             // Mark checked — only if all required sends succeeded
@@ -201,6 +206,26 @@ async function sendFeedbackRequests() {
         }
 
         console.log(`Finished processing. Sent requests for ${processedCount} matches.`);
+        console.log(`📊 Summary: ${successCount} sent, ${failCount} failed`);
+
+        // Alert admin if there were notable failures
+        const totalAttempts = successCount + failCount;
+        const failRate = totalAttempts > 0 ? (failCount / totalAttempts * 100) : 0;
+
+        if (failCount > 0 && !IS_DRY_RUN && !IS_TEST_MODE) {
+            const summary =
+                `Script: weekend-feedback\n` +
+                `Matches processed: ${processedCount}\n` +
+                `Messages failed: ${failCount}/${totalAttempts} (${failRate.toFixed(1)}%)\n` +
+                `Messages sent: ${successCount}`;
+
+            if (failCount >= 5 && failRate >= 30) {
+                await sendCriticalAlert('Weekend Feedback — Delivery Failures', summary);
+                process.exit(1);
+            } else if (failCount >= 3 || failRate >= 20) {
+                await sendWarningAlert('Weekend Feedback — Partial Failures', summary);
+            }
+        }
 
     } catch (error) {
         console.error('Error in sendFeedbackRequests:', error);

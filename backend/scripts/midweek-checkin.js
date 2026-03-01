@@ -20,6 +20,7 @@ require('dotenv').config({ path: require('path').join(__dirname, '../../.env') }
 const Airtable = require('airtable');
 const { Telegraf, Markup } = require('telegraf');
 const { logMessage } = require('../utils/logger');
+const { sendCriticalAlert, sendWarningAlert } = require('../utils/alerting');
 
 // Initialize Airtable
 // Initialize Airtable
@@ -122,6 +123,8 @@ async function sendFeedbackRequests() {
         console.log(`Found ${matches.length} matches to process.`);
 
         let processedCount = 0;
+        let successCount = 0;
+        let failCount = 0;
 
         for (const match of matches) {
             if (processedCount >= MAX_MATCHES_TO_PROCESS) {
@@ -147,9 +150,11 @@ async function sendFeedbackRequests() {
 
             // Send to Member 1
             const sent1 = await sendToMember(matchId, 1, m1TgId, m1Id, m1Username, m2Username, m1Lang);
+            if (sent1 === true) successCount++; else if (sent1 === false) failCount++;
 
             // Send to Member 2
             const sent2 = await sendToMember(matchId, 2, m2TgId, m2Id, m2Username, m1Username, m2Lang);
+            if (sent2 === true) successCount++; else if (sent2 === false) failCount++;
 
             // Update match record to mark as checked in — only if both sends succeeded
             // Logic: Not Dry Run AND Not Test Mode (to preserve real state)
@@ -177,6 +182,26 @@ async function sendFeedbackRequests() {
         }
 
         console.log('Finished processing all matches.');
+        console.log(`📊 Summary: ${successCount} sent, ${failCount} failed`);
+
+        // Alert admin if there were notable failures
+        const totalAttempts = successCount + failCount;
+        const failRate = totalAttempts > 0 ? (failCount / totalAttempts * 100) : 0;
+
+        if (failCount > 0 && !IS_DRY_RUN && !IS_TEST_MODE) {
+            const summary =
+                `Script: midweek-checkin\n` +
+                `Matches processed: ${processedCount}\n` +
+                `Messages failed: ${failCount}/${totalAttempts} (${failRate.toFixed(1)}%)\n` +
+                `Messages sent: ${successCount}`;
+
+            if (failCount >= 5 && failRate >= 30) {
+                await sendCriticalAlert('Midweek Check-in — Delivery Failures', summary);
+                process.exit(1);
+            } else if (failCount >= 3 || failRate >= 20) {
+                await sendWarningAlert('Midweek Check-in — Partial Failures', summary);
+            }
+        }
 
     } catch (error) {
         console.error('Error in sendFeedbackRequests:', error);
