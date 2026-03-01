@@ -354,6 +354,45 @@ textarea.form-control {
   }
 }
 
+/* Member Profile Side Panel (Community Page) */
+.member-profile-backdrop {
+  display: none;
+}
+
+.member-profile-panel {
+  flex: 1 1 35%;
+  min-width: 0;
+  position: sticky;
+  top: 2rem;
+  max-height: calc(100vh - 4rem);
+  overflow-y: auto;
+}
+
+@media (max-width: 768px) {
+  .member-profile-backdrop {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 90;
+  }
+
+  .member-profile-panel {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90vw;
+    max-width: 400px;
+    max-height: 85vh;
+    z-index: 91;
+    flex: none;
+  }
+}
+
 /* Chips Container Shared Style */
 .language-chips,
 .interest-chips,

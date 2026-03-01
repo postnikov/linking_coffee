@@ -1172,14 +1172,13 @@ const CommunityInfoPage = ({ user }) => {
 
         {/* Member Profile Panel */}
         {selectedMember && (
-          <div style={{
-            flex: '1 1 35%',
-            minWidth: 0,
-            position: 'sticky',
-            top: '2rem',
-            maxHeight: 'calc(100vh - 4rem)',
-            overflowY: 'auto'
-          }}>
+          <>
+          {/* Mobile overlay backdrop */}
+          <div
+            className="member-profile-backdrop"
+            onClick={() => { setSelectedMember(null); setMemberProfile(null); }}
+          />
+          <div className="member-profile-panel">
             <div className="content-card" style={{ padding: '1.5rem' }}>
               {/* Close button */}
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '0.5rem' }}>
@@ -1440,6 +1439,7 @@ const CommunityInfoPage = ({ user }) => {
               )}
             </div>
           </div>
+          </>
         )}
       </div>
       {confirmModal && (
