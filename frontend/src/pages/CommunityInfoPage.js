@@ -474,7 +474,7 @@ const CommunityInfoPage = ({ user }) => {
 
   return (
     <main className="main-content dashboard-main">
-      <div style={{ maxWidth: '900px', margin: '0 auto', padding: '0 2rem', width: '100%', boxSizing: 'border-box' }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 2rem', width: '100%', boxSizing: 'border-box' }}>
         <div className="content-card" style={{ padding: '2rem' }}>
           {/* Header */}
           <div style={{ marginBottom: '30px' }}>
@@ -491,7 +491,7 @@ const CommunityInfoPage = ({ user }) => {
             </div>
 
             {community.description && (
-              <p style={{ color: '#666', lineHeight: '1.6' }}>{community.description}</p>
+              <p style={{ color: '#666', lineHeight: '1.6', whiteSpace: 'pre-line' }}>{community.description}</p>
             )}
           </div>
 

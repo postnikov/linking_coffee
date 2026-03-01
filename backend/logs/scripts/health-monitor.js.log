@@ -108,3 +108,18 @@
 [2026-03-01T11:55:00.244Z] [INFO] [59857] ✅ Health check passed (41ms)
 [2026-03-01T11:55:00.245Z] [INFO] [59857] 📊 Loaded alert state from disk
 [2026-03-01T11:55:00.249Z] [INFO] [59857] Script completed in 0.2s (exit code: 0) - SUCCESS
+[2026-03-01T12:00:00.047Z] [INFO] [61225] Starting Health Monitor
+[2026-03-01T12:00:00.214Z] [INFO] [61225] 🏥 Health check: http://localhost:3001/api/health
+[2026-03-01T12:00:00.241Z] [INFO] [61225] ✅ Health check passed (26ms)
+[2026-03-01T12:00:00.241Z] [INFO] [61225] 📊 Loaded alert state from disk
+[2026-03-01T12:00:00.246Z] [INFO] [61225] Script completed in 0.2s (exit code: 0) - SUCCESS
+[2026-03-01T12:05:00.032Z] [INFO] [62523] Starting Health Monitor
+[2026-03-01T12:05:00.205Z] [INFO] [62523] 🏥 Health check: http://localhost:3001/api/health
+[2026-03-01T12:05:00.232Z] [INFO] [62523] ✅ Health check passed (26ms)
+[2026-03-01T12:05:00.232Z] [INFO] [62523] 📊 Loaded alert state from disk
+[2026-03-01T12:05:00.236Z] [INFO] [62523] Script completed in 0.2s (exit code: 0) - SUCCESS
+[2026-03-01T12:10:00.051Z] [INFO] [63772] Starting Health Monitor
+[2026-03-01T12:10:00.217Z] [INFO] [63772] 🏥 Health check: http://localhost:3001/api/health
+[2026-03-01T12:10:00.301Z] [INFO] [63772] ✅ Health check passed (83ms)
+[2026-03-01T12:10:00.301Z] [INFO] [63772] 📊 Loaded alert state from disk
+[2026-03-01T12:10:00.305Z] [INFO] [63772] Script completed in 0.3s (exit code: 0) - SUCCESS

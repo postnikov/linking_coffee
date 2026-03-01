@@ -650,7 +650,13 @@ router.put('/api/community/:slug', apiLimiter, adminLimiter, checkCommunityAdmin
     }
 
     if (description !== undefined) {
-      updates.Description = sanitizeForAirtable(description);
+      if (typeof description !== 'string' || description.length > 2000) {
+        return res.status(400).json({
+          success: false,
+          error: 'Description must be a string under 2000 characters'
+        });
+      }
+      updates.Description = description.trim();
     }
 
     if (minActiveForMatching !== undefined) {

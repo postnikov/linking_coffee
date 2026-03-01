@@ -48,7 +48,7 @@ function App() {
 
     const MainLayout = ({ children }) => {
         const location = useLocation();
-        const isFullWidth = location.pathname === '/' || location.pathname.startsWith('/profile');
+        const isFullWidth = location.pathname === '/' || location.pathname.startsWith('/profile') || location.pathname.startsWith('/community');
 
         return (
             <div className="app-container">
