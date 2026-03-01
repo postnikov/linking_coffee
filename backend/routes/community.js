@@ -770,6 +770,7 @@ router.get('/api/my/communities', pollLimiter, async (req, res) => {
       const communityIds = membership.fields.Community;
       if (communityIds && communityIds.length > 0) {
         const community = await base(process.env.AIRTABLE_COMMUNITIES_TABLE).find(communityIds[0]);
+        if (community.fields.Status !== 'Active' || community.fields.Deleted_At) continue;
         communities.push({
           slug: community.fields.Slug,
           name: community.fields.Name,

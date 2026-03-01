@@ -16,7 +16,7 @@
     }
   },
   "healthChecks": {
-    "lastSuccess": "2026-03-01T10:05:00.243Z",
-    "lastFailure": null
+    "lastSuccess": "2026-03-01T11:55:00.245Z",
+    "lastFailure": "2026-03-01T10:20:00.328Z"
   }
 }
